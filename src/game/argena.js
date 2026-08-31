@@ -2683,11 +2683,13 @@ function ekranTrenera(sc){
     wGrupie.forEach(function(w){
       var pn = kosztPn(w), cenaN = kosztZl(w);
       var umie = w.raz && S.kupione[w.id];
-      var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm]);
+      var zaNiski = w.wymPoziom && S.poziom < w.wymPoziom;
+      var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm]) && !zaNiski;
       if(!umie && stac) cokolwiek = true;
       var etykieta = umie ? (w.l.replace(/ \+1$/,"") + " - już to umiesz")
         : (w.uczy === "nikt" ? w.l + " - nikt tu tego nie uczy"
-        : ((w.wymagaUm && !S.umie[w.wymagaUm]) ? w.l + " - najpierw " + nazwaUmiejetnosci(w.wymagaUm) : w.l));
+        : (zaNiski ? w.l + " - wymaga " + w.wymPoziom + " poziomu"
+        : ((w.wymagaUm && !S.umie[w.wymagaUm]) ? w.l + " - najpierw " + nazwaUmiejetnosci(w.wymagaUm) : w.l)));
       html += '<button data-i="'+i+'"'+((umie||!stac)?" disabled":"")+'>'
             + (umie ? "" : '<span class="koszt">'+pn+' pn &middot; '+cenaN+' zł</span>')
             + etykieta + '</button>';
@@ -2695,6 +2697,7 @@ function ekranTrenera(sc){
         var p = kosztPn(w), c = kosztZl(w);
         if(S.pn < p || S.zloto < c) return;
         if(w.raz && S.kupione[w.id]) return;
+        if(w.wymPoziom && S.poziom < w.wymPoziom) return;
         S.pn -= p; S.zloto -= c;
         if(w.raz) S.kupione[w.id] = true;
         w.ef();
@@ -6050,6 +6053,472 @@ function dopracujGre(){
 dopracujGre();
 
 
+
+
+/* ================= ROZDZIAŁ DRUGI: SŁUŻBA I POSELSTWO ================= */
+
+var RANGI = {
+  sk:["Pachołek strażnicy","Kopijnik","Chorąży","Rotmistrz przyboczny"],
+  nw:["Wpisany do ksiąg","Faktor","Prokurent kontoru","Syndyk"],
+  od:["Przyjęty do stołu","Cichy","Rozjemca","Starszy Cichych"],
+  pl:["Przepuszczony przez kratę","Idący borem","Głos matecznika","Wybraniec puszczy"]
+};
+
+function nazwaRangi(){
+  if(!S.frakcja) return "bez barw";
+  var r = RANGI[S.frakcja] || [];
+  return r[Math.min(S.ranga || 0, r.length - 1)] || r[0];
+}
+
+function bieglosc(){
+  return S.umie.walka3 ? 3 : (S.umie.walka2 ? 2 : (S.umie.walka1 ? 1 : 0));
+}
+
+function rozdzialDrugi(){
+  uzupelnijStan();
+  if(S.ranga === undefined) S.ranga = 0;
+
+  /* ---- biegłość bronią: trzy poziomy, realny wpływ na obrażenia ---- */
+  var _obrazeniaBazowe = obrazenia;
+  obrazenia = function(){
+    var d = _obrazeniaBazowe();
+    var b = bieglosc();
+    if(!b) return d;
+    d = Math.round(d * (1 + 0.09 * b));
+    if(b === 3 && Math.random() < 0.15){
+      d += 4;
+      S.log.push("Prowadzisz ostrze samym nadgarstkiem - dokładasz jeszcze raz.");
+    }
+    return d;
+  };
+
+  /* ---- superciosy: jeden co pięć poziomów ---- */
+  var progi = {ciecie:1, podciecie:5, pchniecie:10, mlyniec:15};
+  NAUKA.forEach(function(w){ if(progi[w.id]) w.wymPoziom = progi[w.id]; });
+
+  SUPERCIOSY.push({id:"pogromca", n:"Cios pogromcy", z:["g","d","s","s"], o:"×3 obrażeń", v:3});
+
+  /* ---- nowe przedmioty rozdziału ---- */
+  var P = {
+    list_kontorowy:{n:"List kontorowy bez pieczęci", kat:"pismo", typ:"towar", cena:0,
+      o:"Rozkaz wypłaty dla ludzi, których nie ma w żadnym rejestrze. Podpis urwany razem z rogiem karty."},
+    pieczec_lakowa:{n:"Pieczęć lakowa rozjemców", kat:"pismo", typ:"towar", cena:0,
+      o:"Trzy chorągwie odciśnięte w jednym laku. Otwiera drzwi, których nie otwiera złoto."},
+    sygnet_rozjemcy:{n:"Sygnet rozjemcy", kat:"artefakt", typ:"wyposazenie", slot:"pierscien",
+      daje:{sila:2, zrecz:2}, cena:520,
+      o:"Noszą go ci, którym wolno mówić w cudzym imieniu. Siła +2, zręczność +2."},
+    plaszcz_poselski:{n:"Płaszcz poselski", kat:"pancerz", typ:"wyposazenie", slot:"tors",
+      odp:{klute:10, ciete:12, obuch:6}, cena:560,
+      o:"Gruby sukienny płaszcz na kolczej podszewce. Ma wyglądać dostojnie i zatrzymywać noże."},
+    ostrze_rozjemcze:{n:"Ostrze rozjemcze", kat:"bron", typ:"wyposazenie", slot:"bron",
+      obr:[16,23], cena:720, wym:{sila:26},
+      o:"Miecz kuty na jarmarku z trzech różnych sztab, po jednej od każdej chorągwi."}
+  };
+  for(var k in P) if(!PRZEDMIOTY[k]) PRZEDMIOTY[k] = P[k];
+
+  /* ---- nowi wrogowie ---- */
+  var W = {
+    kurier:{n:"Kurier kontoru", hp:96, dmg:[10,15], exp:260, zloto:70, lup:{list_kontorowy:1},
+      sekw:["s","g"], finisz:{dmg:[18,25], o:"pchnięcie sztyletem spod płaszcza"}, blokSzansa:20,
+      typObr:"klute",
+      wyglad:"Ubrany jak pisarz, chodzi jak żołnierz. Torba przypięta do pasa łańcuszkiem.",
+      styl:"Tnie przez środek, żeby cię cofnąć, potem idzie wysoko. Kiedy uzna, że przegrywa, sięga po sztylet spod płaszcza."},
+    bezchoragwi:{n:"Zbrojny bez chorągwi", hp:150, dmg:[14,20], exp:420, zloto:140, lup:{pieczec_lakowa:1},
+      sekw:["g","g","d"], finisz:{dmg:[26,34], o:"nadziane na puklerz"}, blokSzansa:30,
+      typObr:"obuch",
+      wyglad:"Zbroja z czterech różnych wojen, żadnych barw, twarz zakryta do oczu. Ktoś mu dobrze płaci za to, że nie ma imienia.",
+      styl:"Dwa razy wysoko, potem nagle nisko pod tarczę. Trzyma puklerz przy biodrze i tym puklerzem kończy."},
+    zwiadowca_pl:{n:"Zwiadowca zza kraty", hp:112, dmg:[12,16], exp:300, zloto:0, lup:{czarci_kwiat:2},
+      sekw:["d","s"], finisz:{dmg:[20,27], o:"strzała z bliska"}, blokSzansa:10,
+      typObr:"klute",
+      wyglad:"Nie słychać go, dopóki nie zechce. Łuk trzyma opuszczony, bo wie, ile trwa podniesienie.",
+      styl:"Bije nisko, żeby zmusić cię do zasłony, i natychmiast przez środek. Z pięciu kroków strzela."}
+  };
+  for(var kw in W) if(!WROGOWIE[kw]) WROGOWIE[kw] = W[kw];
+
+  /* ---- nauka rozdziału drugiego ---- */
+  var nowa = [
+    {id:"walka1", uczy:"racibor", grupa:"walka", l:"Biegłość bronią I", pn:3, zl:120, raz:true, wymPoziom:3,
+     ef:function(){ S.umie.walka1 = true; }},
+    {id:"walka2", uczy:"smil", grupa:"walka", l:"Biegłość bronią II", pn:4, zl:260, raz:true, wymPoziom:8, wymagaUm:"walka1",
+     ef:function(){ S.umie.walka2 = true; }},
+    {id:"walka3", uczy:"ostoja", grupa:"walka", l:"Biegłość bronią III", pn:6, zl:520, raz:true, wymPoziom:14, wymagaUm:"walka2",
+     ef:function(){ S.umie.walka3 = true; }},
+    {id:"pogromca", uczy:"ostoja", grupa:"walka", l:"Supercios: Cios pogromcy", pn:6, zl:600, raz:true, wymPoziom:20, wymagaUm:"walka3",
+     ef:function(){ S.umie.pogromca = true; }},
+    {id:"mowa", uczy:"ostoja", grupa:"rzemioslo", l:"Mowa poselska", pn:3, zl:200, raz:true,
+     ef:function(){ S.umie.mowa = true; }},
+    {id:"mana3", uczy:"wierzchoslawa", grupa:"magia", l:"Zasób many +12", pn:3, zl:90,
+     ef:function(){ S.manaMax += 12; S.mana += 12; }}
+  ];
+  nowa.forEach(function(w){ if(!NAUKA.some(function(x){ return x.id === w.id; })) NAUKA.push(w); });
+
+  /* ---- zadania ---- */
+  var Z = {
+  kariera1:{t:"Służba: rozkaz na piśmie", od:"Twoja frakcja",
+    pelny:"Barwy zobowiązują. Pierwszy rozkaz nie jest o walce - jest o tym, żeby cię zobaczono tam, gdzie trzeba.<br><br><span class='mowa'>„Pojedziesz do Stołu Rozjemczego i staniesz przed legatem Ostoją. Nie w naszym imieniu. W swoim. Niech zapamięta twarz.”</span>",
+    opis:"Twoja frakcja wysyła cię na Stół Rozjemczy, żeby pokazać, kogo ma.",
+    cel:"Stań przed legatem Ostoją przy Stole Rozjemczym.", nagroda:{exp:400, zloto:120}},
+  kariera2:{t:"Służba: zbrojny bez chorągwi", od:"Legat Ostoja",
+    pelny:"<span class='mowa'>„Na Obozowisku Chorążych stoi człowiek, który bierze żołd od wszystkich czterech i pracuje przeciw wszystkim czterem.<br><br>Nikt go nie może zabić w swoich barwach. Ty możesz, bo nikt jeszcze nie wie, czyj jesteś.”</span>",
+    opis:"Najemnik bez barw rozgrywa cztery frakcje przeciwko sobie.",
+    cel:"Zabij Zbrojnego bez chorągwi na Obozowisku Chorążych i wróć do Ostoi.",
+    nagroda:{exp:700, zloto:260, przedmiot:"plaszcz_poselski"}},
+  kariera3:{t:"Służba: pieczęć na twoje imię", od:"Legat Ostoja",
+    pelny:"Pieczęć zdjęta z trupa najemnika jest prawdziwa. Kto ją odda swojej frakcji, ten pierwszy raz przestanie być czyimś posłańcem.<br><br><span class='mowa'>„Zanieś ją swoim. Powiedz, że rozjemcy proszą o człowieka do stołu, i że proszą o ciebie.”</span>",
+    opis:"Pieczęć rozjemców otwiera ci drogę wyżej we własnej frakcji.",
+    cel:"Zanieś pieczęć lakową swojej frakcji.",
+    nagroda:{exp:900, zloto:300, przedmiot:"sygnet_rozjemcy"}},
+
+  posel1:{t:"Poselstwo: cztery stołki i jeden stół", od:"Legat Ostoja",
+    pelny:"<span class='mowa'>„Zwołaliśmy rozejm, którego nikt nie chce. Ismaal przysłał posła, kontor przysłał kanclerza, puszcza przysłała szeptuchę - i wszyscy troje siedzą osobno.<br><br>Zacznij od Świętobora. Jest najgłośniejszy, więc najłatwiej go usłyszeć.”</span>",
+    opis:"Rozjemcy chcą posadzić cztery frakcje przy jednym stole.",
+    cel:"Porozmawiaj z posłem Świętoborem przy Stole Rozjemczym.", nagroda:{exp:350, zloto:100}},
+  posel2:{t:"Poselstwo: cło, którego nie ma w cenniku", od:"Poseł Świętobor",
+    pelny:"<span class='mowa'>„Ismaal usiądzie, jak kontor przestanie brać od naszych wozów opłatę, której nie ma w żadnym cenniku.<br><br>Kanclerz Radomiła powie, że to kłamstwo. Powie tak, dopóki nie położysz jej czegoś na stole.”</span>",
+    opis:"Ismaal nie usiądzie do stołu, dopóki kontor bierze ciche cło.",
+    cel:"Wypytaj kanclerz Radomiłę o opłaty od wozów Ismaala.", nagroda:{exp:350, zloto:100}},
+  posel3:{t:"Poselstwo: list bez pieczęci", od:"Kanclerz Radomiła",
+    pelny:"<span class='mowa'>„Kontor nie bierze niczego, czego nie zapisał. Ale kontor to nie tylko ja.<br><br>Drogą Poselską jeździ kurier, który wozi rozkazy wypłaty bez mojego podpisu. Przynieś mi jeden taki list, a sama wsadzę winnego do lochu.”</span>",
+    opis:"Ktoś w kontorze płaci ludziom poza księgami.",
+    cel:"Zdobądź list kontorowy od kuriera na Drodze Poselskiej i oddaj go Radomile.",
+    nagroda:{exp:600, zloto:220}},
+  posel4:{t:"Poselstwo: zgoda puszczy", od:"Kanclerz Radomiła",
+    pelny:"Winny siedzi już w lochu kontoru, a Radomiła podpisała zniesienie cła.<br><br><span class='mowa'>„Zostaje puszcza. Szeptucha Wierzchosława nie rozmawia z kontorem, ale rozmawia z tym, kto przyjdzie z darem, a nie z papierem.”</span>",
+    opis:"Bez zgody Prastarego Ludu nie ma stołu.",
+    cel:"Przynieś szeptusze Wierzchosławie trzy czarcie kwiaty.", nagroda:{exp:600, rep:{pl:3}}},
+  posel5:{t:"Poselstwo: co widzi puszcza", od:"Szeptucha Wierzchosława",
+    pelny:"<span class='mowa'>„Usiądziemy. Ale usiądziemy dlatego, że mamy wam coś do powiedzenia, a nie dlatego, że nas prosisz.<br><br>Od strony Ziem Niczyich idzie coś, czego korzenie nie znają. Nasi zwiadowcy nie wracają - jeden wrócił i nie chce mówić. Znajdź go na Obozowisku i zmuś, żeby mówił.”</span>",
+    opis:"Zwiadowca zza kraty wrócił z Ziem Niczyich odmieniony.",
+    cel:"Znajdź zwiadowcę zza kraty na Obozowisku Chorążych.", nagroda:{exp:700, zloto:200}},
+  posel6:{t:"Poselstwo: rozejm", od:"Szeptucha Wierzchosława",
+    pelny:"Zwiadowca powiedział trzy słowa, zanim padł: <em>„piasek, brama, oni”</em>.<br><br>Cztery frakcje mają teraz powód, żeby usiąść, i to nie jest powód, którego ktokolwiek chciał.",
+    opis:"Rozjemcy zwołują stół. Twoje słowo zamyka rozdział.",
+    cel:"Zwołaj wszystkich do Stołu Rozjemczego i przemów przy legacie Ostoi.",
+    nagroda:{exp:1400, zloto:500, przedmiot:"ostrze_rozjemcze"}}
+  };
+  for(var zid in Z) if(!ZADANIA[zid]) ZADANIA[zid] = Z[zid];
+
+  NAZWY_LANCUCHOW.kariera = "Służba we własnych barwach";
+  NAZWY_LANCUCHOW.posel = "Poselstwo czterech chorągwi";
+
+  /* ---- lokacje ---- */
+  var L = {
+  droga_poselska:{
+    n:"Droga Poselska", region:"pas rozjemczy",
+    opis:function(){
+      return "Trakt wysypany tłuczniem, jedyny w tych stronach utrzymywany wspólnie przez wszystkie chorągwie. Co ćwierć mili stoi słup z czterema znakami i żaden nie jest wyżej od pozostałych.<br><br>"
+        + (jestNoc()
+          ? "Nocą po drodze jeżdżą tylko kurierzy i ci, którzy na kurierów czekają."
+          : "Wozy przejeżdżają bez opłat i bez postoju. Nikt tu nikogo nie zatrzymuje - taka była umowa.");
+    },
+    tereny:[{n:"Zejdź w zarośla przy słupach", teren:"droga_poselska_teren"}],
+    drogi:[
+      {n:"Do Stołu Rozjemczego", lok:"stol_rozjemczy"},
+      {n:"Na Obozowisko Chorążych", lok:"obozowisko"},
+      {n:"Z powrotem na Jarmark", lok:"jarmark"}
+    ]
+  },
+
+  stol_rozjemczy:{
+    n:"Stół Rozjemczy", region:"siedziba rozjemców",
+    opis:function(){
+      return "Kamienna sala bez dachu, przykryta płótnem na czterech masztach. Pośrodku okrągły stół z jednego dębowego plastra - postawiono go tak, żeby nikt nie mógł usiąść u szczytu.<br><br>"
+        + (jestNoc()
+          ? "Po zmroku przy stole siedzi tylko legat i pilnuje, żeby świece paliły się do rana. Tak każe zwyczaj."
+          : "Trzej posłowie siedzą osobno, każdy przy swoim maszcie, i każdy udaje, że pozostałych nie ma.");
+    },
+    postacie:[
+      {n:"Legat Ostoja", id:"ostoja", nieznany:"Starzec bez barw przy stole", rola:"legat rozjemców", scena:"ostoja", portret:"weteran"},
+      {n:"Poseł Świętobor", id:"swietobor", nieznany:"Zbrojny w czerwieni", rola:"poseł Ismaala", scena:"swietobor", portret:"urzednik"},
+      {n:"Kanclerz Radomiła", id:"radomila", nieznany:"Kobieta z dwiema księgami", rola:"kanclerz kontoru", scena:"radomila", portret:"kobieta"},
+      {n:"Szeptucha Wierzchosława", id:"wierzchoslawa", nieznany:"Kobieta w płaszczu z kory", rola:"szeptucha puszczy", scena:"wierzchoslawa", portret:"kobieta"}
+    ],
+    miejsca:[
+      {n:"Prycza w krużganku - prześpij noc", scena:"prycza_rozjemcza"},
+      {n:"Studnia rozjemcza - odpocznij", scena:"studnia_rozjemcza"}
+    ],
+    drogi:[{n:"Drogą Poselską", lok:"droga_poselska"}]
+  },
+
+  obozowisko:{
+    n:"Obozowisko Chorążych", region:"obóz zbrojnych czterech barw",
+    opis:function(){
+      return "Cztery obozy postawione tak blisko siebie, jak pozwala duma, i tak daleko, jak pozwala miejsce. Między nimi wydeptany plac, na którym nikt niczego nie sprzedaje, bo tu się tylko czeka.<br><br>"
+        + (jestNoc()
+          ? "Nocą pilnują się nawzajem, a warty stoją tyłem do siebie. Ktoś w namiocie bez barw jeszcze nie śpi."
+          : "Konie, kuchnie polowe, ćwiczenia z drzewcami. Wszyscy czekają na rozkaz, którego nikt nie chce wydać.");
+    },
+    postacie:[
+      {n:"Zbrojny bez chorągwi", id:"bezchoragwi_npc", nieznany:"Człowiek bez barw przy ognisku", rola:"najemnik", scena:"bezchoragwi_scena", portret:"kowal",
+       warunek:function(){ return stanZadania("kariera2") === "aktywne"; }},
+      {n:"Zwiadowca zza kraty", id:"zwiadowca_npc", nieznany:"Ranny w płaszczu z mchu", rola:"zwiadowca puszczy", scena:"zwiadowca_scena", portret:"weteran",
+       warunek:function(){ return stanZadania("posel5") === "aktywne" || !!S.poznane.zwiadowca_slowa; }}
+    ],
+    tereny:[{n:"Obejdź obozy dokoła", teren:"obozowisko_teren"}],
+    drogi:[{n:"Drogą Poselską", lok:"droga_poselska"}]
+  },
+
+  wietrznica_pusta_ch2:{ n:"", ukryta:true }
+  };
+  for(var lid in L) if(!LOKACJE[lid]) LOKACJE[lid] = L[lid];
+  delete LOKACJE.wietrznica_pusta_ch2;
+
+  var T2 = {
+  droga_poselska_teren:{
+    n:"Zarośla przy Drodze Poselskiej", wraca:"droga_poselska",
+    opis:"Za słupami granicznymi ciągnie się pas nieskoszonej trawy. Widać z niego drogę, a z drogi nie widać nikogo.",
+    punkty:[
+      {id:"dp_kurier", typ:"mob", n:"Kurier z torbą przypiętą do pasa", walka:"kurier"},
+      {id:"dp_ziola", typ:"zasob", n:"Czarci kwiat w rowie", wymaga:"zielarstwo", zbierz:{czarci_kwiat:2},
+       wynik:"Rośnie w rowie, gdzie woda stoi od wiosny. Ścinasz dwa i zawijasz w płótno."},
+      {id:"dp_skrytka", typ:"skrzynia", n:"Wydrążony słup graniczny", wymaga:"tropienie", zloto:120,
+       wynik:"Ktoś zostawia tu zapłatę dla kogoś, kto nie chce jej odbierać osobiście. Dziś odbierasz ją ty."}
+    ]
+  },
+  obozowisko_teren:{
+    n:"Obrzeża obozowiska", wraca:"obozowisko",
+    opis:"Za linią namiotów zaczyna się śmietnisko czterech armii: połamane drzewce, zdarte podkowy i to, czego nikt nie chciał nieść dalej.",
+    punkty:[
+      {id:"ob_ruda", typ:"ruda", n:"Porzucone sztaby w błocie", wymaga:"gornictwo", zbierz:{sztaba:2},
+       wynik:"Sztaby wypadły z wozu i nikt ich nie podniósł, bo nie były niczyje."},
+      {id:"ob_zwiad", typ:"mob", n:"Zwiadowca, który nie chce rozmawiać", walka:"zwiadowca_pl",
+       warunek:function(){ return stanZadania("posel5") === "aktywne"; }},
+      {id:"ob_skrytka", typ:"skrzynia", n:"Kufer pod przewróconym wozem", wymaga:"zamki", zloto:180,
+       wynik:"Zamek prosty, ale kufer wciśnięty tak, że trzeba wiedzieć, gdzie sięgnąć."}
+    ]
+  }
+  };
+  for(var tid in T2) if(!TERENY[tid]) TERENY[tid] = T2[tid];
+
+  /* droga z jarmarku otwiera się po wstąpieniu do frakcji */
+  if(LOKACJE.jarmark && !LOKACJE.jarmark.__ch2){
+    LOKACJE.jarmark.__ch2 = true;
+    LOKACJE.jarmark.drogi.unshift({n:"Drogą Poselską na północ", lok:"droga_poselska",
+      warunek:function(){ return !!S.frakcja; }});
+  }
+
+  /* ---- sceny ---- */
+  function wlasnaFrakcja(){ return FRAKCJE_INFO[S.frakcja] || null; }
+
+  SCENY.studnia_rozjemcza = {portret:null, kto:"Studnia rozjemcza",
+    tekst:"Woda zimna i czysta, wyciągana wspólnym wiadrem. Zwyczaj mówi, że przy tej studni nikt nie dobywa broni.",
+    opcje:[
+      {l:"Usiądź przy studni", odpoczynek:{wraca:"studnia_rozjemcza"}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wróć do stołu", idz:"__lok_stol_rozjemczy"}
+    ]};
+
+  SCENY.prycza_rozjemcza = {portret:null, kto:"Krużganek",
+    tekst:"Pod zadaszeniem stoi osiem prycz dla posłańców. Za nocleg płaci się rozjemcom, bo rozjemcy nie mają z czego żyć.",
+    opcje:[
+      {l:"Prześpij noc (6 zł)", warunek:function(){ return S.zloto >= 6; },
+       odpoczynek:{lozko:true, wraca:"prycza_rozjemcza",
+                   tekst:"Płótno nad tobą łopocze przez całą noc, ale nikt cię nie budzi."}},
+      {l:"Wróć do stołu", idz:"__lok_stol_rozjemczy"}
+    ]};
+
+  SCENY.ostoja = {
+    portret:"weteran", kto:"Legat Ostoja", npc:"ostoja",
+    intro:{
+      tekst:"Siedzi przy stole tam, gdzie nie ma szczytu, i struga patyk nożem, którym na pewno kiedyś robił co innego.<br><br><span class='mowa'>„Nosisz barwy i przyszedłeś tu sam. To znaczy, że albo cię przysłali, albo uciekłeś. Jedno i drugie mi pasuje.”</span>",
+      opcje:[{l:"Przysłali mnie.", poznaj:"ostoja", idz:"ostoja"}]
+    },
+    tekst:function(){
+      return "<span class='mowa'>„Rozjemcy nie mają wojska ani ziemi. Mamy tylko ten stół i to, że jeszcze nikt go nie porąbał na opał.”</span><br><br>"
+        + "Twoja ranga: <em>" + nazwaRangi() + "</em>.";
+    },
+    opcje:[
+      {l:"Poucz mnie, legacie.", idz:"ostoja_nauka"},
+      {l:"Melduję się z rozkazu swoich.", warunekZ:{id:"kariera1", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("kariera1"); }, idz:"ostoja_kariera1"},
+      {l:"Zbrojny bez chorągwi nie żyje.", warunekZ:{id:"kariera2", stan:"aktywne"},
+       wymagaPrzedmiotu:"pieczec_lakowa", idz:"ostoja_kariera2"},
+      {l:"Zwołaj wszystkich do stołu.", warunekZ:{id:"posel6", stan:"aktywne"}, idz:"posel_final"},
+      {l:"Odejdź od stołu", idz:"__lok_stol_rozjemczy"}
+    ]
+  };
+
+  SCENY.ostoja_kariera1 = {portret:"weteran", kto:"Legat Ostoja",
+    tekst:"Ogląda cię tak, jak ogląda się konia przed kupnem, i nie udaje, że robi co innego.<br><br><span class='mowa'>„Zapamiętam. A skoro już tu jesteś, zrobisz coś, czego żaden z nich nie może zrobić w swoich barwach.”</span>",
+    opcje:[{l:"Mów, o co chodzi.", ef:function(){ gotoweZadanie("kariera1"); oddajZadanie("kariera1"); }, dajZ:"kariera2", idz:"ostoja"}]};
+
+  SCENY.ostoja_kariera2 = {portret:"weteran", kto:"Legat Ostoja",
+    tekst:"Bierze pieczęć, przykłada do świecy i patrzy pod światło dłużej, niż trzeba.<br><br><span class='mowa'>„Prawdziwa. Ktoś ją wyniósł stąd, z tej sali. Zanieś ją swoim i powiedz, że proszę o człowieka do stołu - o ciebie.”</span>",
+    opcje:[{l:"Wezmę pieczęć.", ef:function(){ gotoweZadanie("kariera2"); oddajZadanie("kariera2"); }, dajZ:"kariera3", idz:"ostoja"}]};
+
+  SCENY.ostoja_posel1 = {portret:"weteran", kto:"Legat Ostoja",
+    tekst:function(){ return ZADANIA.posel1.pelny; },
+    opcje:[{l:"Zacznę od Świętobora.", dajZ:"posel1", idz:"ostoja"}]};
+  SCENY.ostoja.opcje.unshift({l:"Rozjemcy potrzebują człowieka do stołu.",
+    warunekZ:{id:"posel1", stan:"brak"},
+    warunek:function(){ return stanZadania("kariera3") === "oddane"; }, idz:"ostoja_posel1"});
+
+  SCENY.swietobor = {
+    portret:"urzednik", kto:"Poseł Świętobor", npc:"swietobor",
+    intro:{
+      tekst:"Stoi przy czerwonym maszcie i mówi głośniej, niż wymaga odległość.<br><br><span class='mowa'>„Ismaal przyjechał tu pierwszy i wyjedzie ostatni. Zapisz to sobie, jeśli umiesz pisać.”</span>",
+      opcje:[{l:"Umiem słuchać.", poznaj:"swietobor", idz:"swietobor"}]
+    },
+    tekst:"<span class='mowa'>„Rozejm to słowo dla ludzi, którzy nie stali na moście. Ale usiądę, jeśli będzie po co.”</span>",
+    opcje:[
+      {l:"Co musi się stać, żebyś usiadł?", warunekZ:{id:"posel1", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("posel1"); }, idz:"swietobor_posel1"},
+      {l:"Kontor zniósł ciche cło.", warunekZ:{id:"posel4", stan:"aktywne"},
+       ef:function(){ S.poznane.swietobor_zgoda = true; }, idz:"swietobor_zgoda"},
+      {l:"Odejdź", idz:"__lok_stol_rozjemczy"}
+    ]
+  };
+  SCENY.swietobor_posel1 = {portret:"urzednik", kto:"Poseł Świętobor",
+    tekst:function(){ return ZADANIA.posel2.pelny; },
+    opcje:[{l:"Pomówię z kanclerz.", ef:function(){ gotoweZadanie("posel1"); oddajZadanie("posel1"); }, dajZ:"posel2", idz:"swietobor"}]};
+  SCENY.swietobor_zgoda = {portret:"urzednik", kto:"Poseł Świętobor",
+    tekst:"Milknie pierwszy raz, odkąd go poznałeś.<br><br><span class='mowa'>„Skoro podpisała, to usiądę. Ale siadam z tobą, nie z nią.”</span>",
+    opcje:[{l:"Wystarczy.", idz:"swietobor"}]};
+
+  SCENY.radomila = {
+    portret:"kobieta", kto:"Kanclerz Radomiła", npc:"radomila",
+    intro:{
+      tekst:"Dwie księgi otwarte naraz, palec w jednej, pióro w drugiej.<br><br><span class='mowa'>„Mów krótko. Wszystko, co powiesz, i tak zapiszę krócej.”</span>",
+      opcje:[{l:"Będę krótki.", poznaj:"radomila", idz:"radomila"}]
+    },
+    tekst:"<span class='mowa'>„Kontor nie prowadzi wojny. Kontor prowadzi rachunki, a rachunki przeżyją oba królestwa.”</span>",
+    opcje:[
+      {l:"Ismaal mówi o cle, którego nie ma w cenniku.", warunekZ:{id:"posel2", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("posel2"); }, idz:"radomila_posel2"},
+      {l:"Mam list kurierski bez twojego podpisu.", warunekZ:{id:"posel3", stan:"aktywne"},
+       wymagaPrzedmiotu:"list_kontorowy", idz:"radomila_posel3"},
+      {l:"Odejdź", idz:"__lok_stol_rozjemczy"}
+    ]
+  };
+  SCENY.radomila_posel2 = {portret:"kobieta", kto:"Kanclerz Radomiła",
+    tekst:function(){ return ZADANIA.posel3.pelny; },
+    opcje:[{l:"Przywiozę ten list.", ef:function(){ gotoweZadanie("posel2"); oddajZadanie("posel2"); }, dajZ:"posel3", idz:"radomila"}]};
+  SCENY.radomila_posel3 = {portret:"kobieta", kto:"Kanclerz Radomiła",
+    tekst:"Czyta trzy razy, potem odkłada pióro - i to jest najgorsze, co dziś zrobiła.<br><br><span class='mowa'>„To ręka mojego prokurenta. Do wieczora będzie siedział, a cło zniosę jeszcze dziś, żeby nie mieli o czym mówić.”</span>",
+    opcje:[{l:"Zostaje puszcza.", oddajZ:"posel3", wymagaPrzedmiotu:"list_kontorowy",
+            dajZ:"posel4", idz:"radomila"}]};
+
+  SCENY.wierzchoslawa = {
+    portret:"kobieta", kto:"Szeptucha Wierzchosława", npc:"wierzchoslawa",
+    intro:{
+      tekst:"Siedzi poza kręgiem świec, tam gdzie płótno nie sięga i widać niebo.<br><br><span class='mowa'>„Przyszedłeś z papierem czy z darem? Bo z papierem nie rozmawiam.”</span>",
+      opcje:[{l:"Na razie z niczym.", poznaj:"wierzchoslawa", idz:"wierzchoslawa"}]
+    },
+    tekst:"<span class='mowa'>„Ludzie mówią o granicach, a granica jest jedna: to, dokąd sięga korzeń.”</span>",
+    opcje:[
+      {l:"Naucz mnie tego, co wie puszcza.", idz:"wierzchoslawa_nauka"},
+      {l:"Trzy czarcie kwiaty dla puszczy.", warunekZ:{id:"posel4", stan:"aktywne"},
+       wymagaPrzedmiotu:"czarci_kwiat", ile:3, idz:"wierzchoslawa_posel4"},
+      {l:"Twój zwiadowca powiedział trzy słowa.", warunekZ:{id:"posel5", stan:"aktywne"},
+       warunek:function(){ return !!S.poznane.zwiadowca_slowa; }, idz:"wierzchoslawa_posel5"},
+      {l:"Odejdź", idz:"__lok_stol_rozjemczy"}
+    ]
+  };
+  SCENY.wierzchoslawa_posel4 = {portret:"kobieta", kto:"Szeptucha Wierzchosława",
+    tekst:function(){ return ZADANIA.posel5.pelny; },
+    opcje:[{l:"Znajdę go.", oddajZ:"posel4", wymagaPrzedmiotu:"czarci_kwiat", ile:3,
+            dajZ:"posel5", idz:"wierzchoslawa"}]};
+  SCENY.wierzchoslawa_posel5 = {portret:"kobieta", kto:"Szeptucha Wierzchosława",
+    tekst:"Słucha trzech słów i zamyka oczy na tyle długo, że myślisz, iż zasnęła.<br><br><span class='mowa'>„Piasek, brama, oni. Znam tę przepowiednię z drugiej strony i wolałabym jej nie znać.<br><br>Siądziemy do stołu. Wszyscy czterej.”</span>",
+    opcje:[{l:"Idę po legata.", ef:function(){ gotoweZadanie("posel5"); oddajZadanie("posel5"); }, dajZ:"posel6", idz:"wierzchoslawa"}]};
+
+
+  SCENY.ostoja_nauka = {portret:"weteran", kto:"Legat Ostoja", trener:true, uczy:"ostoja",
+    tekst:"<span class='mowa'>„Uczyłem ludzi, którzy potem stawali po obu stronach tego samego mostu. Ciebie też nauczę, a co z tym zrobisz, to już nie moja sprawa.”</span>",
+    wraca:"ostoja", wracaOpis:"Wróć do rozmowy"};
+
+  SCENY.wierzchoslawa_nauka = {portret:"kobieta", kto:"Szeptucha Wierzchosława", trener:true, uczy:"wierzchoslawa",
+    tekst:"<span class='mowa'>„Nie uczę sztuczek. Pokazuję, gdzie w tobie jest miejsce na więcej, niż mieści się teraz.”</span>",
+    wraca:"wierzchoslawa", wracaOpis:"Wróć do rozmowy"};
+
+  SCENY.bezchoragwi_scena = {portret:"kowal", kto:"Zbrojny bez chorągwi",
+    tekst:"Nie wstaje. Dokłada do ognia i mówi w płomień.<br><br><span class='mowa'>„Wiem, po co przyszedłeś. Płacą mi wszyscy czterej, więc wszyscy czterej chcą mnie zabić. To uczciwy układ.”</span>",
+    opcje:[
+      {l:"Wstawaj.", walka:"bezchoragwi", po:"bezchoragwi_po"},
+      {l:"Jeszcze nie dziś.", idz:"__lok_obozowisko"}
+    ]};
+  SCENY.bezchoragwi_po = {portret:null, kto:"Po walce",
+    tekst:"Przy pasie ma pieczęć lakową rozjemców, której nie powinien mieć nikt poza stołem.",
+    opcje:[{l:"Weź pieczęć i wracaj", ef:function(){ gotoweZadanie("kariera2"); }, idz:"__lok_obozowisko"}]};
+
+  SCENY.zwiadowca_scena = {portret:"weteran", kto:"Zwiadowca zza kraty",
+    tekst:function(){
+      if(S.poznane.zwiadowca_slowa){
+        return "Leży przykryty płaszczem z mchu i oddycha płytko. Nic więcej już nie powie.";
+      }
+      return "Siedzi tyłem do wszystkich ognisk. Kiedy podchodzisz, sięga po nóż, ale ręka mu drży za bardzo.<br><br><span class='mowa'>„Nie pytaj. Kto pyta, ten potem widzi to samo co ja.”</span>";
+    },
+    opcje:[
+      {l:"Będziesz mówił.", warunek:function(){ return !S.poznane.zwiadowca_slowa; },
+       walka:"zwiadowca_pl", po:"zwiadowca_po"},
+      {l:"Odejdź", idz:"__lok_obozowisko"}
+    ]};
+  SCENY.zwiadowca_po = {portret:null, kto:"Po walce",
+    tekst:"Osuwa się w mech, przestaje się bronić i patrzy gdzieś za ciebie.<br><br><span class='mowa'>„Piasek... brama... oni wychodzą z bramy.”</span><br><br>Potem już nic.",
+    opcje:[{l:"Wracaj do szeptuchy",
+            ef:function(){ S.poznane.zwiadowca_slowa = true; gotoweZadanie("posel5");
+                           S.poznane.demony = true; },
+            idz:"__lok_obozowisko"}]};
+
+  SCENY.posel_final = {portret:"weteran", kto:"Stół Rozjemczy",
+    tekst:function(){
+      var info = wlasnaFrakcja();
+      return "Cztery chorągwie u czterech masztów, cztery krzesła przy stole bez szczytu i ty, stojący pośrodku, bo dla ciebie nie przewidziano krzesła.<br><br>"
+        + "Mówisz krótko: piasek, brama, oni. Nikt nie przerywa, choć każdy z nich przerywa zawsze.<br><br>"
+        + "<span class='mowa'>„Zawieszenie broni na czas nieokreślony”</span> - mówi Ostoja i to nie brzmi jak zwycięstwo, tylko jak coś, co się robi przed burzą.<br><br>"
+        + (info ? "Twoi zapisują to jako twoją zasługę. " + info.n + " nie zapomina takich rzeczy." : "");
+    },
+    opcje:[{l:"Przemów przy stole",
+            ef:function(){ gotoweZadanie("posel6"); oddajZadanie("posel6");
+              S.rozdzial = 3;
+              S.rep.sk += 2; S.rep.nw += 2; S.rep.od += 2; S.rep.pl += 2;
+              S.poznane.rozejm = true;
+            }, idz:"koniec_rozdzialu2"}]};
+
+  SCENY.koniec_rozdzialu2 = {
+    tekst:function(){
+      return "Rozejm trzyma się na jednym zdaniu umierającego zwiadowcy, a to mało nawet jak na te strony.<br><br>"
+        + "Odeszli już wysyłają gońców na wszystkie cztery strony. Prastary Lud mówi o przepowiedni, której nie chce powtórzyć głośno. Kontor liczy, ile kosztowałaby wspólna wyprawa, i sam się swoich rachunków przestraszył.<br><br>"
+        + "Z Ziem Niczyich idzie coś, co nie ma chorągwi.<br><br>"
+        + "<em>Koniec rozdziału drugiego. " + dataGry() + ".</em><br>"
+        + "<em>Poziom " + S.poziom + " &middot; " + nazwaRangi() + "</em>";
+    },
+    opcje:[
+      {l:"Graj dalej", idz:"__lok_stol_rozjemczy"},
+      {l:"Zapisz grę", zapis:true}
+    ]
+  };
+
+  /* ---- wejścia do łańcucha kariery u własnej frakcji ---- */
+  var wejscia = {sk:"dobroslawa", nw:"sedziwoj", od:"sedzimir", pl:"jarogniewa"};
+  Object.keys(wejscia).forEach(function(f){
+    var sc = SCENY[wejscia[f]];
+    if(!sc || !sc.opcje || sc.__ch2) return;
+    sc.__ch2 = true;
+    var idStart = "ch2_start_" + f, idKon = "ch2_ranga_" + f;
+
+    SCENY[idStart] = {portret:sc.portret || "weteran", kto:sc.kto,
+      tekst:function(){ return ZADANIA.kariera1.pelny; },
+      opcje:[{l:"Pojadę do Stołu Rozjemczego.", dajZ:"kariera1",
+              ef:function(){ S.poznane.stol_rozjemczy = true; }, idz:wejscia[f]}]};
+
+    SCENY[idKon] = {portret:sc.portret || "weteran", kto:sc.kto,
+      tekst:"Pieczęć rozjemców ląduje na stole i przez chwilę nikt jej nie dotyka.<br><br><span class='mowa'>„Skoro proszą o ciebie, to od dziś mówisz w naszym imieniu. Nie przy każdym stole i nie w każdej sprawie - ale mówisz.”</span>",
+      opcje:[{l:"Przyjmuję.", oddajZ:"kariera3", wymagaPrzedmiotu:"pieczec_lakowa",
+              ef:function(){ S.ranga = Math.min((S.ranga || 0) + 1, 3); S.rep[f] += 4; },
+              idz:wejscia[f]}]};
+
+    sc.opcje.unshift(
+      {l:"Mam barwy. Co dalej?", warunekZ:{id:"kariera1", stan:"brak"},
+       warunek:function(){ return S.frakcja === f; }, idz:idStart},
+      {l:"Rozjemcy przysyłają swoją pieczęć.", warunekZ:{id:"kariera3", stan:"aktywne"},
+       warunek:function(){ return S.frakcja === f; },
+       wymagaPrzedmiotu:"pieczec_lakowa", idz:idKon}
+    );
+  });
+}
+rozdzialDrugi();
 
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
   PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,

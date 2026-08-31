@@ -32,4 +32,8 @@
 - [x] 28. Dziennik zadań w łańcuchach z zaznaczonym bieżącym etapem
 - [x] 29. Zakładka „Zaklęcia” — opisy, widoczność i kolejność w walce
 - [x] 30. Audyt: 51 zadań ma start i zakończenie, każdy przedmiot ma opis
-- [ ] 31. Rozdziały II–V (Krwawy Rubin, Brama, Wielka Wojna)
+## Rozdziały
+- [x] 31. Rozdział II — służba we frakcji (3 rangi), poselstwo czterech chorągwi (6 zadań, 5 NPC), Stół Rozjemczy, Droga Poselska, Obozowisko Chorążych, biegłość bronią I–III, superciosy co 5 poziomów
+- [ ] 32. Rozdział III — ekspedycja międzyfrakcyjna, raport Strażnika Leśnego, Krwawy Rubin i wyspa
+- [ ] 33. Rozdział IV — świątynia na wyspie, zagadki, boss, artefakt
+- [ ] 34. Rozdział V — Nieznane Ziemie, monument, Siewca Zagłady, finał
