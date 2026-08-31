@@ -6694,6 +6694,940 @@ function sciezkiKarier(){
 sciezkiKarier();
 
 
+
+/* ================= ROZDZIAŁ I: ZIEMIE NOWOŻYTNYCH ================= */
+
+function ocenaFrakcyjna(w){
+  var f = S.frakcja || "brak";
+  return w[f] || w.brak || "";
+}
+function repNW(){ return S.rep.nw || 0; }
+
+function rozszerzNowozytnych(){
+
+  /* --- przedmioty --- */
+  var P = {
+    smola_okretowa:{n:"Smoła okrętowa", kat:"surowiec", typ:"towar", cena:18,
+      o:"Czarna, ciągnąca się jak żywica. Bez niej żadna łódź nie wraca dwa razy."},
+    sledz_solony:{n:"Śledź solony", kat:"zywnosc", typ:"jadalne", leczy:14, cena:9,
+      o:"Twardy jak rzemień, ale po nim człowiek idzie dalej niż po chlebie."},
+    ruda_kuznicka:{n:"Ruda kuźnicka", kat:"surowiec", typ:"towar", cena:26,
+      o:"Wypłukiwana z rzeki pod kołami młynów. Czystsza od darniowej i dwa razy droższa."},
+    kord_ostrowski:{n:"Kord ostrowski", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[11,17], cena:260,
+      o:"Prosta, wąska klinga z podpisem płatnerza wybitym u nasady. W Nowym Ostrowie płaci się nie za ostrze, tylko za podpis."},
+    kusza_latarnicza:{n:"Kusza latarnicza", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[13,19], cena:340,
+      o:"Krótka, żeby dało się z niej strzelać z pokładu. Łoże wysmarowane smołą przeciw wodzie."},
+    sygnet_gieldowy:{n:"Sygnet giełdowy", kat:"bizuteria", typ:"wyposazenie", slot:"palec", bonus:{intel:2}, cena:300,
+      o:"Mosiądz udający złoto. Kto go nosi, temu w Ostrowie liczą ceny inaczej - lepiej albo gorzej, zależnie od tego, kto liczy."},
+    naszyjnik_latarni:{n:"Naszyjnik latarnika", kat:"bizuteria", typ:"wyposazenie", slot:"szyja", bonus:{odp_ogien:8}, cena:280,
+      o:"Kółko z żelaza obtopione szkłem z rozbitej latarni. Ciepłe nawet w mróz."},
+    kaftan_syndyka:{n:"Kaftan syndycki", kat:"pancerz", typ:"wyposazenie", slot:"pancerz",
+      bonus:{odp_klute:6, odp_ciete:6}, cena:320,
+      o:"Sukno podbite warstwami klejonego płótna. Nowożytni odkryli, że dwadzieścia warstw lnu trzyma nóż lepiej niż blacha."},
+    ksiega_wagowa:{n:"Księga wag i miar", kat:"pismo", typ:"ksiega", cena:120, exp:90, bonusIntel:1,
+      o:"Spis miar używanych po obu stronach granicy - i tego, ile na każdej z nich można ukraść."}
+  };
+  for(var pk in P) if(!PRZEDMIOTY[pk]) PRZEDMIOTY[pk] = P[pk];
+
+  /* --- wrogowie --- */
+  var W = {
+    portowiec:{n:"Portowy zbir", hp:96, dmg:[11,16], exp:220, zloto:60, lup:{smola_okretowa:1},
+      sekw:["s","g","d"], finisz:{dmg:[20,28], o:"uderzenie hakiem bosaka"}, blokSzansa:15,
+      wyglad:"Ręce spalone od lin, w pasie zatknięty hak. Trzeźwy, co gorsza.",
+      styl:"Tnie przez środek, potem wysoko, potem podcina. Hakiem sięga dopiero, kiedy uzna, że stoisz za pewnie."},
+    kanalarz:{n:"Kanalarz z Ostrowa", hp:84, dmg:[10,15], exp:200, zloto:75,
+      sekw:["d","d","g"], finisz:{dmg:[18,26], o:"pchnięcie szydłem pod żebra"}, blokSzansa:10,
+      wyglad:"Blady, w za dużym płaszczu, cuchnie kanałem, w którym mieszka od lat.",
+      styl:"Dwa razy nisko, przy nogach, żeby ci opadły ręce. Potem góra i szydło."},
+    wilczur_stoczniowy:{n:"Wilczur stoczniowy", hp:78, dmg:[12,17], exp:190, zloto:0, lup:{skora:1}, lupWymaga:"oprawianie",
+      sekw:["d","g"], finisz:{dmg:[19,25], o:"szarpnięcie za ramię"}, blokSzansa:0,
+      wyglad:"Trzymany na łańcuchu przy pochylni, dopóki ktoś tego łańcucha nie odpiął.",
+      styl:"Nisko i od razu wysoko, bez przerwy między jednym a drugim."},
+    zlodziej_soli:{n:"Złodziej soli", hp:88, dmg:[10,15], exp:210, zloto:70, lup:{sol_kamienna:2},
+      sekw:["s","d"], finisz:{dmg:[19,25], o:"cios workiem z solą"}, blokSzansa:10,
+      wyglad:"Bosy, w podwiniętych portkach, z workiem przewieszonym przez ramię. Nie ucieka, bo nie ma dokąd.",
+      styl:"Tnie przez środek, potem nisko. Worek unosi dopiero, kiedy uzna, że go nie puścisz."},
+    buntownik_kuznicki:{n:"Buntownik z Kuźnic", hp:110, dmg:[13,18], exp:280, zloto:90, lup:{ruda_kuznicka:1},
+      sekw:["g","s","s"], finisz:{dmg:[24,32], o:"cios młotem kuźniczym"}, blokSzansa:20,
+      wyglad:"Fartuch przepalony w kilkunastu miejscach, młot trzyma jak człowiek, który nim pracuje, nie walczy.",
+      styl:"Otwiera wysoko, potem dwa razy przez środek. Młot idzie dopiero na końcu i wtedy nie ma z czego się cofać."}
+  };
+  for(var wk in W) if(!WROGOWIE[wk]) WROGOWIE[wk] = W[wk];
+  if(typeof TYPY_WROGOW === "object"){
+    TYPY_WROGOW.portowiec = "obuchowe"; TYPY_WROGOW.kanalarz = "klute";
+    TYPY_WROGOW.wilczur_stoczniowy = "ciete"; TYPY_WROGOW.zlodziej_soli = "obuchowe"; TYPY_WROGOW.buntownik_kuznicki = "obuchowe";
+  }
+
+  /* --- lokacje --- */
+  var L = {
+  trakt_wagowy:{
+    n:"Trakt Wagowy", region:"droga do ziem Nowożytnych",
+    opis:function(){
+      return "Jedyna droga w tych stronach, którą ktoś naprawdę utrzymuje: tłuczeń, rowy po bokach, kamienie milowe z wybitą liczbą mil i ceną przewozu.<br><br>"
+        + (jestNoc() ? "Nocą stoją tu wozy zaprzężone, bo woźnice wolą spać przy koniach niż w karczmie."
+                     : "Co pół godziny mija cię wóz. Nikt nie pyta, dokąd idziesz - pytają, czy masz co sprzedać.");
+    },
+    tereny:[{n:"Zejdź w rowy przy trakcie", teren:"trakt_wagowy_teren"}],
+    drogi:[
+      {n:"Do Nowego Ostrowa", lok:"nowy_ostrow"},
+      {n:"Do Kobylnik", lok:"kobylniki"},
+      {n:"Z powrotem do Wietrznicy", lok:"wietrznica"}
+    ]
+  },
+
+  nowy_ostrow:{
+    n:"Nowy Ostrów", region:"stolica Nowożytnych",
+    opis:function(){
+      return "Miasto na wyspie w rozwidleniu rzeki, spięte trzema mostami. Nie ma murów - Nowożytni twierdzą, że mury to koszt, a woda jest darmowa.<br><br>"
+        + "Środek zajmuje Giełda: kryta hala z jednym stołem długim na czterdzieści kroków, przy którym siedzą ludzie decydujący, ile w tym roku warta jest sól, żelazo i ludzkie życie.<br><br>"
+        + (jestNoc() ? "Po zmroku hala świeci od lamp, bo rachunki zamyka się nocą, kiedy nikt nie hałasuje."
+                     : "Na mostach tłok, na wodzie łodzie, a nad wszystkim krzyk chłopców roznoszących ceny z hali.");
+    },
+    postacie:[
+      {n:"Syndyk Bożydar", id:"bozydar", nieznany:"Człowiek przy końcu długiego stołu", rola:"syndyk giełdy", scena:"bozydar", portret:"urzednik"},
+      {n:"Wagmistrzyni Nawoja", id:"nawoja", nieznany:"Kobieta ważąca sztaby", rola:"wagmistrzyni", scena:"nawoja", portret:"kobieta"},
+      {n:"Mistrz Żegota", id:"zegota", nieznany:"Człowiek z osmalonymi rękawami", rola:"mag ognia", scena:"zegota", portret:"urzednik"},
+      {n:"Ciborek", id:"ciborek", nieznany:"Ktoś, kto stoi w cieniu arkady", rola:"zwiadowca", scena:"ciborek", portret:"weteran",
+       warunek:function(){ return jestNoc() || !!S.poznani.ciborek; }}
+    ],
+    miejsca:[
+      {n:"Zajazd Pod Trzema Mostami - nocleg", scena:"zajazd_ostrow"},
+      {n:"Kram giełdowy - handel", scena:"kram_ostrow"}
+    ],
+    tereny:[{n:"Zejdź pod mosty i w zaułki", teren:"ostrow_teren"}],
+    drogi:[
+      {n:"Traktem Wagowym na południe", lok:"trakt_wagowy"},
+      {n:"Do Miedzianej Wagi", lok:"miedziana_waga"},
+      {n:"Drogą Latarniczą do portu", lok:"droga_latarnicza"},
+      {n:"Do Kuźnic Wodnych", lok:"kuznice_wodne"}
+    ]
+  },
+
+  miedziana_waga:{
+    n:"Miedziana Waga", region:"miasto menniczne Nowożytnych",
+    opis:function(){
+      return "Miasto jednego rzemiosła: tu bije się monetę. Ulice układają się w kratę, każda nosi nazwę nominału, a nad bramą mennicy wisi waga wielkości wozu.<br><br>"
+        + (jestNoc() ? "Nocą mennica pracuje dalej, a stukot stempli słychać w każdej izbie w mieście."
+                     : "Straż mennicza stoi na każdym rogu i patrzy ludziom na ręce, nie w twarz.");
+    },
+    postacie:[
+      {n:"Cechmistrz Dobiegniew", id:"dobiegniew", nieznany:"Człowiek z lupą przy oku", rola:"cechmistrz mennicy", scena:"dobiegniew", portret:"kowal"},
+      {n:"Pisarka Wszebora", id:"wszebora", nieznany:"Kobieta z trzema kałamarzami", rola:"pisarka cechu", scena:"wszebora", portret:"kobieta"}
+    ],
+    miejsca:[
+      {n:"Gospoda Pod Stemplem - nocleg", scena:"gospoda_waga"},
+      {n:"Kram cechowy - handel", scena:"kram_waga"}
+    ],
+    tereny:[{n:"Obejdź zaplecze mennicy", teren:"waga_teren"}],
+    drogi:[
+      {n:"Do Nowego Ostrowa", lok:"nowy_ostrow"},
+      {n:"Do Smolarzy", lok:"smolarze"}
+    ]
+  },
+
+  droga_latarnicza:{
+    n:"Droga Latarnicza", region:"grobla do portu",
+    opis:"Grobla usypana z kamienia i muszli, po obu stronach płycizna. Co sto kroków stoi słup z koszem na ogień - stąd nazwa i stąd pewność, że nocą też się tędy przejdzie.",
+    tereny:[{n:"Zejdź na płyciznę", teren:"latarnicza_teren"}],
+    drogi:[
+      {n:"Do Latarnicy", lok:"latarnica"},
+      {n:"Z powrotem do Nowego Ostrowa", lok:"nowy_ostrow"}
+    ]
+  },
+
+  latarnica:{
+    n:"Latarnica", region:"port Nowożytnych",
+    opis:function(){
+      return "Port zbudowany wokół jednej rzeczy: kamiennej latarni na cyplu, w której ogień pali się od stu lat i której nikomu nie wolno wygasić.<br><br>"
+        + "Pochylnie, stocznia, magazyny soli i cała ulica szynków, których nazwy zmieniają się częściej niż właściciele.<br><br>"
+        + (jestNoc() ? "Nocą latarnia rzuca światło aż na wodę Ziem Niczyich, a w porcie robi się interesy, których rano nikt nie pamięta."
+                     : "Ładują i rozładowują jednocześnie, wszyscy krzyczą, nikt nikomu nie ustępuje.");
+    },
+    postacie:[
+      {n:"Kapitan portu Trojan", id:"trojan", nieznany:"Człowiek z lunetą na sznurku", rola:"kapitan portu", scena:"trojan", portret:"weteran"},
+      {n:"Latarniczka Świętosława", id:"swietoslawa", nieznany:"Kobieta niosąca dzban oleju", rola:"latarniczka", scena:"swietoslawa", portret:"kobieta"},
+      {n:"Szkutnik Wit", id:"wit", nieznany:"Człowiek strugający wręgę", rola:"szkutnik", scena:"wit", portret:"kowal"}
+    ],
+    miejsca:[
+      {n:"Szynk Pod Kotwicą - nocleg", scena:"szynk_latarnica"},
+      {n:"Skład portowy - handel", scena:"sklad_latarnica"}
+    ],
+    tereny:[{n:"Wejdź między pochylnie", teren:"latarnica_teren"}],
+    drogi:[
+      {n:"Groblą z powrotem", lok:"droga_latarnicza"},
+      {n:"Ścieżką rybacką do Grobli", lok:"grobla_nw"}
+    ]
+  },
+
+  kuznice_wodne:{
+    n:"Kuźnice Wodne", region:"miasto hutnicze Nowożytnych",
+    opis:function(){
+      return "Osiem kół wodnych na jednej rzece, każde napędza inny młot. Miasto stoi na palach nad wodą, a ludzie mówią tu głośniej niż gdziekolwiek, bo inaczej się nie słyszą.<br><br>"
+        + (jestNoc() ? "Nocą wygaszają dwa piece z ośmiu i wtedy dopiero słychać rzekę."
+                     : "Para, iskry i zapach wypalonej rudy. Nad dachami wisi rudy dym, który nie schodzi nawet przy wietrze.");
+    },
+    postacie:[
+      {n:"Hutmistrz Ninogniew", id:"ninogniew", nieznany:"Człowiek w przepalonym fartuchu", rola:"hutmistrz", scena:"ninogniew", portret:"kowal"},
+      {n:"Zbrojmistrz Domasław", id:"domaslaw", nieznany:"Człowiek próbujący ostrza paznokciem", rola:"zbrojmistrz", scena:"domaslaw", portret:"weteran"}
+    ],
+    miejsca:[
+      {n:"Izba czeladna - nocleg", scena:"izba_kuznice"},
+      {n:"Zbrojownia - handel", scena:"zbrojownia_kuznice"}
+    ],
+    tereny:[{n:"Wejdź na pomosty nad kołami", teren:"kuznice_teren"}],
+    drogi:[
+      {n:"Do Nowego Ostrowa", lok:"nowy_ostrow"},
+      {n:"Do Smolarzy", lok:"smolarze"}
+    ]
+  },
+
+  kobylniki:{
+    n:"Kobylniki", region:"wieś przy trakcie",
+    opis:"Osiemnaście chałup, stajnia zajezdna i waga dla wozów. Wieś żyje z tego, że wozy muszą gdzieś zmienić konie.",
+    postacie:[
+      {n:"Sołtys Miłosz", id:"milosz", nieznany:"Człowiek z batem za pasem", rola:"sołtys", scena:"milosz", portret:"kowal"}
+    ],
+    miejsca:[{n:"Stajnia zajezdna - odpocznij", scena:"stajnia_kobylniki"}],
+    tereny:[{n:"Obejdź pastwiska", teren:"kobylniki_teren"}],
+    drogi:[{n:"Na Trakt Wagowy", lok:"trakt_wagowy"}]
+  },
+
+  smolarze:{
+    n:"Smolarze", region:"wieś w borze",
+    opis:"Cztery mielerze dymią bez przerwy, a ludzie chodzą tu czarni od sadzy i nie myją się do niedzieli. Smoła stąd idzie do Latarnicy, węgiel do Kuźnic.",
+    postacie:[
+      {n:"Smolarz Radzim", id:"radzim", nieznany:"Człowiek czarny od sadzy", rola:"smolarz", scena:"radzim", portret:"kowal"}
+    ],
+    miejsca:[{n:"Ognisko przy mielerzu - odpocznij", scena:"ognisko_smolarze"}],
+    tereny:[{n:"Wejdź między mielerze", teren:"smolarze_teren"}],
+    drogi:[
+      {n:"Do Miedzianej Wagi", lok:"miedziana_waga"},
+      {n:"Do Kuźnic Wodnych", lok:"kuznice_wodne"}
+    ]
+  },
+
+  grobla_nw:{
+    n:"Grobla", region:"wieś rybacka Nowożytnych",
+    opis:"Rząd chałup na usypanym wale, po jednej stronie morze, po drugiej stawy solne. Ludzie tu liczą dni nie tygodniami, tylko przypływami.",
+    postacie:[
+      {n:"Warzelnik Sulisław", id:"sulislaw", nieznany:"Człowiek zgarniający sól z panwi", rola:"warzelnik", scena:"sulislaw", portret:"kowal"}
+    ],
+    miejsca:[{n:"Chałupa warzelników - nocleg", scena:"chalupa_grobla"}],
+    tereny:[{n:"Zejdź na stawy solne", teren:"grobla_teren"}],
+    drogi:[{n:"Ścieżką rybacką do Latarnicy", lok:"latarnica"}]
+  }
+  };
+  for(var lk in L) if(!LOKACJE[lk]) LOKACJE[lk] = L[lk];
+
+  /* wejście z Kontoru na Trakt Wagowy */
+  if(LOKACJE.kontor && LOKACJE.kontor.drogi)
+    LOKACJE.kontor.drogi.unshift({n:"Traktem Wagowym w głąb ziem Nowożytnych", lok:"trakt_wagowy"});
+  if(LOKACJE.wietrznica && LOKACJE.wietrznica.drogi)
+    LOKACJE.wietrznica.drogi.unshift({n:"Traktem Wagowym na północ", lok:"trakt_wagowy",
+      warunek:function(){ return !!S.poznane.trakt_wagowy; }});
+
+  /* --- tereny --- */
+  var T = {
+  trakt_wagowy_teren:{
+    n:"Rowy przy trakcie", wraca:"trakt_wagowy",
+    opis:"Za rowem zaczyna się zarośnięte pole i resztki starego, porzuconego traktu.",
+    punkty:[
+      {id:"tw_ziolo", typ:"zasob", n:"Dziurawiec na miedzy", wymaga:"zielarstwo", zbierz:{dziurawiec:2},
+       wynik:"Rośnie tam, gdzie kosa nie sięga."},
+      {id:"tw_pies", typ:"mob", n:"Coś idzie za tobą rowem", walka:"wilczur_stoczniowy"},
+      {id:"tw_skrzynia", typ:"skrzynia", n:"Kufer wyrzucony z wozu", zloto:70,
+       wynik:"Ktoś go otwierał w pośpiechu i nie doliczył się dna."}
+    ]
+  },
+  ostrow_teren:{
+    n:"Zaułki pod mostami", wraca:"nowy_ostrow",
+    opis:"Pod mostami mieszkają ci, których na Giełdzie policzono jako stratę.",
+    punkty:[
+      {id:"no_kanalarz", typ:"mob", n:"Ktoś wychodzi z kanału", walka:"kanalarz"},
+      {id:"no_skrzynia", typ:"skrzynia", n:"Skrytka pod przyczółkiem", zloto:120, zbierz:{mikstura_mocy:1},
+       wynik:"Kamień wychodzi ze ściany zbyt łatwo, jak na kamień."},
+      {id:"no_ryba", typ:"ryba", n:"Sieć uwiązana do filaru", wymaga:"wedkarstwo", zbierz:{szczupak:2},
+       wynik:"Cudza sieć, cudze ryby, ale nikt nie stoi obok."}
+    ]
+  },
+  waga_teren:{
+    n:"Zaplecze mennicy", wraca:"miedziana_waga",
+    opis:"Podwórze zawalone tyglami i odpadem po odlewach. Straż zagląda tu raz na godzinę.",
+    punkty:[
+      {id:"mw_zlom", typ:"zasob", n:"Odpad po odlewach", zbierz:{ruda_kuznicka:2},
+       wynik:"Wybierasz z żużlu to, co się jeszcze do czegoś nadaje."},
+      {id:"mw_zbir", typ:"mob", n:"Ktoś czekał tu na kogoś innego", walka:"kanalarz"},
+      {id:"mw_skarb", typ:"skrzynia", n:"Puszka pod progiem tygielni", zloto:150,
+       wynik:"Bite grosze, wszystkie z tego roku, wszystkie nieostemplowane."}
+    ]
+  },
+  latarnicza_teren:{
+    n:"Płycizna przy grobli", wraca:"droga_latarnicza",
+    opis:"Woda po kolana, dno z muszli, wszędzie sterczą pale po starej przystani.",
+    punkty:[
+      {id:"dl_ryba", typ:"ryba", n:"Ryba przy palach", wymaga:"wedkarstwo", zbierz:{wegorz:2},
+       wynik:"Węgorze trzymają się starych pali i nie boją się cienia."},
+      {id:"dl_wrak", typ:"skrzynia", n:"Wrak łodzi w mule", zloto:90, zbierz:{smola_okretowa:1},
+       wynik:"Z wraku da się jeszcze zebrać smołę i to, co ktoś schował pod ławą."},
+      {id:"dl_pies", typ:"mob", n:"Coś biegnie po płyciźnie", walka:"wilczur_stoczniowy"}
+    ]
+  },
+  latarnica_teren:{
+    n:"Pochylnie i magazyny", wraca:"latarnica",
+    opis:"Między kadłubami na pochylniach jest ciemno nawet w południe.",
+    punkty:[
+      {id:"lt_zbir", typ:"mob", n:"Trzech stoi, jeden rusza w twoją stronę", walka:"portowiec"},
+      {id:"lt_smola", typ:"zasob", n:"Beczki smoły przy pochylni", zbierz:{smola_okretowa:2},
+       wynik:"Beczki są policzone, ale nie co do jednej."},
+      {id:"lt_sledz", typ:"zasob", n:"Kadź ze śledziem w składzie", zbierz:{sledz_solony:3},
+       wynik:"Bierzesz tyle, ile zmieści się za pazuchę."},
+      {id:"lt_skrzynia", typ:"skrzynia", n:"Skrzynia bez cechy celnej", zloto:140,
+       wynik:"Skrzynia, której nie ma w żadnym rejestrze - i dlatego nikt jej nie będzie szukał."}
+    ]
+  },
+  kuznice_teren:{
+    n:"Pomosty nad kołami", wraca:"kuznice_wodne",
+    opis:"Deski śliskie od wodnego pyłu, pod nimi łopatki kół idą jedno za drugim.",
+    punkty:[
+      {id:"kw_ruda", typ:"ruda", n:"Płuczka z rudą", wymaga:"gornictwo", zbierz:{ruda_kuznicka:3},
+       wynik:"Z płuczki schodzi ruda czysta jak nigdzie indziej w kraju."},
+      {id:"kw_bunt", typ:"mob", n:"Czeladnik z młotem zastępuje ci drogę", walka:"buntownik_kuznicki"},
+      {id:"kw_skrzynia", typ:"skrzynia", n:"Schowek pod kołem trzecim", zloto:160, zbierz:{mikst_zycia:1},
+       wynik:"Woda go nie sięga, bo koło trzecie stoi od zimy."}
+    ]
+  },
+  kobylniki_teren:{
+    n:"Pastwiska za wsią", wraca:"kobylniki",
+    opis:"Trawa po pas, wszędzie ślady kopyt i jeden wykrot, do którego bydło nie podchodzi.",
+    punkty:[
+      {id:"kb_ziolo", typ:"zasob", n:"Krwawnik przy wykrocie", wymaga:"zielarstwo", zbierz:{krwawnik:3},
+       wynik:"Rośnie gęsto tam, gdzie ziemia była ruszana."},
+      {id:"kb_wilk", typ:"mob", n:"Bydło zbiło się w kupę", walka:"wilk"},
+      {id:"kb_skrzynia", typ:"skrzynia", n:"Sakwa zgubiona przy wadze", zloto:55,
+       wynik:"Rzemień przecięty równo. Zgubiona to złe słowo."}
+    ]
+  },
+  smolarze_teren:{
+    n:"Między mielerzami", wraca:"smolarze",
+    opis:"Kopce ziemi dymią z wierzchołków. Grunt jest ciepły przez cały rok.",
+    punkty:[
+      {id:"sm_smola", typ:"zasob", n:"Świeży spust smoły", zbierz:{smola_okretowa:2},
+       wynik:"Gęsta i gorąca, trzeba ją zbierać przez szmatę."},
+      {id:"sm_grzyb", typ:"zasob", n:"Grzyby przy wypaleniu", wymaga:"zielarstwo", zbierz:{arcydziegiel:1},
+       wynik:"Na starym wypaleniu rośnie to, czego nie ma nigdzie indziej."},
+      {id:"sm_mob", typ:"mob", n:"Ktoś obserwuje cię zza kopca", walka:"kanalarz"}
+    ]
+  },
+  grobla_teren:{
+    n:"Stawy solne", wraca:"grobla_nw",
+    opis:"Kwadraty płytkiej wody odgrodzone wałami. Sól wychodzi z niej sama, trzeba tylko czekać.",
+    punkty:[
+      {id:"gr_sol", typ:"zasob", n:"Panwie z odparowaną solą", zbierz:{sol_kamienna:2},
+       wynik:"Zgarniasz sól z brzegu panwi, tak jak robią to warzelnicy."},
+      {id:"gr_ryba", typ:"ryba", n:"Przypływ zostawił rybę w rowie", wymaga:"wedkarstwo", zbierz:{sledz_solony:3},
+       wynik:"Śledzie zostają w rowach po każdym przypływie."},
+      {id:"gr_mob", typ:"mob", n:"Ktoś kradnie sól z panwi", walka:"zlodziej_soli"}
+    ]
+  }
+  };
+  for(var tk in T) if(!TERENY[tk]) TERENY[tk] = T[tk];
+
+  /* --- zadania --- */
+  var Z = {
+  nw_waga1:{t:"Wagi Ostrowa: fałszywa miara", od:"Wagmistrzyni Nawoja",
+    pelny:"<span class='mowa'>„Trzy wozy z Kuźnic przyszły lżejsze, niż wyjechały, a wszystkie ważono w Miedzianej Wadze.<br><br>Nie chcę awantury z cechem. Chcę wiedzieć, czy ich odważniki są uczciwe.”</span>",
+    opis:"Ktoś oszukuje na wadze między Kuźnicami a Ostrowem.",
+    cel:"Sprawdź odważniki u cechmistrza Dobiegniewa w Miedzianej Wadze.", nagroda:{exp:200, zloto:60, rep:{nw:2}}},
+  nw_waga2:{t:"Wagi Ostrowa: cudzy stempel", od:"Cechmistrz Dobiegniew",
+    pelny:"<span class='mowa'>„Odważniki są moje i są uczciwe. Ale ktoś bije stemple moim znakiem, a ja go nie bijam.<br><br>Pisarka Wszebora prowadzi rejestr wydanych stempli. Niech ci pokaże, komu wydała ostatni.”</span>",
+    opis:"Ktoś podrabia cechowe stemple mennicy.",
+    cel:"Zajrzyj do rejestru u pisarki Wszebory.", nagroda:{exp:220, zloto:70, rep:{nw:2}}},
+  nw_waga3:{t:"Wagi Ostrowa: smoła i sadza", od:"Pisarka Wszebora",
+    pelny:"Ostatni stempel wydano na wozy jadące do Smolarzy - i nigdy nie wrócił.<br><br><span class='mowa'>„Radzim wie, czyje wozy tam stają. Tylko on nie mówi bez powodu.”</span>",
+    opis:"Ślad stempla prowadzi do Smolarzy.",
+    cel:"Przynieś Radzimowi trzy bochny chleba i wypytaj go o wozy.", nagroda:{exp:240, zloto:80, rep:{nw:2}}},
+  nw_waga4:{t:"Wagi Ostrowa: ludzie z młotami", od:"Smolarz Radzim",
+    pelny:"<span class='mowa'>„Wozy stają u nas nocą, a jadą do Kuźnic. Ludzie przy nich są kuźniccy, tylko nie w robocie.<br><br>Kto tam rządzi po ciemku, wie hutmistrz. Kto nie chce, żeby wiedział - stoi na pomostach.”</span>",
+    opis:"Trzeba przejść przez pomosty Kuźnic i dojść do hutmistrza.",
+    cel:"Rozmów się z hutmistrzem Ninogniewem w Kuźnicach Wodnych.", nagroda:{exp:280, zloto:100, rep:{nw:3}}},
+  nw_waga5:{t:"Wagi Ostrowa: rozliczenie przy stole", od:"Hutmistrz Ninogniew",
+    pelny:"Fałszywy stempel bili czeladnicy, którym cech obciął zapłatę o jedną trzecią. Kradli tyle, ile im zabrano - co do grama.<br><br>Teraz wracasz do Ostrowa i mówisz, co widziałeś. Albo mówisz to inaczej.",
+    opis:"Wiesz już, kto i dlaczego. Zostaje sposób, w jaki to powiesz.",
+    cel:"Wróć do syndyka Bożydara i zamknij sprawę.", nagroda:{exp:420, zloto:250, rep:{nw:6}, przedmiot:"kord_ostrowski"}},
+
+  nw_latarnia:{t:"Ogień, który nie gaśnie", od:"Latarniczka Świętosława",
+    pelny:"<span class='mowa'>„Oleju starczy mi na cztery noce. Piąta noc bez ognia i ktoś wjedzie na mieliznę.<br><br>Przynieś smołę z pochylni albo od smolarzy. Nie pytam, jak ją zdobędziesz.”</span>",
+    opis:"Latarnia w Latarnicy potrzebuje smoły.",
+    cel:"Przynieś Świętosławie cztery beczułki smoły okrętowej.", nagroda:{exp:200, zloto:90, rep:{nw:2}, przedmiot:"naszyjnik_latarni"}},
+  nw_port:{t:"Trzech przy pochylni", od:"Kapitan portu Trojan",
+    pelny:"<span class='mowa'>„Ściągają myto od szkutników, a ja nie mogę posłać straży, bo połowa straży pije z nimi.<br><br>Ty nie jesteś stąd. Ciebie nikt nie rozpozna.”</span>",
+    opis:"Portowi zbiry ściągają myto na pochylniach.",
+    cel:"Rozpraw się ze zbirem przy pochylniach w Latarnicy.", nagroda:{exp:300, zloto:140, rep:{nw:2}}},
+  nw_wreg:{t:"Wręga z jednego pnia", od:"Szkutnik Wit",
+    pelny:"<span class='mowa'>„Potrzebuję żelaza, które nie pęknie na mrozie. Kuźnickie się nada, jeśli je dostanę, zanim skończę kadłub.”</span>",
+    opis:"Szkutnik czeka na dobre żelazo.",
+    cel:"Przynieś Witowi pięć brył rudy kuźnickiej.", nagroda:{exp:220, zloto:110, rep:{nw:1}}},
+  nw_sol:{t:"Panwie i przypływ", od:"Warzelnik Sulisław",
+    pelny:"<span class='mowa'>„Ktoś podchodzi nocą i zgarnia sól z panwi. Jednego już goniłem, ale mam pięćdziesiąt lat i krótki oddech.”</span>",
+    opis:"Ktoś kradnie sól ze stawów w Grobli.",
+    cel:"Złap złodzieja soli na stawach solnych.", nagroda:{exp:260, zloto:100, rep:{nw:2}}},
+  nw_konie:{t:"Wozy bez woźnicy", od:"Sołtys Miłosz",
+    pelny:"<span class='mowa'>„Dwa wozy przyszły z pustym kozłem. Konie znały drogę, woźnice nie wrócili.<br><br>W rowach przy trakcie coś siedzi. Zajrzyj tam, jeśli ci życie niemiłe albo miłe złoto.”</span>",
+    opis:"Na Trakcie Wagowym giną woźnice.",
+    cel:"Przeszukaj rowy przy Trakcie Wagowym i skończ z tym, co tam siedzi.", nagroda:{exp:240, zloto:120, rep:{nw:2}}},
+  nw_kanal:{t:"Ci spod mostów", od:"Syndyk Bożydar",
+    pelny:"<span class='mowa'>„Giełda nie ma sumienia, ma rachunek. A rachunek mówi, że kupcy przestają wchodzić na mosty po zmroku.<br><br>Zrób z tym porządek. Nie pytam, jaki.”</span>",
+    opis:"Pod mostami Ostrowa robi się niebezpiecznie.",
+    cel:"Rozpraw się z kanalarzem pod mostami Ostrowa.", nagroda:{exp:320, zloto:150, rep:{nw:3}}},
+  nw_ksiega:{t:"Miary obu królestw", od:"Pisarka Wszebora",
+    pelny:"<span class='mowa'>„Przepisałam księgę wag i miar dla kogoś, kto po nią nie przyszedł. Zanieś ją wagmistrzyni, a przeczytać możesz po drodze. I tak przeczytasz.”</span>",
+    opis:"Księga wag i miar czeka na odbiorcę.",
+    cel:"Zanieś księgę wag Nawoi do Nowego Ostrowa.", nagroda:{exp:180, zloto:60, rep:{nw:1}}},
+  nw_zbroja:{t:"Próba ostrza", od:"Zbrojmistrz Domasław",
+    pelny:"<span class='mowa'>„Kuję nowy wzór dla straży i muszę wiedzieć, czy trzyma. Nie na słomie - na kimś, kto oddaje.<br><br>Weź kaftan, idź na pomosty i wróć w nim albo nie wracaj wcale.”</span>",
+    opis:"Zbrojmistrz chce sprawdzić nowy kaftan w prawdziwej walce.",
+    cel:"Pokonaj buntownika na pomostach Kuźnic i wróć do Domasława.", nagroda:{exp:340, zloto:80, rep:{nw:2}, przedmiot:"kaftan_syndyka"}}
+  };
+  for(var zk in Z) if(!ZADANIA[zk]) ZADANIA[zk] = Z[zk];
+
+  WROGOWIE.portowiec.konczy = "nw_port";
+  WROGOWIE.kanalarz.konczy = "nw_kanal";
+  WROGOWIE.wilczur_stoczniowy.konczy = "nw_konie";
+  WROGOWIE.zlodziej_soli.konczy = "nw_sol";
+  WROGOWIE.buntownik_kuznicki.konczy = "nw_zbroja";
+
+}
+rozszerzNowozytnych();
+
+
+
+function scenyNowozytnych(){
+
+  function nocleg(id, lok, cena, txt, opisNocy){
+    SCENY[id] = {
+      tekst:txt,
+      opcje:[
+        {l:"Prześpij noc (10 godzin, "+cena+" zł)", warunek:function(){ return S.zloto >= cena; },
+         odpoczynek:{lozko:true, godzin:10, udzial:1, lok:lok, tekst:opisNocy},
+         ef:function(){ S.zloto -= cena; }},
+        {l:"Posiedź i przeczekaj (4 godziny)", odpoczynek:{godzin:4, udzial:0.35, lok:lok,
+          tekst:"Siedzisz z kubkiem w ręku i słuchasz, co mówią przy sąsiednim stole."}},
+        {l:"Zapisz grę", zapis:true},
+        {l:"Wyjdź", idz:"__lok_"+lok}
+      ]
+    };
+  }
+
+  nocleg("zajazd_ostrow","nowy_ostrow",14,
+    "Zajazd Pod Trzema Mostami: trzy piętra, izby na godziny i pościel zmieniana częściej niż gdziekolwiek indziej w kraju. Płaci się z góry, kwit dostaje się na piśmie.",
+    "Śpisz nad wodą i przez sen słyszysz, jak pod oknem przybijają łodzie.");
+  nocleg("gospoda_waga","miedziana_waga",11,
+    "Gospoda Pod Stemplem stoi naprzeciw mennicy, więc goście to albo ludzie cechu, albo ci, którzy na nich czekają.",
+    "Stukot stempli nie ustaje przez całą noc i po godzinie przestajesz go słyszeć.");
+  nocleg("szynk_latarnica","latarnica",9,
+    "Szynk Pod Kotwicą: izba niska, okna zabite deskami od strony morza, na ścianie wisi wiosło z wyrytymi imionami.",
+    "Śpisz w izbie z ośmioma innymi i rano brakuje jednego buta, nie twojego.");
+  nocleg("izba_kuznice","kuznice_wodne",8,
+    "Izba czeladna: prycze w dwóch rzędach, piec zawsze gorący, bo ciepło idzie tu wprost z hut.",
+    "Prycza jest twarda, ale ciepła. Rano wstajesz razem z czeladzią.");
+  nocleg("chalupa_grobla","grobla_nw",6,
+    "Chałupa warzelników pachnie solą tak mocno, że po godzinie przestajesz czuć cokolwiek innego.",
+    "Śpisz na sienniku wypchanym sitowiem i budzisz się z solą na ustach.");
+
+  SCENY.stajnia_kobylniki = {
+    tekst:"Stajnia zajezdna: trzydzieści boksów, siano na piętrze i kąt, w którym woźnice śpią za darmo, jeśli pomogą przy koniach.",
+    opcje:[
+      {l:"Prześpij noc na sianie (10 godzin, 3 zł)", warunek:function(){ return S.zloto >= 3; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"kobylniki", tekst:"Siano jest cieplejsze niż niejedno łóżko, w którym spałeś."},
+       ef:function(){ S.zloto -= 3; }},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_kobylniki"}
+    ]
+  };
+  SCENY.ognisko_smolarze = {
+    tekst:"Przy mielerzu pali się ogień, którego nikt nie pilnuje, bo ogień pilnuje tu sam siebie od pokoleń.",
+    opcje:[
+      {l:"Przesiedź przy ogniu (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"smolarze",
+        tekst:"Ziemia pod tobą jest ciepła od spodu. Zasypiasz i budzisz się czarny od sadzy."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_smolarze"}
+    ]
+  };
+
+  SCENY.kram_ostrow = {kto:"Kram giełdowy", portret:"urzednik", handel:true,
+    oferta:["chleb","sledz_solony","mikst_zycia","mikst_many","strzaly","belty","kord_ostrowski","sygnet_gieldowy","ksiega_wagowa"],
+    tekst:"Kram stoi w hali, pod samym stołem giełdowym. Ceny wypisane kredą i poprawiane trzy razy dziennie.",
+    opcje:[{l:"Odejdź od kramu", idz:"__lok_nowy_ostrow"}]};
+  SCENY.kram_waga = {kto:"Kram cechowy", portret:"kowal", handel:true,
+    oferta:["kaftan","kolczuga","sygnet_gieldowy","mikst_zycia","chleb","ruda_kuznicka"],
+    tekst:"Cech sprzedaje tylko to, co sam ostemplował. Reszty tu nie kupisz za żadne pieniądze.",
+    opcje:[{l:"Odejdź od kramu", idz:"__lok_miedziana_waga"}]};
+  SCENY.sklad_latarnica = {kto:"Skład portowy", portret:"kowal", handel:true,
+    oferta:["smola_okretowa","sledz_solony","kusza_latarnicza","belty","naszyjnik_latarni","mikst_zycia","chleb"],
+    tekst:"Skład jest otwarty od świtu do świtu, bo statki nie pytają o porę.",
+    opcje:[{l:"Wyjdź ze składu", idz:"__lok_latarnica"}]};
+  SCENY.zbrojownia_kuznice = {kto:"Zbrojownia kuźnicka", portret:"weteran", handel:true,
+    oferta:["kaftan_syndyka","kord_ostrowski","kolczuga","mikstura_mocy","ruda_kuznicka","belty","strzaly"],
+    tekst:"Ściany obwieszone bronią w rzędach, każdy egzemplarz z numerem wybitym przy jelcu.",
+    opcje:[{l:"Wyjdź", idz:"__lok_kuznice_wodne"}]};
+
+  /* ---------- SYNDYK BOŻYDAR ---------- */
+  SCENY.bozydar = {
+    portret:"urzednik", npc:"bozydar", ktoNieznany:"Człowiek przy końcu długiego stołu", kto:"Syndyk Bożydar",
+    intro:{
+      tekst:"Siedzi na końcu stołu, tam, gdzie nikt nie musi krzyczeć, żeby go usłyszano. Przed nim jedna kartka i jedno pióro.<br><br><span class='mowa'>„Mów krótko. Stół kosztuje sto grzywien za godzinę i to nie jest przenośnia.”</span>",
+      opcje:[
+        {l:"Kto tu właściwie rządzi?", idz:"bozydar_w1"},
+        {l:"Przyszedłem po robotę.", idz:"bozydar", poznaj:"bozydar"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        nw:"<span class='mowa'>„Nasz człowiek. To znaczy: policzony po naszej stronie, a nie po żadnej innej.”</span>",
+        sk:"<span class='mowa'>„Czerwony płaszcz przy moim stole. Ismaal handluje mieczem, my liczydłem, i jakoś to my mamy pieniądze.<br><br>Ale liczę cię jako klienta, nie jako wroga. Na razie.”</span>",
+        pl:"<span class='mowa'>„Puszcza. Wy nie uznajecie miar, więc nigdy nie wiadomo, ile jesteście warci.<br><br>Mimo to płacę uczciwie. Nawet wam.”</span>",
+        od:"<span class='mowa'>„Odeszli. Ludzie bez ksiąg i bez adresu.<br><br>Wolę takich niż zbrojnych: wy przynajmniej wiecie, ile bierzecie.”</span>",
+        brak:"<span class='mowa'>„Człowiek bez barwy. Najtańszy i najdroższy naraz - nikt za ciebie nie odpowie, więc płacę więcej.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Pod mostami robi się nieprzyjemnie.", warunekZ:{id:"nw_kanal", stan:"brak"}, dajZ:"nw_kanal", idz:"bozydar"},
+      {l:"Pod mostami zrobiło się cicho.", warunekZ:{id:"nw_kanal", stan:"gotowe"}, oddajZ:"nw_kanal", idz:"bozydar_kanal_koniec"},
+      {l:"Mam sprawę stempli z Kuźnic.", warunekZ:{id:"nw_waga5", stan:"aktywne"}, idz:"bozydar_waga_koniec"},
+      {l:"Co Giełda sądzi o wojnie?", idz:"bozydar_wojna", raz:true},
+      {l:"Odejdź od stołu", idz:"__lok_nowy_ostrow"}
+    ]
+  };
+  SCENY.bozydar_w1 = {portret:"urzednik", kto:"Syndyk Bożydar",
+    tekst:"<span class='mowa'>„Nikt. To jest odpowiedź, za którą zapłacisz mi kiedyś przysługą.<br><br>Nowożytni nie mają króla. Mamy stół i ludzi, którzy przy nim siedzą tak długo, jak długo się opłaca. Ismaal ma jednego pana i dlatego jednym ciosem można ich rozstroić. Nas nie.”</span>",
+    opcje:[{l:"Rozsądne.", idz:"bozydar", poznaj:"bozydar", ef:function(){ S.poznane.gielda = true; }}]};
+  SCENY.bozydar_wojna = {portret:"urzednik", kto:"Syndyk Bożydar",
+    tekst:function(){
+      return "<span class='mowa'>„Wojna to najgorzej policzony interes świata. Kupujesz zniszczenie i płacisz za nie ludźmi, którzy potem nie płacą podatku.<br><br>Ale Ismaal nie rozumie innego języka, a my nie umiemy nauczyć ich naszego.”</span><br><br>"
+        + ocenaFrakcyjna({
+          sk:"Patrzy na twój płaszcz.<br><br><span class='mowa'>„Powtórz im to. Nie uwierzą, ale powtórz.”</span>",
+          pl:"<span class='mowa'>„Wy wojny nie zaczniecie. Wy ją tylko przeżyjecie, jak zawsze.”</span>",
+          brak:"<span class='mowa'>„Ty jeszcze możesz wybrać stronę. Wybieraj rachunkiem, nie sercem.”</span>"
+        });
+    },
+    opcje:[{l:"Zapamiętam.", idz:"bozydar", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.gielda_wojna = true; }}]};
+  SCENY.bozydar_kanal_koniec = {portret:"urzednik", kto:"Syndyk Bożydar",
+    tekst:"<span class='mowa'>„Wiem. Ceny przewozu spadły o dwa grosze tej samej nocy. To jest jedyny dowód, jakiego potrzebuję.”</span><br><br>Podsuwa ci sakwę bez liczenia, co u niego znaczy uznanie.",
+    opcje:[{l:"Wrócę.", idz:"bozydar"}]};
+  SCENY.bozydar_waga_koniec = {portret:"urzednik", kto:"Syndyk Bożydar",
+    tekst:"Słucha do końca, nie przerywając ani razu.<br><br><span class='mowa'>„Czyli cech okradł czeladź, a czeladź okradła cech. Rachunek się zeruje, tylko ludzi trzeba jeszcze rozliczyć.<br><br>Powiedz mi, jak mam to zapisać.”</span>",
+    opcje:[
+      {l:"Zapisz prawdę: cech obciął zapłatę pierwszy.", oddajZ:"nw_waga5", idz:"bozydar_waga_prawda",
+       ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.waga_prawda = true; S.rep.od += 2; }},
+      {l:"Zapisz tylko kradzież czeladników.", oddajZ:"nw_waga5", idz:"bozydar_waga_cech",
+       ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.waga_cech = true; S.rep.nw += 2; S.rep.od -= 2; }}
+    ]};
+  SCENY.bozydar_waga_prawda = {portret:"urzednik", kto:"Syndyk Bożydar",
+    tekst:"<span class='mowa'>„Drogo cię to będzie kosztowało u cechu i tanio u ludzi.<br><br>Zapiszę tak, jak mówisz. Zapamiętaj, że mogłeś inaczej.”</span><br><br>Wieść idzie do Kuźnic tego samego wieczora. Czeladź dostaje zaległe, cechmistrz - naganę na piśmie.",
+    opcje:[{l:"Tak trzeba było.", idz:"bozydar"}]};
+  SCENY.bozydar_waga_cech = {portret:"urzednik", kto:"Syndyk Bożydar",
+    tekst:"<span class='mowa'>„Prościej. I dla nas taniej.”</span><br><br>Trzech czeladników idzie do wieży, cech odzyskuje twarz, a w Kuźnicach zapamiętują twoje imię - tylko nie tak, jakbyś chciał.",
+    opcje:[{l:"Interes to interes.", idz:"bozydar"}]};
+
+  /* ---------- WAGMISTRZYNI NAWOJA ---------- */
+  SCENY.nawoja = {
+    portret:"kobieta", npc:"nawoja", ktoNieznany:"Kobieta ważąca sztaby", kto:"Wagmistrzyni Nawoja",
+    intro:{
+      tekst:"Kładzie sztabę na szalce, patrzy, zdejmuje, kładzie następną. Robi to tak długo, że przestajesz liczyć.<br><br><span class='mowa'>„Stój po tamtej stronie. Oddychasz na wagę.”</span>",
+      opcje:[
+        {l:"Wszystko tu ważycie?", idz:"nawoja_w1"},
+        {l:"Cofnąć się o krok", idz:"nawoja", poznaj:"nawoja"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        nw:"<span class='mowa'>„Swój. Dobrze, bo swojemu można powiedzieć, że się pomylił.”</span>",
+        pl:"<span class='mowa'>„Puszczańska robota. Wasze mierzą krokiem i garścią, a potem dziwią się, że dostają mniej.”</span>",
+        brak:"<span class='mowa'>„Mów, ale krótko - szalka nie lubi hałasu.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Masz coś dla mnie?", warunekZ:{id:"nw_waga1", stan:"brak"}, dajZ:"nw_waga1", idz:"nawoja"},
+      {l:"Odważniki cechu są uczciwe.", warunekZ:{id:"nw_waga1", stan:"gotowe"}, oddajZ:"nw_waga1", idz:"nawoja"},
+      {l:"Wszebora przysyła ci księgę wag.", warunekZ:{id:"nw_ksiega", stan:"aktywne"},
+       wymagaPrzedmiotu:"ksiega_wagowa", oddajZ:"nw_ksiega", idz:"nawoja_ksiega"},
+      {l:"Nauka: miary, liczby i targ", idz:"nawoja_nauka"},
+      {l:"Odejdź", idz:"__lok_nowy_ostrow"}
+    ]
+  };
+  SCENY.nawoja_w1 = {portret:"kobieta", kto:"Wagmistrzyni Nawoja",
+    tekst:"<span class='mowa'>„Wszystko. Sól, żelazo, wełnę, ludzi też, tylko ludzi się nie kładzie na szalce, bo się ruszają.<br><br>Ismaal wierzy w słowo honoru. My wierzymy w odważnik, bo odważnik nie kłamie, jeśli ktoś go nie podpiłuje.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"nawoja", poznaj:"nawoja"}]};
+  SCENY.nawoja_ksiega = {portret:"kobieta", kto:"Wagmistrzyni Nawoja",
+    tekst:"Przerzuca karty, zatrzymuje się na trzeciej i kiwa głową.<br><br><span class='mowa'>„Wszebora pisze równiej niż mennica bije. Zatrzymaj ją, jeśli umiesz czytać - mnie wystarczy, że wiem, że istnieje.”</span>",
+    opcje:[{l:"Zatrzymam.", idz:"nawoja", ef:function(){ dodaj("ksiega_wagowa"); }}]};
+  SCENY.nawoja_nauka = {wraca:"nawoja", wracaOpis:"Wróć do rozmowy",
+    portret:"kobieta", kto:"Wagmistrzyni Nawoja", uczy:"nawoja", trener:true,
+    tekst:"<span class='mowa'>„Nie nauczę cię bić. Nauczę cię liczyć, a to w tym kraju rani głębiej.”</span>"};
+
+  /* ---------- MISTRZ ŻEGOTA (magia ognia) ---------- */
+  SCENY.zegota = {
+    portret:"urzednik", npc:"zegota", ktoNieznany:"Człowiek z osmalonymi rękawami", kto:"Mistrz Żegota",
+    intro:{
+      tekst:"Rękawy ma wypalone równo do łokci, jakby to był krój, a nie wypadek. Nad dłonią trzyma ogień wielkości orzecha i nie patrzy na niego.<br><br><span class='mowa'>„Nie podchodź bliżej, niż stoisz. Nie dla twojego bezpieczeństwa - ogień się rozprasza.”</span>",
+      opcje:[
+        {l:"Uczysz kogokolwiek?", idz:"zegota_w1"},
+        {l:"Odejść", idz:"__lok_nowy_ostrow"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        nw:"<span class='mowa'>„Nasz. Więc uczę cię taniej i wymagam więcej.”</span>",
+        sk:"<span class='mowa'>„Ismaal też ma magów ognia i uczą lepiej, przyznaję. Ale ty stoisz tutaj, więc coś ci u nich nie pasuje.”</span>",
+        od:"<span class='mowa'>„Odeszli i ogień. Wasi robią przy wodzie i dlatego nikt się was nie boi.”</span>",
+        brak:"<span class='mowa'>„Ogień nie pyta, komu służysz. Ale ja pytam, bo to ja wystawiam rachunek.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Nauka: sztuka ognia", idz:"zegota_nauka"},
+      {l:"Skąd się bierze ogień w dłoni?", idz:"zegota_w2", raz:true},
+      {l:"Odejdź", idz:"__lok_nowy_ostrow"}
+    ]
+  };
+  SCENY.zegota_w1 = {portret:"urzednik", kto:"Mistrz Żegota",
+    tekst:"<span class='mowa'>„Uczę tych, którzy przeżyją pierwszą lekcję. Nowicjusz ognia, potem mag, potem - jeśli nie spalisz się od środka - arcymag.<br><br>Trzy stopnie i dwadzieścia lat. Albo cztery miesiące, jeśli masz talent i mało rozsądku.”</span>",
+    opcje:[{l:"Jestem zainteresowany.", idz:"zegota", poznaj:"zegota", ef:function(){ S.poznane.ogien_nw = true; }}]};
+  SCENY.zegota_w2 = {portret:"urzednik", kto:"Mistrz Żegota",
+    tekst:"<span class='mowa'>„Nie z dłoni. Z tego, co masz pod mostkiem i czego nie umiesz nazwać.<br><br>Prastary Lud nazywa to tchnieniem, Ismaal łaską, my - zasobem. Wszyscy mówimy o tym samym i wszyscy się o to zabijamy.”</span>",
+    opcje:[{l:"Wolę zasób.", idz:"zegota"}]};
+  SCENY.zegota_nauka = {wraca:"zegota", wracaOpis:"Wróć do rozmowy",
+    portret:"urzednik", kto:"Mistrz Żegota", uczy:"zegota", trener:true,
+    tekst:"<span class='mowa'>„Płacisz z góry. Poparzenia w cenie.”</span>"};
+
+  /* ---------- CIBOREK (zwiadowca, nocny) ---------- */
+  SCENY.ciborek = {
+    portret:"weteran", npc:"ciborek", ktoNieznany:"Ktoś, kto stoi w cieniu arkady", kto:"Ciborek",
+    intro:{
+      tekst:"Stoi tak, że światło z hali nie sięga mu twarzy. Kiedy się odzywa, wiesz, że stał tam, zanim wszedłeś.<br><br><span class='mowa'>„Nie odwracaj się. Patrz na wodę i mów.”</span>",
+      opcje:[
+        {l:"Kto ci płaci?", idz:"ciborek_w1"},
+        {l:"Odejść bez słowa", idz:"__lok_nowy_ostrow"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        nw:"<span class='mowa'>„Skoro nosisz nasze barwy, to nauczę cię tego, czego Giełda oficjalnie nie kupuje.”</span>",
+        sk:"<span class='mowa'>„Czerwony płaszcz w nocy w Ostrowie. Albo jesteś głupi, albo dobry. Sprawdzę które.”</span>",
+        od:"<span class='mowa'>„Odeszli robią to samo co ja, tylko głośniej i za mniej.”</span>",
+        brak:"<span class='mowa'>„Bez barwy. Najlepszy rodzaj człowieka do tej roboty.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Nauka: cichy chód i strzał z ukrycia", idz:"ciborek_nauka"},
+      {l:"Co się mówi o Ziemiach Niczyich?", idz:"ciborek_w2", raz:true},
+      {l:"Odejdź w cień", idz:"__lok_nowy_ostrow"}
+    ]
+  };
+  SCENY.ciborek_w1 = {portret:"weteran", kto:"Ciborek",
+    tekst:"<span class='mowa'>„Ci sami, którzy siedzą przy stole i twierdzą, że mnie nie ma.<br><br>Giełda nie ma wojska. Ma mnie i jeszcze paru, i to wychodzi taniej niż chorągiew.”</span>",
+    opcje:[{l:"Uczciwie postawione.", idz:"ciborek", poznaj:"ciborek"}]};
+  SCENY.ciborek_w2 = {portret:"weteran", kto:"Ciborek",
+    tekst:"<span class='mowa'>„Że karawany przestały wracać z południa i że nikt nie znajduje ciał. Nie rozbójnicy - rozbójnik zostawia wóz.<br><br>Ktoś zabiera wszystko: wóz, konie, ludzi. Tak jakby zamiatał.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"ciborek", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.karawany = true; }}]};
+  SCENY.ciborek_nauka = {wraca:"ciborek", wracaOpis:"Wróć do rozmowy",
+    portret:"weteran", kto:"Ciborek", uczy:"ciborek", trener:true,
+    tekst:"<span class='mowa'>„Zapłacisz w monetach bez stempla. Innych nie biorę.”</span>"};
+
+  /* ---------- CECHMISTRZ DOBIEGNIEW ---------- */
+  SCENY.dobiegniew = {
+    portret:"kowal", npc:"dobiegniew", ktoNieznany:"Człowiek z lupą przy oku", kto:"Cechmistrz Dobiegniew",
+    intro:{
+      tekst:"Ogląda monetę przez szkło, obraca ją dwa razy i odkłada na kupkę po lewej. Po prawej kupka jest większa.<br><br><span class='mowa'>„Lewa to dobre. Prawa to takie, które ktoś dziś pożałuje.”</span>",
+      opcje:[
+        {l:"Dużo fałszywek?", idz:"dobiegniew_w1"},
+        {l:"Przyszedłem w sprawie wag.", idz:"dobiegniew", poznaj:"dobiegniew"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        nw:"<span class='mowa'>„Ktoś w barwach Giełdy. Znaczy: przysłali cię, żebym się tłumaczył.”</span>",
+        brak:"<span class='mowa'>„Mów. Ręce trzymaj tak, żebym je widział.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Nawoja pyta o wasze odważniki.", warunekZ:{id:"nw_waga1", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("nw_waga1"); }, idz:"dobiegniew_waga"},
+      {l:"O stemplu wiem już wszystko.", warunekZ:{id:"nw_waga5", stan:"aktywne"}, idz:"dobiegniew_koniec"},
+      {l:"Odejdź", idz:"__lok_miedziana_waga"}
+    ]
+  };
+  SCENY.dobiegniew_w1 = {portret:"kowal", kto:"Cechmistrz Dobiegniew",
+    tekst:"<span class='mowa'>„Co roku więcej. I co roku lepsze. Kiedy fałszerz jest lepszy od mennicy, mennica przestaje mieć sens, a razem z nią całe to miasto.”</span>",
+    opcje:[{l:"Ponure.", idz:"dobiegniew", poznaj:"dobiegniew"}]};
+  SCENY.dobiegniew_waga = {portret:"kowal", kto:"Cechmistrz Dobiegniew",
+    tekst:function(){ return ZADANIA.nw_waga2.pelny; },
+    opcje:[{l:"Sprawdzę rejestr.", dajZ:"nw_waga2", idz:"dobiegniew"}]};
+  SCENY.dobiegniew_koniec = {portret:"kowal", kto:"Cechmistrz Dobiegniew",
+    tekst:"Słucha o czeladnikach i o obciętej zapłacie. Odkłada lupę.<br><br><span class='mowa'>„Obciąłem im, bo Giełda obcięła mnie. Tak to idzie w dół, aż dojdzie do kogoś, kto nie ma komu obciąć, i wtedy ten ktoś zaczyna kraść.<br><br>Powiedz syndykowi, co chcesz. Ja i tak wiem, jak to się skończy.”</span>",
+    opcje:[{l:"Powiem, jak było.", idz:"dobiegniew"}]};
+
+  /* ---------- PISARKA WSZEBORA ---------- */
+  SCENY.wszebora = {
+    portret:"kobieta", npc:"wszebora", ktoNieznany:"Kobieta z trzema kałamarzami", kto:"Pisarka Wszebora",
+    intro:{
+      tekst:"Trzy kałamarze: czarny, czerwony i trzeci, do którego nie zagląda przy ludziach.<br><br><span class='mowa'>„Czarnym piszę to, co było. Czerwonym to, co ktoś kazał, żeby było. Trzeciego nie tłumaczę.”</span>",
+      opcje:[
+        {l:"Kto ci każe pisać czerwonym?", idz:"wszebora_w1"},
+        {l:"Mam sprawę do rejestru.", idz:"wszebora", poznaj:"wszebora"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Rejestr jest otwarty dla każdego, kto umie o niego poprosić dwa razy.”</span>",
+    opcje:[
+      {l:"Komu wydano ostatni stempel?", warunekZ:{id:"nw_waga2", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("nw_waga2"); }, idz:"wszebora_stempel"},
+      {l:"Masz coś do zaniesienia?", warunekZ:{id:"nw_ksiega", stan:"brak"},
+       warunek:function(){ return poznany("wszebora"); }, dajZ:"nw_ksiega",
+       ef:function(){ dodaj("ksiega_wagowa"); }, idz:"wszebora"},
+      {l:"Odejdź", idz:"__lok_miedziana_waga"}
+    ]
+  };
+  SCENY.wszebora_w1 = {portret:"kobieta", kto:"Pisarka Wszebora",
+    tekst:"<span class='mowa'>„Cech, kiedy chce, żeby rachunek wyszedł. Giełda, kiedy chce, żeby nie wyszedł cechowi.<br><br>Ja piszę obydwoma i śpię spokojnie, bo czarny egzemplarz zawsze zostaje u mnie.”</span>",
+    opcje:[{l:"Rozsądnie.", idz:"wszebora", poznaj:"wszebora"}]};
+  SCENY.wszebora_stempel = {portret:"kobieta", kto:"Pisarka Wszebora",
+    tekst:function(){ return ZADANIA.nw_waga3.pelny; },
+    opcje:[{l:"Pojadę do Smolarzy.", dajZ:"nw_waga3", oddajZ:"nw_waga2", idz:"wszebora"}]};
+
+  /* ---------- KAPITAN TROJAN ---------- */
+  SCENY.trojan = {
+    portret:"weteran", npc:"trojan", ktoNieznany:"Człowiek z lunetą na sznurku", kto:"Kapitan portu Trojan",
+    intro:{
+      tekst:"Patrzy przez lunetę na pustą wodę, chociaż wszystko, co dzieje się dzisiaj, dzieje się za jego plecami.<br><br><span class='mowa'>„Jak masz ładunek, idź do składu. Jak masz kłopot, mów szybciej.”</span>",
+      opcje:[
+        {l:"Czego wypatrujesz?", idz:"trojan_w1"},
+        {l:"Mam czas i ręce.", idz:"trojan", poznaj:"trojan"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        nw:"<span class='mowa'>„Swój człowiek w porcie to rzadkość. Większość swoich siedzi w Ostrowie i liczy.”</span>",
+        sk:"<span class='mowa'>„Ismaal. Wasze okręty tu nie wpływają, ale wasi ludzie owszem, i zawsze coś potem znika.”</span>",
+        od:"<span class='mowa'>„Odeszli. Połowa mojego portu to wy, tylko nikt tego nie zapisuje.”</span>",
+        brak:"<span class='mowa'>„Mów.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Kto ci uprzykrza życie?", warunekZ:{id:"nw_port", stan:"brak"}, dajZ:"nw_port", idz:"trojan"},
+      {l:"Pochylnie są wolne.", warunekZ:{id:"nw_port", stan:"gotowe"}, oddajZ:"nw_port", idz:"trojan_port_koniec"},
+      {l:"Odejdź", idz:"__lok_latarnica"}
+    ]
+  };
+  SCENY.trojan_w1 = {portret:"weteran", kto:"Kapitan portu Trojan",
+    tekst:"<span class='mowa'>„Dymu. Trzy tygodnie temu widziałem dym na południu, tam, gdzie nie ma czego palić - sam piach i skała.<br><br>Zgłosiłem Giełdzie. Giełda odpisała, że dym nie jest towarem.”</span>",
+    opcje:[{l:"Ktoś jednak coś tam palił.", idz:"trojan", poznaj:"trojan",
+            ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.dym_poludnie = true; }}]};
+  SCENY.trojan_port_koniec = {portret:"weteran", kto:"Kapitan portu Trojan",
+    tekst:"<span class='mowa'>„Szkutnicy wrócili do roboty przed południem. Nie dziękują, bo tu się nie dziękuje - ale kadłub Wita będzie gotowy w terminie i to jest podziękowanie.”</span>",
+    opcje:[{l:"Wystarczy.", idz:"trojan"}]};
+
+  /* ---------- LATARNICZKA ŚWIĘTOSŁAWA ---------- */
+  SCENY.swietoslawa = {
+    portret:"kobieta", npc:"swietoslawa", ktoNieznany:"Kobieta niosąca dzban oleju", kto:"Latarniczka Świętosława",
+    intro:{
+      tekst:"Niesie dzban obiema rękami i nie odstawia go, kiedy z tobą rozmawia.<br><br><span class='mowa'>„Sto lat i ani jednej ciemnej nocy. Nie zacznę od dzisiejszej.”</span>",
+      opcje:[
+        {l:"Ktoś ci pomaga?", idz:"swietoslawa_w1"},
+        {l:"Mogę pomóc.", idz:"swietoslawa", poznaj:"swietoslawa"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Ogień je smołę szybciej, niż ludzie ją noszą.”</span>",
+    opcje:[
+      {l:"Ile potrzebujesz?", warunekZ:{id:"nw_latarnia", stan:"brak"}, dajZ:"nw_latarnia", idz:"swietoslawa"},
+      {l:"Mam smołę.", warunekZ:{id:"nw_latarnia", stan:"aktywne"}, wymagaPrzedmiotu:"smola_okretowa", ile:4,
+       oddajZ:"nw_latarnia", idz:"swietoslawa_koniec"},
+      {l:"Odejdź", idz:"__lok_latarnica"}
+    ]
+  };
+  SCENY.swietoslawa_w1 = {portret:"kobieta", kto:"Latarniczka Świętosława",
+    tekst:"<span class='mowa'>„Miałam syna. Teraz mam schody i sto trzydzieści stopni, i to mi wystarcza za towarzystwo.”</span>",
+    opcje:[{l:"Nie pytam dalej.", idz:"swietoslawa", poznaj:"swietoslawa"}]};
+  SCENY.swietoslawa_koniec = {portret:"kobieta", kto:"Latarniczka Świętosława",
+    tekst:"Zdejmuje z szyi kółko z żelaza obtopione szkłem i wciska ci je w rękę.<br><br><span class='mowa'>„To ze starej latarni, tej, która pękła od gorąca. Noś. Ogień poznaje swoich.”</span>",
+    opcje:[{l:"Dziękuję.", idz:"swietoslawa"}]};
+
+  /* ---------- SZKUTNIK WIT ---------- */
+  SCENY.wit = {
+    portret:"kowal", npc:"wit", ktoNieznany:"Człowiek strugający wręgę", kto:"Szkutnik Wit",
+    intro:{
+      tekst:"Struga wręgę i co chwilę przykłada ją do sznurka rozpiętego nad pochylnią. Sznurek jest prosty, wręga jeszcze nie.<br><br><span class='mowa'>„Nie stawaj na sznurku.”</span>",
+      opcje:[
+        {l:"Dla kogo ta łódź?", idz:"wit_w1"},
+        {l:"Zejść ze sznurka", idz:"wit", poznaj:"wit"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Drewna mam dosyć. Żelaza nie.”</span>",
+    opcje:[
+      {l:"Czego ci brakuje?", warunekZ:{id:"nw_wreg", stan:"brak"}, dajZ:"nw_wreg", idz:"wit"},
+      {l:"Mam rudę z Kuźnic.", warunekZ:{id:"nw_wreg", stan:"aktywne"}, wymagaPrzedmiotu:"ruda_kuznicka", ile:5,
+       oddajZ:"nw_wreg", idz:"wit"},
+      {l:"Odejdź", idz:"__lok_latarnica"}
+    ]
+  };
+  SCENY.wit_w1 = {portret:"kowal", kto:"Szkutnik Wit",
+    tekst:"<span class='mowa'>„Dla Giełdy, ale nie do handlu. Kazali kadłub płytki i szybki, taki, co wejdzie na piach.<br><br>Nikt nie buduje takich łodzi, żeby wozić sól.”</span>",
+    opcje:[{l:"Czyli po co?", idz:"wit", poznaj:"wit",
+            ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.lodz_plytka = true; }}]};
+
+  /* ---------- HUTMISTRZ NINOGNIEW ---------- */
+  SCENY.ninogniew = {
+    portret:"kowal", npc:"ninogniew", ktoNieznany:"Człowiek w przepalonym fartuchu", kto:"Hutmistrz Ninogniew",
+    intro:{
+      tekst:"Stoi przy spuście i patrzy w metal tak długo, że oczy powinny mu dawno wysiąść.<br><br><span class='mowa'>„Odsuń się o dwa kroki. Jak pryśnie, to nie na mnie.”</span>",
+      opcje:[
+        {l:"Ośmiu kół i jedno miasto?", idz:"ninogniew_w1"},
+        {l:"Cofnąć się", idz:"ninogniew", poznaj:"ninogniew"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        nw:"<span class='mowa'>„Barwy Giełdy. To najpierw powiedz swoim, że czeladź je co drugi dzień.”</span>",
+        od:"<span class='mowa'>„Odeszli. Połowa moich czeladników chciałaby pójść za wami i tylko strach ich trzyma.”</span>",
+        brak:"<span class='mowa'>„Mów przy hałasie głośno albo wcale.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Radzim mówił o nocnych wozach.", warunekZ:{id:"nw_waga4", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("nw_waga4"); }, idz:"ninogniew_waga"},
+      {l:"Odejdź", idz:"__lok_kuznice_wodne"}
+    ]
+  };
+  SCENY.ninogniew_w1 = {portret:"kowal", kto:"Hutmistrz Ninogniew",
+    tekst:"<span class='mowa'>„Osiem kół, osiem młotów, czterystu ludzi i jeden rachunek, który przysyłają nam z Ostrowa raz na kwartał.<br><br>W tym rachunku nigdy nie ma pozycji «ludzie».”</span>",
+    opcje:[{l:"Zauważyłem.", idz:"ninogniew", poznaj:"ninogniew"}]};
+  SCENY.ninogniew_waga = {portret:"kowal", kto:"Hutmistrz Ninogniew",
+    tekst:function(){ return ZADANIA.nw_waga5.pelny; },
+    opcje:[
+      {l:"Wracam do Ostrowa.", dajZ:"nw_waga5", oddajZ:"nw_waga4", idz:"ninogniew"}
+    ]};
+
+  /* ---------- ZBROJMISTRZ DOMASŁAW ---------- */
+  SCENY.domaslaw = {
+    portret:"weteran", npc:"domaslaw", ktoNieznany:"Człowiek próbujący ostrza paznokciem", kto:"Zbrojmistrz Domasław",
+    intro:{
+      tekst:"Przesuwa paznokciem po ostrzu, marszczy się i odkłada klingę na kupkę do przekucia.<br><br><span class='mowa'>„Trzynasta dzisiaj. Kują szybciej, niż myślą.”</span>",
+      opcje:[
+        {l:"Uczysz walki?", idz:"domaslaw_w1"},
+        {l:"Tylko się rozglądam.", idz:"domaslaw", poznaj:"domaslaw"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Broń albo nauka. Jedno i drugie kosztuje, tylko nauka boli dłużej.”</span>",
+    opcje:[
+      {l:"Nauka: broń dwuręczna i twarda ręka", idz:"domaslaw_nauka"},
+      {l:"Masz robotę?", warunekZ:{id:"nw_zbroja", stan:"brak"}, dajZ:"nw_zbroja",
+       ef:function(){ dodaj("kaftan_syndyka"); }, idz:"domaslaw"},
+      {l:"Kaftan trzyma. Sprawdziłem.", warunekZ:{id:"nw_zbroja", stan:"gotowe"}, oddajZ:"nw_zbroja", idz:"domaslaw_koniec"},
+      {l:"Odejdź", idz:"__lok_kuznice_wodne"}
+    ]
+  };
+  SCENY.domaslaw_w1 = {portret:"weteran", kto:"Zbrojmistrz Domasław",
+    tekst:"<span class='mowa'>„Uczę tego, czego Ismaal nie uczy: bić się bez tarczy. Tarcza jest droga, a Nowożytni liczą.<br><br>Dwuręczny miecz kosztuje raz. Tarcza kosztuje co bitwę.”</span>",
+    opcje:[{l:"Przekonujące.", idz:"domaslaw", poznaj:"domaslaw"}]};
+  SCENY.domaslaw_nauka = {wraca:"domaslaw", wracaOpis:"Wróć do rozmowy",
+    portret:"weteran", kto:"Zbrojmistrz Domasław", uczy:"domaslaw", trener:true,
+    tekst:"<span class='mowa'>„Stój prosto i nie proś o zniżkę.”</span>"};
+  SCENY.domaslaw_koniec = {portret:"weteran", kto:"Zbrojmistrz Domasław",
+    tekst:"Ogląda przecięcia na kaftanie, liczy je pod nosem i kiwa głową.<br><br><span class='mowa'>„Cztery i żadne na wylot. Zostaw sobie. Zapiszę, że wzór przyjęty - a ty zapisz sobie, że przeżyłeś w moim płótnie.”</span>",
+    opcje:[{l:"Zapiszę.", idz:"domaslaw"}]};
+
+  /* ---------- SOŁTYS MIŁOSZ ---------- */
+  SCENY.milosz = {
+    portret:"kowal", npc:"milosz", ktoNieznany:"Człowiek z batem za pasem", kto:"Sołtys Miłosz",
+    intro:{
+      tekst:"Bat ma za pasem, ale w rękach trzyma rachunek za obrok i to on go martwi.<br><br><span class='mowa'>„Jak konia nie masz, to i sprawy pewnie nie masz.”</span>",
+      opcje:[
+        {l:"Sprawę mam.", idz:"milosz", poznaj:"milosz"},
+        {l:"Odejść", idz:"__lok_kobylniki"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        nw:"<span class='mowa'>„Barwy Giełdy. Może wreszcie ktoś od nich zrobi coś, za co nie wystawią rachunku.”</span>",
+        brak:"<span class='mowa'>„Obcy, ale przynajmniej pieszy. Pieszy nie kradnie koni.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Coś się dzieje na trakcie?", warunekZ:{id:"nw_konie", stan:"brak"}, dajZ:"nw_konie", idz:"milosz"},
+      {l:"Rowy przy trakcie są czyste.", warunekZ:{id:"nw_konie", stan:"gotowe"}, oddajZ:"nw_konie", idz:"milosz"},
+      {l:"Odejdź", idz:"__lok_kobylniki"}
+    ]
+  };
+
+  /* ---------- SMOLARZ RADZIM ---------- */
+  SCENY.radzim = {
+    portret:"kowal", npc:"radzim", ktoNieznany:"Człowiek czarny od sadzy", kto:"Smolarz Radzim",
+    intro:{
+      tekst:"Obchodzi mielerz dookoła i zatyka łopatą dziury, z których idzie za jasny dym.<br><br><span class='mowa'>„Nie przeszkadzaj. Jak wpuszczę powietrze, stracę tydzień.”</span>",
+      opcje:[
+        {l:"Poczekam.", idz:"radzim", poznaj:"radzim"},
+        {l:"Odejść", idz:"__lok_smolarze"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Mówię przy jedzeniu albo nie mówię wcale.”</span>",
+    opcje:[
+      {l:"Mam chleb. Pogadajmy o wozach.", warunekZ:{id:"nw_waga3", stan:"aktywne"},
+       wymagaPrzedmiotu:"chleb", ile:3, oddajZ:"nw_waga3", idz:"radzim_wozy"},
+      {l:"Odejdź", idz:"__lok_smolarze"}
+    ]
+  };
+  SCENY.radzim_wozy = {portret:"kowal", kto:"Smolarz Radzim",
+    tekst:function(){ return ZADANIA.nw_waga4.pelny; },
+    opcje:[{l:"Idę do Kuźnic.", dajZ:"nw_waga4", idz:"radzim"}]};
+
+  /* ---------- WARZELNIK SULISŁAW ---------- */
+  SCENY.sulislaw = {
+    portret:"kowal", npc:"sulislaw", ktoNieznany:"Człowiek zgarniający sól z panwi", kto:"Warzelnik Sulisław",
+    intro:{
+      tekst:"Zgarnia sól drewnianą grabką, powoli, bo szybciej się nie da.<br><br><span class='mowa'>„Sól nie lubi pośpiechu ani żelaza. Dlatego grabka jest z drewna, a ja jestem stary.”</span>",
+      opcje:[
+        {l:"Ciężka robota.", idz:"sulislaw", poznaj:"sulislaw"},
+        {l:"Odejść", idz:"__lok_grobla_nw"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Panwie stoją, sól idzie, złodziej też idzie.”</span>",
+    opcje:[
+      {l:"Jaki złodziej?", warunekZ:{id:"nw_sol", stan:"brak"}, dajZ:"nw_sol", idz:"sulislaw"},
+      {l:"Nie wróci już na twoje panwie.", warunekZ:{id:"nw_sol", stan:"gotowe"}, oddajZ:"nw_sol", idz:"sulislaw"},
+      {l:"Odejdź", idz:"__lok_grobla_nw"}
+    ]
+  };
+
+  /* --- nauka u nowych mistrzów --- */
+  var N = [
+    {id:"targowanie_nw", uczy:"nawoja", grupa:"rzemioslo", l:"Targowanie", pn:2, zl:60, raz:true,
+     ef:function(){ S.umie.targowanie = true; }},
+    {id:"intel_nawoja", uczy:"nawoja", grupa:"rzemioslo", l:"Intelekt +1", pn:1, zl:8, ef:function(){ S.intel += 1; }},
+    {id:"ogien1", uczy:"zegota", grupa:"magia", l:"Nowicjusz ognia: Iskra", pn:2, zl:50, raz:true,
+     ef:function(){ S.umie.iskra = true; }},
+    {id:"ogien2", uczy:"zegota", grupa:"magia", l:"Mag ognia: Popiół", pn:4, zl:180, raz:true, wymagaUm:"iskra",
+     wymPoziom:10, ef:function(){ S.umie.popiol = true; }},
+    {id:"mana_zegota", uczy:"zegota", grupa:"magia", l:"Zasób many +10", pn:2, zl:40,
+     ef:function(){ S.manaMax += 10; S.mana += 10; }},
+    {id:"cichy_chod", uczy:"ciborek", grupa:"rzemioslo", l:"Cichy chód", pn:2, zl:70, raz:true,
+     ef:function(){ S.umie.cichy = true; }},
+    {id:"lucznictwo_nw", uczy:"ciborek", grupa:"walka", l:"Łucznictwo", pn:2, zl:60, raz:true,
+     ef:function(){ S.umie.lucznictwo = true; }},
+    {id:"sztylet_z_cienia", uczy:"ciborek", grupa:"walka", l:"Supercios: Sztylet z cienia", pn:5, zl:200, raz:true,
+     wymPoziom:10, ef:function(){ S.umie.sztylet_cienia = true; }},
+    {id:"dwuraki", uczy:"domaslaw", grupa:"walka", l:"Walka bronią dwuręczną", pn:3, zl:120, raz:true,
+     ef:function(){ S.umie.dwuraki = true; }},
+    {id:"sila_domaslaw", uczy:"domaslaw", grupa:"walka", l:"Siła +1", pn:1, zl:8, ef:function(){ S.sila += 1; }},
+    {id:"rozlupanie", uczy:"domaslaw", grupa:"walka", l:"Supercios: Rozłupanie", pn:5, zl:220, raz:true,
+     wymPoziom:15, wymagaUm:"dwuraki", ef:function(){ S.umie.rozlupanie = true; }}
+  ];
+  N.forEach(function(w){ if(!NAUKA.some(function(x){ return x.id === w.id; })) NAUKA.push(w); });
+  if(!SUPERCIOSY.some(function(c){ return c.id === "sztylet_cienia"; }))
+    SUPERCIOSY.push({id:"sztylet_cienia", n:"Sztylet z cienia", z:["d","g","s"], o:"×2.2 obrażeń", v:2.2});
+  if(!SUPERCIOSY.some(function(c){ return c.id === "rozlupanie"; }))
+    SUPERCIOSY.push({id:"rozlupanie", n:"Rozłupanie", z:["g","g","s","d"], o:"×2.7 obrażeń", v:2.7});
+}
+scenyNowozytnych();
+
+
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
   PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,
   RECEPTURY:RECEPTURY, ZAKLECIA:ZAKLECIA, PROFESJE:PROFESJE, ekranWytwarzania:ekranWytwarzania,
