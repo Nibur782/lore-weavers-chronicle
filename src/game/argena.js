@@ -123,8 +123,8 @@ var PRZEDMIOTY = {
   chleb:     {n:"Bochen żytni",     kat:"zywnosc",  typ:"jadalne", leczy:10, cena:5,  o:"Twardy, ale sycący."},
   krwawnik:  {n:"Krwawnik",         kat:"roslina",  typ:"jadalne", leczy:8,  cena:6,  o:"Zatrzymuje krew. Rośnie tam, gdzie ziemia była ruszana."},
   dziurawiec:{n:"Dziurawiec",       kat:"roslina",  typ:"jadalne", leczy:14, cena:12, o:"Zwany zielem świętojańskim. Kwitnie w pełni lata."},
-  arcydziegiel:{n:"Arcydzięgiel",   kat:"roslina",  typ:"towar",             cena:20, o:"Korzeń gorzki i mocny. Zielarki płacą za niego dobrze."},
-  tojad:     {n:"Tojad mordownik",  kat:"roslina",  typ:"towar",             cena:35, o:"Najbardziej trujące ziele w tych stronach. Kupują go tylko ci, którzy nie mówią po co."},
+  arcydziegiel:{n:"Arcydzięgiel",   kat:"roslina",  typ:"jadalne", leczy:6, mana:8, cena:20, o:"Korzeń gorzki i mocny. Rozgrzewa od środka i rozjaśnia w głowie."},
+  tojad:     {n:"Tojad mordownik",  kat:"roslina",  typ:"jadalne", leczy:0, jad:3, cena:35, o:"Najbardziej trujące ziele w tych stronach. Nie je się go - naciera się nim ostrze."},
   skora:     {n:"Psia skóra",       kat:"surowiec", typ:"towar",             cena:25, o:"Cuchnie, ale kowal ją weźmie."},
   darniowa:  {n:"Ruda darniowa",    kat:"surowiec", typ:"towar",             cena:15, o:"Wygrzebana z bagna. Z niej kuje się wszystko, co proste."},
   krzemien:  {n:"Krzemień pasiasty",kat:"surowiec", typ:"towar",             cena:45, o:"Prążkowany jak słoje drzewa. Podobno przynosi szczęście temu, kto go nosi."},
@@ -141,9 +141,9 @@ var PRZEDMIOTY = {
              o:"Sześcienne, ołowiane kostki wrośnięte w skałę. Łamie się w kwadraty, jakby ktoś ciął ją nożem."},
   miedziak:  {n:"Ruda miedzi",      kat:"surowiec", typ:"towar",             cena:30,
              o:"Zielone i błękitne naloty na szarym kamieniu. Wygląda jak coś chorego, a jest warte więcej niż żelazo."},
-  dziewanna: {n:"Dziewanna",        kat:"roslina",  typ:"towar",             cena:16,
+  dziewanna: {n:"Dziewanna",        kat:"roslina",  typ:"jadalne", leczy:6, wytrzymalosc:2, cena:16,
              o:"Wysoka na chłopa, z żółtym kłosem kwiatów. Susz z niej pomaga na kaszel i na wykręty w rozmowie."},
-  bagno:     {n:"Bagno zwyczajne",  kat:"roslina",  typ:"towar",             cena:34,
+  bagno:     {n:"Bagno zwyczajne",  kat:"roslina",  typ:"jadalne", leczy:0, mana:14, cena:34,
              o:"Krzew o skórzastych liściach, pachnący tak mocno, że kręci się od niego w głowie. Kupują je ci, którzy warzą rzeczy zakazane."},
   dluto:     {n:"Dłuto Cieszkowego brata", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[6,9], cena:0,
              o:"Krótkie, ciężkie, z trzonkiem wygładzonym przez lata jednej dłoni. Na boku wybite imię, którego Cieszko nie wymawia."},
@@ -478,6 +478,43 @@ function usunZListy(lista, ile){
     while(ile>0 && S.plecak[lista[i]]){ usun(lista[i]); ile--; }
   }
 }
+function uzyjJadalne(k){
+  var p = PRZEDMIOTY[k];
+  if(!p || !S.plecak[k]) return null;
+  var opis = [];
+  if(p.leczy){ var przed = S.hp; S.hp = Math.min(S.hpMax, S.hp + p.leczy); if(S.hp>przed) opis.push("+"+(S.hp-przed)+" życia"); }
+  if(p.mana){ var m = S.mana; S.mana = Math.min(S.manaMax, S.mana + p.mana); if(S.mana>m) opis.push("+"+(S.mana-m)+" many"); }
+  if(p.wytrzymalosc){ S.hpMax += p.wytrzymalosc; S.hp += p.wytrzymalosc; opis.push("+"+p.wytrzymalosc+" do trwałego zdrowia"); }
+  if(p.jad){ S.jad = (S.jad||0) + p.jad; opis.push("ostrze zatrute na "+S.jad+" ciosów"); }
+  if(!opis.length) return null;
+  usun(k);
+  return opis.join(", ");
+}
+
+function mozeUzyc(k){
+  var p = PRZEDMIOTY[k];
+  if(!p) return false;
+  if(p.jad || p.wytrzymalosc) return true;
+  if(p.leczy && S.hp < S.hpMax) return true;
+  if(p.mana && S.mana < S.manaMax) return true;
+  return false;
+}
+
+function opisDzialania(p){
+  var cz = [];
+  if(p.leczy) cz.push("+"+p.leczy+" życia");
+  if(p.mana) cz.push("+"+p.mana+" many");
+  if(p.wytrzymalosc) cz.push("+"+p.wytrzymalosc+" zdrowia na stałe");
+  if(p.jad) cz.push("zatruwa ostrze (+5 obrażeń przez "+p.jad+" ciosy)");
+  if(p.obr) cz.push("obrażenia "+p.obr[0]+"-"+p.obr[1]+(p.dwureczna?", oburęczna":"")+(p.dystans?", dystansowa":""));
+  if(p.odp) for(var t in p.odp) cz.push("odporność "+(NAZWY_OBRAZEN[t]||t)+" +"+p.odp[t]+"%");
+  if(p.daje) for(var d in p.daje) cz.push({sila:"siła",zrecz:"zręczność",unik:"unik",kryt:"krytyk"}[d]+" +"+p.daje[d]);
+  if(p.intelekt) cz.push("+"+p.intelekt+" intelektu po przeczytaniu");
+  if(p.wym) for(var w in p.wym) cz.push("wymaga: "+({sila:"siła",zrecz:"zręczność"}[w])+" "+p.wym[w]);
+  if(!cz.length && p.typ === "towar") cz.push("towar na sprzedaż");
+  return cz.join(" &middot; ");
+}
+
 function sztukWPlecaku(){ var n=0; for(var k in S.plecak) n += S.plecak[k]; return n; }
 function wartoscTowarow(){
   var s=0;
@@ -2460,8 +2497,9 @@ function listaRzeczy(){
   if(!klucze.length) return '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Plecak jest pusty.</span></div></div>';
   return '<div class="rzeczy rama">' + klucze.map(function(k){
     var p = PRZEDMIOTY[k];
-    return '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]+'<div class="rzecz-o">'+p.o+'</div></span>'
-         + '<span class="rzecz-o">'+(p.typ==="jadalne" ? "+"+p.leczy+" życia" : p.cena+" zł")+'</span></div>';
+    return '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]+'<div class="rzecz-o">'+p.o+'</div>'
+         + (opisDzialania(p) ? '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisDzialania(p)+'</div>' : '')
+         + '</span><span class="rzecz-o">'+(p.cena ? p.cena+" zł" : "")+'</span></div>';
   }).join("") + '</div>';
 }
 
@@ -2717,7 +2755,7 @@ function ekranPlecaka(){
   var ksiegi = Object.keys(S.plecak).filter(function(k){return PRZEDMIOTY[k].typ === "ksiega";});
   var jadalne = Object.keys(S.plecak).filter(function(k){return PRZEDMIOTY[k].typ === "jadalne";});
   var opcje = jadalne.map(function(k){
-    return {l:"Zjedz: "+PRZEDMIOTY[k].n, koszt:"+"+PRZEDMIOTY[k].leczy+" życia", wylacz: S.hp >= S.hpMax};
+    return {l:(PRZEDMIOTY[k].jad ? "Natrzyj ostrze: " : "Użyj: ")+PRZEDMIOTY[k].n, koszt:opisDzialania(PRZEDMIOTY[k]), wylacz: !mozeUzyc(k)};
   });
   opcje.push({l:"Wróć do osady"});
 
@@ -2726,9 +2764,7 @@ function ekranPlecaka(){
 
   var akcje = jadalne.map(function(k){
     return function(){
-      if(S.hp >= S.hpMax) return;
-      S.hp = Math.min(S.hpMax, S.hp + PRZEDMIOTY[k].leczy);
-      usun(k);
+      if(!uzyjJadalne(k)) return;
       pokaz("plecak");
     };
   });
@@ -2839,6 +2875,7 @@ function obrazenia(){
   if(b){ d = Math.round(los(b.obr[0], b.obr[1]) * (1 + sila/40)); }
   else  { d = los(2 + Math.floor(sila/4), 3 + Math.floor(sila/3)); }
   if(Math.random() < 0.05 + (S.zrecz + bonusStatu("zrecz"))/500 + bonusStatu("kryt")/100){ d = Math.round(d*2); S.log.push("Trafiasz odsłonięte miejsce - krytyk."); }
+  if(S.jad > 0){ d += 5; S.jad--; S.log.push("Trucizna z ostrza wchodzi w ranę (+5)."+(S.jad?"":" Ostrze jest już czyste.")); }
   return d;
 }
 
@@ -2898,9 +2935,10 @@ function pijMane(k){
 function zjedz(k){
   stopZegar();
   if(!S.plecak[k]) return;
-  S.hp = Math.min(S.hpMax, S.hp + PRZEDMIOTY[k].leczy);
-  S.log.push("Zjadasz: "+PRZEDMIOTY[k].n+".");
-  usun(k);
+  var nazwa = PRZEDMIOTY[k].n;
+  var wynik = uzyjJadalne(k);
+  if(!wynik) return;
+  S.log.push("Używasz: "+nazwa+" ("+wynik+").");
   turaWroga(false);
 }
 
@@ -3216,7 +3254,7 @@ if(a === "zapisz"){ zapiszDoSlotu(+k); odswiezPanel(); return; }
       if(a === "wczytaj"){ if(wczytajZeSlotu(+k)){ panel=null; d.hidden=true; d.innerHTML=""; S.trybZapisu=false; pokaz(S.scena||"osada"); rysujPasek(); } return; }
       if(a === "kasuj"){ skasujSlot(+k); odswiezPanel(); return; }
       if(a === "pij"){ S.mana = Math.min(S.manaMax, S.mana + PRZEDMIOTY[k].mana); usun(k); }
-if(a === "zjedz" && S.hp < S.hpMax){ S.hp = Math.min(S.hpMax, S.hp + PRZEDMIOTY[k].leczy); usun(k); }
+if(a === "zjedz"){ uzyjJadalne(k); }
 odswiezPanel();
 rysujPasek();
 };
@@ -3300,15 +3338,15 @@ function widokEkwipunku(){
       var p = PRZEDMIOTY[k];
       h += '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]
          + '<div class="rzecz-o">'+p.o+'</div>'
+         + (opisDzialania(p) ? '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisDzialania(p)+'</div>' : '')
          + (p.typ==="wyposazenie" && !S.wrog ? (brakWymagan(p)
              ? '<div class="rzecz-o" style="margin-top:8px;color:var(--krew)">Wymaga '+brakWymagan(p)+'</div>'
              : '<button data-akcja="zaloz" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">Załóż</button>') : "")
          + (p.typ==="ksiega" && !S.wrog ? '<button data-akcja="czytaj" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">'+"Przeczytaj"+'</button>' : "")
          + (p.typ==="napoj_many" && !S.wrog ? '<button data-akcja="pij" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">Wypij</button>' : "")
-         + (p.typ==="jadalne" && !S.wrog ? '<button data-akcja="zjedz" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">Zjedz</button>' : "")
+         + (p.typ==="jadalne" && !S.wrog && mozeUzyc(k) ? '<button data-akcja="zjedz" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">'+(p.jad ? "Natrzyj ostrze" : "Użyj")+'</button>' : "")
 + ((p.typ==="jadalne"||p.typ==="napoj_many"||p.typ==="wyposazenie") && !S.wrog ? '<button data-akcja="pasek" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0 6px;width:auto">Do paska</button>' : "")
-         + '</span><span class="rzecz-o">'
-         + (p.typ==="jadalne" ? "+"+p.leczy+" życia" : (p.cena ? p.cena+" zł" : ""))+'</span></div>';
+         + '</span><span class="rzecz-o">'+(p.cena ? p.cena+" zł" : "")+'</span></div>';
     });
     h += '</div>';
   });
