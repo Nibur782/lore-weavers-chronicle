@@ -3160,7 +3160,6 @@ var poz = [
 {id:"ekwipunek",   l:"Plecak",   ik:"plecak",   licz:sztukWPlecaku()},
 {id:"postac",      l:"Postać",   ik:"postac",   licz:null},
 {id:"dziennik",    l:"Dziennik", ik:"dziennik", licz:ileAktywnych()},
-{id:"bestiariusz", l:"Bestie",   ik:"bestie",   licz:Object.keys(S.bestiariusz).length},
 {id:"zapisy",      l:"Zapisy",   ik:"zapisy",   licz:null}
 ];
 n.innerHTML = poz.map(function(p){
@@ -3270,6 +3269,7 @@ if(a === "zaloz") zaloz(k);
 if(a === "zdejmij") zdejmij(k);
 if(a === "znacznik"){ pokazZnacznik(+k); return; }
 if(a === "zpaska"){ zPaska(+k); odswiezPanel(); rysujPasek(); return; }
+if(a === "zakladka"){ S.zakladka = k; S.rozwiniete = null; odswiezPanel(); return; }
 if(a === "rozwin"){ S.rozwiniete = (S.rozwiniete === k) ? null : k; odswiezPanel(); return; }
 if(a === "idzDoMapy"){ panel = "mapa"; odswiezPanel(); rysujPasek(); setTimeout(function(){ pokazZnacznik(+k); }, 30); return; }
 if(a === "zoom"){ zoomMapy(+k); return; }
@@ -3493,11 +3493,30 @@ function widokPostaci(){
 }
 
 function widokDziennika(){
-  var wpisy = Object.keys(ZADANIA).filter(function(id){ return stanZadania(id) !== "brak"; });
-  var h = naglowek("Dziennik");
-  if(!wpisy.length) return h + '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nikt cię jeszcze o nic nie poprosił.</span></div></div>';
+  var zak = S.zakladka || "zadania";
+  var karty = [
+    {id:"zadania", n:"Zadania"},
+    {id:"bestie", n:"Bestiariusz"},
+    {id:"swiat", n:"Świat i frakcje"},
+    {id:"ludzie", n:"Nauczyciele i kupcy"}
+  ];
+  var h = naglowek("Dziennik", "Wszystko, co zapisałeś po drodze.");
+  h += '<div class="zakladki">' + karty.map(function(z){
+    return '<button data-akcja="zakladka" data-klucz="'+z.id+'" class="zakladka'+(zak===z.id?" on":"")+'">'+z.n+'</button>';
+  }).join("") + '</div>';
+  if(zak === "zadania") h += czescZadania();
+  if(zak === "bestie") h += czescBestie();
+  if(zak === "swiat") h += czescSwiat();
+  if(zak === "ludzie") h += czescLudzie();
+  return h;
+}
 
-  h += '<div class="rzeczy rama">' + wpisy.map(function(id){
+function czescZadania(){
+  var wpisy = Object.keys(ZADANIA).filter(function(id){ return stanZadania(id) !== "brak"; });
+  if(!wpisy.length) return '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nikt cię jeszcze o nic nie poprosił.</span></div></div>';
+  var kolej = {gotowe:0, aktywne:1, oddane:2};
+  wpisy.sort(function(a,b){ return kolej[stanZadania(a)] - kolej[stanZadania(b)]; });
+  return '<div class="rzeczy rama">' + wpisy.map(function(id){
     var z = ZADANIA[id], st = stanZadania(id), otw = S.rozwiniete === ("z_"+id);
     var op = {aktywne:"w toku", gotowe:"do oddania", oddane:"zakończone"}[st];
     var t = '<div class="rzecz"><span style="width:100%">'
@@ -3508,6 +3527,7 @@ function widokDziennika(){
          + '<p class="rzecz-o">Od: '+z.od+'</p>'
          + '<p>'+(z.pelny || z.opis)+'</p>'
          + (st === "oddane" ? '' : '<p><b>Do zrobienia:</b> '+z.cel+'</p>')
+         + (z.krok ? '<p class="rzecz-o">Krok '+z.krok()+'</p>' : '')
          + (z.miejsce !== undefined
             ? '<button data-akcja="idzDoMapy" data-klucz="'+z.miejsce+'" class="odnosnik">Pokaż na mapie: '+MAPA.znaczniki[z.miejsce].n+'</button>'
             : '')
@@ -3515,24 +3535,26 @@ function widokDziennika(){
     }
     return t + '</span></div>';
   }).join("") + '</div>';
-  return h;
 }
 
-function widokBestii(){
+function czescBestie(){
   var klucze = Object.keys(S.bestiariusz);
-  var h = naglowek("Bestiariusz", "Zapisujesz to, co zdążyłeś zobaczyć - także wtedy, gdy trzeba było uciekać.");
-  if(!klucze.length) return h + '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nie stanąłeś jeszcze naprzeciw niczego.</span></div></div>';
-
-  h += '<div class="rzeczy rama">' + klucze.map(function(id){
+  if(!klucze.length) return '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nie stanąłeś jeszcze naprzeciw niczego.</span></div></div>';
+  return '<div class="rzeczy rama">' + klucze.map(function(id){
     var w = WROGOWIE[id], b = S.bestiariusz[id], otw = S.rozwiniete === ("b_"+id);
     var znane = b.widziane, wszystkie = w.sekw.length;
     var stan = b.final ? "poznany" : (znane+"/"+(wszystkie+1)+" ciosów");
+    var kroki = w.sekw.map(function(z,i){
+      return i < b.widziane ? {g:"góra",s:"środek",d:"dół"}[z] : "?";
+    }).join(" - ") + (b.final ? " → " + w.finisz.o : " → ?");
     var t = '<div class="rzecz"><span style="width:100%">'
       + '<button data-akcja="rozwin" data-klucz="b_'+id+'" class="wpis">'+w.n
       + '<span class="rzecz-o" style="float:right">'+stan+'</span></button>';
     if(otw){
       t += '<div class="rozwiniete">'
          + '<p>'+(w.wyglad||"Nie przyjrzałeś się dokładnie.")+'</p>'
+         + '<p class="rzecz-o">Sekwencja: '+kroki+'</p>'
+         + '<p class="rzecz-o">Zadaje obrażenia '+(NAZWY_OBRAZEN[typObrazenWroga(id)]||"cięte")+'.</p>'
          + '<p>'+(b.widziane >= wszystkie && b.final
              ? (w.styl||"")
              : "Widziałeś dopiero początek jego sposobu walki. Wróć tu, gdy poznasz resztę.")+'</p>'
@@ -3540,8 +3562,81 @@ function widokBestii(){
     }
     return t + '</span></div>';
   }).join("") + '</div>';
+}
+
+var WIEDZA = [
+  {id:"ziemie", t:"Ziemie Niczyje", grupa:"Świat",
+   w:function(){ return true; },
+   o:"Pas ziemi między Ismaalem a Nowożytnymi. Nikt tu nie rządzi i każdy się wprasza. Wsie płacą obu stronom i chowają się w piwnicach, gdy któraś przejeżdża."},
+  {id:"popielnica", t:"Popielnica", grupa:"Świat",
+   w:function(){ return !!S.odwiedzone.osada; },
+   o:"Dwanaście chałup, kuźnia i studnia, o którą biją się obie strony. Bez straży i bez sołtysa."},
+  {id:"kruczy", t:"Kruczy Dół", grupa:"Świat",
+   w:function(){ return !!S.odwiedzone.karczma || !!S.odwiedzone.bodzieta; },
+   o:"Obóz wciśnięty w zagłębienie, żeby dymu nie było widać z drogi. Nie pyta się tu, skąd ktoś przyszedł."},
+  {id:"sk", t:"Królestwo Ismaala", grupa:"Frakcje",
+   w:function(){ return true; },
+   o:"Mury starsze niż rachuba lat. Urodzenie decyduje o całym życiu. Uważają Ziemie Niczyje za swoje, ale nikogo tu nie trzymają."},
+  {id:"nw", t:"Nowożytni", grupa:"Frakcje",
+   w:function(){ return true; },
+   o:"Kominy, rejestry i umowy. Twierdzą, że czego nie ma w rejestrze, tego nie ma w ogóle."},
+  {id:"od", t:"Odeszli", grupa:"Frakcje",
+   w:function(){ return (S.rep.od||0) !== 0 || !!S.poznani.lgota; },
+   o:"Odeszli od obu stron i założyli własne siedziby między graniami. Handlują tym, czego obie strony zakazały."},
+  {id:"pl", t:"Prastary Lud", grupa:"Frakcje",
+   w:function(){ return (S.rep.pl||0) !== 0 || !!S.odwiedzone.przeprawa_teren; },
+   o:"Puszcza za rzeką, granica zamknięta kratą. Przepuszczają tylko tych, którzy coś dla nich zrobili."},
+  {id:"wojna", t:"O co jest ta wojna", grupa:"Świat",
+   w:function(){ return !!S.odwiedzone.weteran_wojna; },
+   o:"O studnię, jak mówi Domarat. Jedni chcą pilnować tego, co postawiono, drudzy postawić szybciej i lepiej. Obie strony palą tę samą wieś."},
+  {id:"kult", t:"Kult przodków", grupa:"Świat",
+   w:function(){ return stanZadania("woda") !== "brak"; },
+   o:"Trzeciego dnia po pogrzebie obmywa się próg wodą ze studni i kładzie gorzkie ziele. Nowożytni nie wpisali tego do żadnego rejestru."},
+  {id:"przemyt", t:"Nocne kursy", grupa:"Świat",
+   w:function(){ return !!S.poznane.lgota_woz || stanZadania("sol_lgoty") !== "brak"; },
+   o:"Tędy jeździ nocą wóz z solą. Sól na Ziemiach Niczyich jest cenniejsza niż na obu dworach razem."}
+];
+
+function czescSwiat(){
+  var znane = WIEDZA.filter(function(x){ try { return x.w(); } catch(e){ return false; } });
+  if(!znane.length) return '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nic jeszcze nie wiesz.</span></div></div>';
+  var h = "";
+  ["Świat","Frakcje"].forEach(function(gr){
+    var lista = znane.filter(function(x){ return x.grupa === gr; });
+    if(!lista.length) return;
+    h += '<div class="kat">'+gr+'</div><div class="rzeczy rama">' + lista.map(function(x){
+      return '<div class="rzecz"><span>'+x.t+'<div class="rzecz-o">'+x.o+'</div></span></div>';
+    }).join("") + '</div>';
+  });
   return h;
 }
+
+var LUDZIE = [
+  {id:"weteran", n:"Domarat", gdzie:"Popielnica", rola:"nauczyciel", o:"Uczy siły, zręczności, wytrzymałości, supersciosów oraz życia w puszczy: zielarstwa, oprawiania i tropienia."},
+  {id:"lgota", n:"Lgota", gdzie:"Kruczy Dół, karczma", rola:"nauczyciel", o:"Uczy górnictwa i wędkarstwa. Trzeba go najpierw poznać - i nie żartować z kaptura."},
+  {id:"iwo", n:"Iwo z Kuźnicy", gdzie:"Kruczy Dół", rola:"nauczyciel", o:"Uczy targowania się. Kupuje i sprzedaje wszystko, czego nie pozwala rejestr."},
+  {id:"ozog", n:"Brat Ożóg", gdzie:"Stary Cmentarz", rola:"nauczyciel", o:"Uczy many, iskry i run. Prastarych run nie uczy nikt."},
+  {id:"kowal", n:"Hordak", gdzie:"Popielnica", rola:"kupiec", o:"Kowal. Broń, pancerze, skupuje ołów i surowce."},
+  {id:"bodzieta", n:"Bodzięta", gdzie:"Kruczy Dół, karczma", rola:"kupiec", o:"Karczmarz. Jedzenie, picie i plotki, jeśli nie pytasz za dużo."},
+  {id:"wanda", n:"Wanda", gdzie:"Kruczy Dół", rola:"kupiec", o:"Znachorka. Mikstury i zioła, skupuje krwawnik."}
+];
+
+function czescLudzie(){
+  var h = "";
+  [["nauczyciel","Nauczyciele"],["kupiec","Kupcy"]].forEach(function(par){
+    var lista = LUDZIE.filter(function(x){ return x.rola === par[0] && poznany(x.id); });
+    h += '<div class="kat">'+par[1]+'</div><div class="rzeczy rama">';
+    if(!lista.length) h += '<div class="rzecz"><span class="rzecz-o">Nikogo jeszcze nie poznałeś.</span></div>';
+    else h += lista.map(function(x){
+      return '<div class="rzecz"><span>'+x.n+'<div class="rzecz-o">'+x.gdzie+'</div>'
+        + '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+x.o+'</div></span></div>';
+    }).join("");
+    h += '</div>';
+  });
+  return h;
+}
+
+function widokBestii(){ return widokDziennika(); }
 
 function ekranBestiariusza(){
   var klucze = Object.keys(S.bestiariusz);
