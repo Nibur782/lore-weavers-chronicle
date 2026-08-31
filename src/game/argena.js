@@ -5468,6 +5468,103 @@ function rozszerzSceny3(){
   for(var k in N) if(!SCENY[k]) SCENY[k] = N[k];
 }
 
+/* ================= WSTĄPIENIE DO FRAKCJI I KONIEC ROZDZIAŁU ================= */
+
+var FRAKCJE_INFO = {
+  sk:{n:"Królestwo Ismaala", npc:"Kasztelanka Dobrosława", zad:["sk_1","sk_2","sk_3"],
+      tytul:"Pasowany na pachołka strażnicy",
+      slowa:"Ismaal nie pyta, kim byłeś. Ismaal pyta, gdzie staniesz, kiedy zadmą w rogi."},
+  nw:{n:"Nowożytni", npc:"Rachmistrz Sędziwoj", zad:["nw_1","nw_2","nw_3"],
+      tytul:"Wpisany do ksiąg kontoru",
+      slowa:"Nie przysięgasz. Podpisujesz. To pewniejsze, bo podpis zostaje po tobie."},
+  od:{n:"Odeszli", npc:"Sędzimir Cichy", zad:["od_1","od_2","od_3"],
+      tytul:"Przyjęty do stołu Odeszłych",
+      slowa:"Nie ma przyjęcia i nie ma obrzędu. Po prostu od dziś nikt cię tu nie pyta, po co przyszedłeś."},
+  pl:{n:"Prastary Lud", npc:"Wieszczka Jarogniewa", zad:["pl_1","pl_2","pl_3"],
+      tytul:"Przepuszczony przez kratę",
+      slowa:"Puszcza nie przyjmuje ludzi. Puszcza przestaje ich zauważać, a to u nas najwyższy zaszczyt."}
+};
+
+function gotowyDoFrakcji(f){
+  uzupelnijStan();
+  if(S.frakcja) return false;
+  var info = FRAKCJE_INFO[f];
+  for(var i=0;i<info.zad.length;i++) if(stanZadania(info.zad[i]) !== "oddane") return false;
+  return true;
+}
+
+function brakiDoFrakcji(f){
+  var info = FRAKCJE_INFO[f], b = [];
+  if(S.poziom < 15) b.push("musisz osiągnąć 15 poziom (masz " + S.poziom + ")");
+  if((S.rep[f]||0) < 8) b.push("potrzebujesz mocniejszej reputacji");
+  return b;
+}
+
+function scenaWstapienia(f, wraca){
+  var info = FRAKCJE_INFO[f];
+  return {
+    portret:"weteran", kto:info.npc,
+    tekst:function(){
+      var b = brakiDoFrakcji(f);
+      if(b.length){
+        return "<span class='mowa'>„Chęci to nie to samo co gotowość.<br><br>Wróć, kiedy " + b.join(" i ") + ".”</span>";
+      }
+      return "<span class='mowa'>„" + info.slowa + "”</span><br><br>"
+        + "Robisz krok, którego nie da się cofnąć. Od dziś jedni przestaną z tobą rozmawiać, a inni zaczną mówić ci rzeczy, których dotąd nie mówili nikomu obcemu.";
+    },
+    opcje:[
+      {l:"Przystępuję do "+info.n, warunek:function(){ return !brakiDoFrakcji(f).length; },
+       ef:function(){ wstapDoFrakcji(f); }, idz:"koniec_rozdzialu"},
+      {l:"Jeszcze nie teraz.", idz:wraca}
+    ]
+  };
+}
+
+function wstapDoFrakcji(f){
+  uzupelnijStan();
+  S.frakcja = f;
+  S.rep[f] = (S.rep[f]||0) + 6;
+  for(var k in FRAKCJE_INFO) if(k !== f) S.rep[k] = (S.rep[k]||0) - 2;
+  S.awans = dodajExp(600);
+  S.poznane["frakcja_"+f] = true;
+  S.rozdzial = 2;
+}
+
+SCENY.koniec_rozdzialu = {
+  tekst:function(){
+    var info = FRAKCJE_INFO[S.frakcja] || {n:"nikogo", tytul:""};
+    return "<p class='tekst'>" + info.tytul + ".</p>"
+      + "Wracasz tą samą drogą, którą przyszedłeś na Ziemie Niczyje, i pierwszy raz nikt na trakcie nie pyta, do kogo należysz - widać to po tym, jak idziesz.<br><br>"
+      + "Wojna nie skończyła się przez ciebie ani nie zaczęła. Ale kiedy przyjdzie następna zima, będziesz stał po jednej stronie i będziesz wiedział dlaczego.<br><br>"
+      + "<em>Koniec rozdziału pierwszego. " + dataGry() + ".</em><br>"
+      + "<em>Poziom " + S.poziom + " &middot; " + info.n + "</em>";
+  },
+  opcje:[
+    {l:"Graj dalej", idz:"__lok_kruczy"},
+    {l:"Zapisz grę", zapis:true}
+  ]
+};
+
+/* ---------- URUCHOMIENIE ROZSZERZEŃ ---------- */
+
+function rozszerzGre(){
+  uzupelnijStan();
+  rozszerzPrzedmioty();
+  rozszerzWrogow();
+  rozszerzNauke();
+  rozszerzLokacje();
+  rozszerzTereny();
+  rozszerzZadania();
+  rozszerzSceny();
+  rozszerzSceny2();
+  rozszerzSceny3();
+
+  SCENY.wstap_sk = scenaWstapienia("sk", "dobroslawa");
+  SCENY.wstap_nw = scenaWstapienia("nw", "sedziwoj");
+  SCENY.wstap_od = scenaWstapienia("od", "sedzimir");
+  SCENY.wstap_pl = scenaWstapienia("pl", "jarogniewa");
+}
+
 /* ---------- ROZDZIAŁ PIERWSZY: ROZSZERZENIE ---------- */
 rozszerzGre();
 
