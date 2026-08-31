@@ -6694,6 +6694,402 @@ function sciezkiKarier(){
 sciezkiKarier();
 
 
+
+/* ================= ROZDZIAŁ I: ZIEMIE NOWOŻYTNYCH ================= */
+
+function ocenaFrakcyjna(w){
+  var f = S.frakcja || "brak";
+  return w[f] || w.brak || "";
+}
+function repNW(){ return S.rep.nw || 0; }
+
+function rozszerzNowozytnych(){
+
+  /* --- przedmioty --- */
+  var P = {
+    smola_okretowa:{n:"Smoła okrętowa", kat:"surowiec", typ:"towar", cena:18,
+      o:"Czarna, ciągnąca się jak żywica. Bez niej żadna łódź nie wraca dwa razy."},
+    sledz_solony:{n:"Śledź solony", kat:"zywnosc", typ:"jadalne", leczy:14, cena:9,
+      o:"Twardy jak rzemień, ale po nim człowiek idzie dalej niż po chlebie."},
+    ruda_kuznicka:{n:"Ruda kuźnicka", kat:"surowiec", typ:"towar", cena:26,
+      o:"Wypłukiwana z rzeki pod kołami młynów. Czystsza od darniowej i dwa razy droższa."},
+    kord_ostrowski:{n:"Kord ostrowski", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[11,17], cena:260,
+      o:"Prosta, wąska klinga z podpisem płatnerza wybitym u nasady. W Nowym Ostrowie płaci się nie za ostrze, tylko za podpis."},
+    kusza_latarnicza:{n:"Kusza latarnicza", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[13,19], cena:340,
+      o:"Krótka, żeby dało się z niej strzelać z pokładu. Łoże wysmarowane smołą przeciw wodzie."},
+    sygnet_gieldowy:{n:"Sygnet giełdowy", kat:"bizuteria", typ:"wyposazenie", slot:"palec", bonus:{intel:2}, cena:300,
+      o:"Mosiądz udający złoto. Kto go nosi, temu w Ostrowie liczą ceny inaczej - lepiej albo gorzej, zależnie od tego, kto liczy."},
+    naszyjnik_latarni:{n:"Naszyjnik latarnika", kat:"bizuteria", typ:"wyposazenie", slot:"szyja", bonus:{odp_ogien:8}, cena:280,
+      o:"Kółko z żelaza obtopione szkłem z rozbitej latarni. Ciepłe nawet w mróz."},
+    kaftan_syndyka:{n:"Kaftan syndycki", kat:"pancerz", typ:"wyposazenie", slot:"pancerz",
+      bonus:{odp_klute:6, odp_ciete:6}, cena:320,
+      o:"Sukno podbite warstwami klejonego płótna. Nowożytni odkryli, że dwadzieścia warstw lnu trzyma nóż lepiej niż blacha."},
+    ksiega_wagowa:{n:"Księga wag i miar", kat:"pismo", typ:"ksiega", cena:120, exp:90, bonusIntel:1,
+      o:"Spis miar używanych po obu stronach granicy - i tego, ile na każdej z nich można ukraść."}
+  };
+  for(var pk in P) if(!PRZEDMIOTY[pk]) PRZEDMIOTY[pk] = P[pk];
+
+  /* --- wrogowie --- */
+  var W = {
+    portowiec:{n:"Portowy zbir", hp:96, dmg:[11,16], exp:220, zloto:60, lup:{smola_okretowa:1},
+      sekw:["s","g","d"], finisz:{dmg:[20,28], o:"uderzenie hakiem bosaka"}, blokSzansa:15,
+      wyglad:"Ręce spalone od lin, w pasie zatknięty hak. Trzeźwy, co gorsza.",
+      styl:"Tnie przez środek, potem wysoko, potem podcina. Hakiem sięga dopiero, kiedy uzna, że stoisz za pewnie."},
+    kanalarz:{n:"Kanalarz z Ostrowa", hp:84, dmg:[10,15], exp:200, zloto:75,
+      sekw:["d","d","g"], finisz:{dmg:[18,26], o:"pchnięcie szydłem pod żebra"}, blokSzansa:10,
+      wyglad:"Blady, w za dużym płaszczu, cuchnie kanałem, w którym mieszka od lat.",
+      styl:"Dwa razy nisko, przy nogach, żeby ci opadły ręce. Potem góra i szydło."},
+    wilczur_stoczniowy:{n:"Wilczur stoczniowy", hp:78, dmg:[12,17], exp:190, zloto:0, lup:{skora:1}, lupWymaga:"oprawianie",
+      sekw:["d","g"], finisz:{dmg:[19,25], o:"szarpnięcie za ramię"}, blokSzansa:0,
+      wyglad:"Trzymany na łańcuchu przy pochylni, dopóki ktoś tego łańcucha nie odpiął.",
+      styl:"Nisko i od razu wysoko, bez przerwy między jednym a drugim."},
+    buntownik_kuznicki:{n:"Buntownik z Kuźnic", hp:110, dmg:[13,18], exp:280, zloto:90, lup:{ruda_kuznicka:1},
+      sekw:["g","s","s"], finisz:{dmg:[24,32], o:"cios młotem kuźniczym"}, blokSzansa:20,
+      wyglad:"Fartuch przepalony w kilkunastu miejscach, młot trzyma jak człowiek, który nim pracuje, nie walczy.",
+      styl:"Otwiera wysoko, potem dwa razy przez środek. Młot idzie dopiero na końcu i wtedy nie ma z czego się cofać."}
+  };
+  for(var wk in W) if(!WROGOWIE[wk]) WROGOWIE[wk] = W[wk];
+  if(typeof TYPY_WROGOW === "object"){
+    TYPY_WROGOW.portowiec = "obuchowe"; TYPY_WROGOW.kanalarz = "klute";
+    TYPY_WROGOW.wilczur_stoczniowy = "ciete"; TYPY_WROGOW.buntownik_kuznicki = "obuchowe";
+  }
+
+  /* --- lokacje --- */
+  var L = {
+  trakt_wagowy:{
+    n:"Trakt Wagowy", region:"droga do ziem Nowożytnych",
+    opis:function(){
+      return "Jedyna droga w tych stronach, którą ktoś naprawdę utrzymuje: tłuczeń, rowy po bokach, kamienie milowe z wybitą liczbą mil i ceną przewozu.<br><br>"
+        + (jestNoc() ? "Nocą stoją tu wozy zaprzężone, bo woźnice wolą spać przy koniach niż w karczmie."
+                     : "Co pół godziny mija cię wóz. Nikt nie pyta, dokąd idziesz - pytają, czy masz co sprzedać.");
+    },
+    tereny:[{n:"Zejdź w rowy przy trakcie", teren:"trakt_wagowy_teren"}],
+    drogi:[
+      {n:"Do Nowego Ostrowa", lok:"nowy_ostrow"},
+      {n:"Do Kobylnik", lok:"kobylniki"},
+      {n:"Z powrotem do Wietrznicy", lok:"wietrznica"}
+    ]
+  },
+
+  nowy_ostrow:{
+    n:"Nowy Ostrów", region:"stolica Nowożytnych",
+    opis:function(){
+      return "Miasto na wyspie w rozwidleniu rzeki, spięte trzema mostami. Nie ma murów - Nowożytni twierdzą, że mury to koszt, a woda jest darmowa.<br><br>"
+        + "Środek zajmuje Giełda: kryta hala z jednym stołem długim na czterdzieści kroków, przy którym siedzą ludzie decydujący, ile w tym roku warta jest sól, żelazo i ludzkie życie.<br><br>"
+        + (jestNoc() ? "Po zmroku hala świeci od lamp, bo rachunki zamyka się nocą, kiedy nikt nie hałasuje."
+                     : "Na mostach tłok, na wodzie łodzie, a nad wszystkim krzyk chłopców roznoszących ceny z hali.");
+    },
+    postacie:[
+      {n:"Syndyk Bożydar", id:"bozydar", nieznany:"Człowiek przy końcu długiego stołu", rola:"syndyk giełdy", scena:"bozydar", portret:"urzednik"},
+      {n:"Wagmistrzyni Nawoja", id:"nawoja", nieznany:"Kobieta ważąca sztaby", rola:"wagmistrzyni", scena:"nawoja", portret:"kobieta"},
+      {n:"Mistrz Żegota", id:"zegota", nieznany:"Człowiek z osmalonymi rękawami", rola:"mag ognia", scena:"zegota", portret:"urzednik"},
+      {n:"Ciborek", id:"ciborek", nieznany:"Ktoś, kto stoi w cieniu arkady", rola:"zwiadowca", scena:"ciborek", portret:"weteran",
+       warunek:function(){ return jestNoc() || !!S.poznani.ciborek; }}
+    ],
+    miejsca:[
+      {n:"Zajazd Pod Trzema Mostami - nocleg", scena:"zajazd_ostrow"},
+      {n:"Kram giełdowy - handel", scena:"kram_ostrow"}
+    ],
+    tereny:[{n:"Zejdź pod mosty i w zaułki", teren:"ostrow_teren"}],
+    drogi:[
+      {n:"Traktem Wagowym na południe", lok:"trakt_wagowy"},
+      {n:"Do Miedzianej Wagi", lok:"miedziana_waga"},
+      {n:"Drogą Latarniczą do portu", lok:"droga_latarnicza"},
+      {n:"Do Kuźnic Wodnych", lok:"kuznice_wodne"}
+    ]
+  },
+
+  miedziana_waga:{
+    n:"Miedziana Waga", region:"miasto menniczne Nowożytnych",
+    opis:function(){
+      return "Miasto jednego rzemiosła: tu bije się monetę. Ulice układają się w kratę, każda nosi nazwę nominału, a nad bramą mennicy wisi waga wielkości wozu.<br><br>"
+        + (jestNoc() ? "Nocą mennica pracuje dalej, a stukot stempli słychać w każdej izbie w mieście."
+                     : "Straż mennicza stoi na każdym rogu i patrzy ludziom na ręce, nie w twarz.");
+    },
+    postacie:[
+      {n:"Cechmistrz Dobiegniew", id:"dobiegniew", nieznany:"Człowiek z lupą przy oku", rola:"cechmistrz mennicy", scena:"dobiegniew", portret:"kowal"},
+      {n:"Pisarka Wszebora", id:"wszebora", nieznany:"Kobieta z trzema kałamarzami", rola:"pisarka cechu", scena:"wszebora", portret:"kobieta"}
+    ],
+    miejsca:[
+      {n:"Gospoda Pod Stemplem - nocleg", scena:"gospoda_waga"},
+      {n:"Kram cechowy - handel", scena:"kram_waga"}
+    ],
+    tereny:[{n:"Obejdź zaplecze mennicy", teren:"waga_teren"}],
+    drogi:[
+      {n:"Do Nowego Ostrowa", lok:"nowy_ostrow"},
+      {n:"Do Smolarzy", lok:"smolarze"}
+    ]
+  },
+
+  droga_latarnicza:{
+    n:"Droga Latarnicza", region:"grobla do portu",
+    opis:"Grobla usypana z kamienia i muszli, po obu stronach płycizna. Co sto kroków stoi słup z koszem na ogień - stąd nazwa i stąd pewność, że nocą też się tędy przejdzie.",
+    tereny:[{n:"Zejdź na płyciznę", teren:"latarnicza_teren"}],
+    drogi:[
+      {n:"Do Latarnicy", lok:"latarnica"},
+      {n:"Z powrotem do Nowego Ostrowa", lok:"nowy_ostrow"}
+    ]
+  },
+
+  latarnica:{
+    n:"Latarnica", region:"port Nowożytnych",
+    opis:function(){
+      return "Port zbudowany wokół jednej rzeczy: kamiennej latarni na cyplu, w której ogień pali się od stu lat i której nikomu nie wolno wygasić.<br><br>"
+        + "Pochylnie, stocznia, magazyny soli i cała ulica szynków, których nazwy zmieniają się częściej niż właściciele.<br><br>"
+        + (jestNoc() ? "Nocą latarnia rzuca światło aż na wodę Ziem Niczyich, a w porcie robi się interesy, których rano nikt nie pamięta."
+                     : "Ładują i rozładowują jednocześnie, wszyscy krzyczą, nikt nikomu nie ustępuje.");
+    },
+    postacie:[
+      {n:"Kapitan portu Trojan", id:"trojan", nieznany:"Człowiek z lunetą na sznurku", rola:"kapitan portu", scena:"trojan", portret:"weteran"},
+      {n:"Latarniczka Świętosława", id:"swietoslawa", nieznany:"Kobieta niosąca dzban oleju", rola:"latarniczka", scena:"swietoslawa", portret:"kobieta"},
+      {n:"Szkutnik Wit", id:"wit", nieznany:"Człowiek strugający wręgę", rola:"szkutnik", scena:"wit", portret:"kowal"}
+    ],
+    miejsca:[
+      {n:"Szynk Pod Kotwicą - nocleg", scena:"szynk_latarnica"},
+      {n:"Skład portowy - handel", scena:"sklad_latarnica"}
+    ],
+    tereny:[{n:"Wejdź między pochylnie", teren:"latarnica_teren"}],
+    drogi:[
+      {n:"Groblą z powrotem", lok:"droga_latarnicza"},
+      {n:"Ścieżką rybacką do Grobli", lok:"grobla_nw"}
+    ]
+  },
+
+  kuznice_wodne:{
+    n:"Kuźnice Wodne", region:"miasto hutnicze Nowożytnych",
+    opis:function(){
+      return "Osiem kół wodnych na jednej rzece, każde napędza inny młot. Miasto stoi na palach nad wodą, a ludzie mówią tu głośniej niż gdziekolwiek, bo inaczej się nie słyszą.<br><br>"
+        + (jestNoc() ? "Nocą wygaszają dwa piece z ośmiu i wtedy dopiero słychać rzekę."
+                     : "Para, iskry i zapach wypalonej rudy. Nad dachami wisi rudy dym, który nie schodzi nawet przy wietrze.");
+    },
+    postacie:[
+      {n:"Hutmistrz Ninogniew", id:"ninogniew", nieznany:"Człowiek w przepalonym fartuchu", rola:"hutmistrz", scena:"ninogniew", portret:"kowal"},
+      {n:"Zbrojmistrz Domasław", id:"domaslaw", nieznany:"Człowiek próbujący ostrza paznokciem", rola:"zbrojmistrz", scena:"domaslaw", portret:"weteran"}
+    ],
+    miejsca:[
+      {n:"Izba czeladna - nocleg", scena:"izba_kuznice"},
+      {n:"Zbrojownia - handel", scena:"zbrojownia_kuznice"}
+    ],
+    tereny:[{n:"Wejdź na pomosty nad kołami", teren:"kuznice_teren"}],
+    drogi:[
+      {n:"Do Nowego Ostrowa", lok:"nowy_ostrow"},
+      {n:"Do Smolarzy", lok:"smolarze"}
+    ]
+  },
+
+  kobylniki:{
+    n:"Kobylniki", region:"wieś przy trakcie",
+    opis:"Osiemnaście chałup, stajnia zajezdna i waga dla wozów. Wieś żyje z tego, że wozy muszą gdzieś zmienić konie.",
+    postacie:[
+      {n:"Sołtys Miłosz", id:"milosz", nieznany:"Człowiek z batem za pasem", rola:"sołtys", scena:"milosz", portret:"kowal"}
+    ],
+    miejsca:[{n:"Stajnia zajezdna - odpocznij", scena:"stajnia_kobylniki"}],
+    tereny:[{n:"Obejdź pastwiska", teren:"kobylniki_teren"}],
+    drogi:[{n:"Na Trakt Wagowy", lok:"trakt_wagowy"}]
+  },
+
+  smolarze:{
+    n:"Smolarze", region:"wieś w borze",
+    opis:"Cztery mielerze dymią bez przerwy, a ludzie chodzą tu czarni od sadzy i nie myją się do niedzieli. Smoła stąd idzie do Latarnicy, węgiel do Kuźnic.",
+    postacie:[
+      {n:"Smolarz Radzim", id:"radzim", nieznany:"Człowiek czarny od sadzy", rola:"smolarz", scena:"radzim", portret:"kowal"}
+    ],
+    miejsca:[{n:"Ognisko przy mielerzu - odpocznij", scena:"ognisko_smolarze"}],
+    tereny:[{n:"Wejdź między mielerze", teren:"smolarze_teren"}],
+    drogi:[
+      {n:"Do Miedzianej Wagi", lok:"miedziana_waga"},
+      {n:"Do Kuźnic Wodnych", lok:"kuznice_wodne"}
+    ]
+  },
+
+  grobla_nw:{
+    n:"Grobla", region:"wieś rybacka Nowożytnych",
+    opis:"Rząd chałup na usypanym wale, po jednej stronie morze, po drugiej stawy solne. Ludzie tu liczą dni nie tygodniami, tylko przypływami.",
+    postacie:[
+      {n:"Warzelnik Sulisław", id:"sulislaw", nieznany:"Człowiek zgarniający sól z panwi", rola:"warzelnik", scena:"sulislaw", portret:"kowal"}
+    ],
+    miejsca:[{n:"Chałupa warzelników - nocleg", scena:"chalupa_grobla"}],
+    tereny:[{n:"Zejdź na stawy solne", teren:"grobla_teren"}],
+    drogi:[{n:"Ścieżką rybacką do Latarnicy", lok:"latarnica"}]
+  }
+  };
+  for(var lk in L) if(!LOKACJE[lk]) LOKACJE[lk] = L[lk];
+
+  /* wejście z Kontoru na Trakt Wagowy */
+  if(LOKACJE.kontor && LOKACJE.kontor.drogi)
+    LOKACJE.kontor.drogi.unshift({n:"Traktem Wagowym w głąb ziem Nowożytnych", lok:"trakt_wagowy"});
+  if(LOKACJE.wietrznica && LOKACJE.wietrznica.drogi)
+    LOKACJE.wietrznica.drogi.unshift({n:"Traktem Wagowym na północ", lok:"trakt_wagowy",
+      warunek:function(){ return !!S.poznane.trakt_wagowy; }});
+
+  /* --- tereny --- */
+  var T = {
+  trakt_wagowy_teren:{
+    n:"Rowy przy trakcie", wraca:"trakt_wagowy",
+    opis:"Za rowem zaczyna się zarośnięte pole i resztki starego, porzuconego traktu.",
+    punkty:[
+      {id:"tw_ziolo", typ:"zasob", n:"Dziurawiec na miedzy", wymaga:"zielarstwo", zbierz:{dziurawiec:2},
+       wynik:"Rośnie tam, gdzie kosa nie sięga."},
+      {id:"tw_pies", typ:"mob", n:"Coś idzie za tobą rowem", walka:"wilczur_stoczniowy"},
+      {id:"tw_skrzynia", typ:"skrzynia", n:"Kufer wyrzucony z wozu", zloto:70,
+       wynik:"Ktoś go otwierał w pośpiechu i nie doliczył się dna."}
+    ]
+  },
+  ostrow_teren:{
+    n:"Zaułki pod mostami", wraca:"nowy_ostrow",
+    opis:"Pod mostami mieszkają ci, których na Giełdzie policzono jako stratę.",
+    punkty:[
+      {id:"no_kanalarz", typ:"mob", n:"Ktoś wychodzi z kanału", walka:"kanalarz"},
+      {id:"no_skrzynia", typ:"skrzynia", n:"Skrytka pod przyczółkiem", zloto:120, zbierz:{mikstura_mocy:1},
+       wynik:"Kamień wychodzi ze ściany zbyt łatwo, jak na kamień."},
+      {id:"no_ryba", typ:"ryba", n:"Sieć uwiązana do filaru", wymaga:"wedkarstwo", zbierz:{szczupak:2},
+       wynik:"Cudza sieć, cudze ryby, ale nikt nie stoi obok."}
+    ]
+  },
+  waga_teren:{
+    n:"Zaplecze mennicy", wraca:"miedziana_waga",
+    opis:"Podwórze zawalone tyglami i odpadem po odlewach. Straż zagląda tu raz na godzinę.",
+    punkty:[
+      {id:"mw_zlom", typ:"zasob", n:"Odpad po odlewach", zbierz:{ruda_kuznicka:2},
+       wynik:"Wybierasz z żużlu to, co się jeszcze do czegoś nadaje."},
+      {id:"mw_zbir", typ:"mob", n:"Ktoś czekał tu na kogoś innego", walka:"kanalarz"},
+      {id:"mw_skarb", typ:"skrzynia", n:"Puszka pod progiem tygielni", zloto:150,
+       wynik:"Bite grosze, wszystkie z tego roku, wszystkie nieostemplowane."}
+    ]
+  },
+  latarnicza_teren:{
+    n:"Płycizna przy grobli", wraca:"droga_latarnicza",
+    opis:"Woda po kolana, dno z muszli, wszędzie sterczą pale po starej przystani.",
+    punkty:[
+      {id:"dl_ryba", typ:"ryba", n:"Ryba przy palach", wymaga:"wedkarstwo", zbierz:{wegorz:2},
+       wynik:"Węgorze trzymają się starych pali i nie boją się cienia."},
+      {id:"dl_wrak", typ:"skrzynia", n:"Wrak łodzi w mule", zloto:90, zbierz:{smola_okretowa:1},
+       wynik:"Z wraku da się jeszcze zebrać smołę i to, co ktoś schował pod ławą."},
+      {id:"dl_pies", typ:"mob", n:"Coś biegnie po płyciźnie", walka:"wilczur_stoczniowy"}
+    ]
+  },
+  latarnica_teren:{
+    n:"Pochylnie i magazyny", wraca:"latarnica",
+    opis:"Między kadłubami na pochylniach jest ciemno nawet w południe.",
+    punkty:[
+      {id:"lt_zbir", typ:"mob", n:"Trzech stoi, jeden rusza w twoją stronę", walka:"portowiec"},
+      {id:"lt_smola", typ:"zasob", n:"Beczki smoły przy pochylni", zbierz:{smola_okretowa:2},
+       wynik:"Beczki są policzone, ale nie co do jednej."},
+      {id:"lt_sledz", typ:"zasob", n:"Kadź ze śledziem w składzie", zbierz:{sledz_solony:3},
+       wynik:"Bierzesz tyle, ile zmieści się za pazuchę."},
+      {id:"lt_skrzynia", typ:"skrzynia", n:"Skrzynia bez cechy celnej", zloto:140,
+       wynik:"Skrzynia, której nie ma w żadnym rejestrze - i dlatego nikt jej nie będzie szukał."}
+    ]
+  },
+  kuznice_teren:{
+    n:"Pomosty nad kołami", wraca:"kuznice_wodne",
+    opis:"Deski śliskie od wodnego pyłu, pod nimi łopatki kół idą jedno za drugim.",
+    punkty:[
+      {id:"kw_ruda", typ:"ruda", n:"Płuczka z rudą", wymaga:"gornictwo", zbierz:{ruda_kuznicka:3},
+       wynik:"Z płuczki schodzi ruda czysta jak nigdzie indziej w kraju."},
+      {id:"kw_bunt", typ:"mob", n:"Czeladnik z młotem zastępuje ci drogę", walka:"buntownik_kuznicki"},
+      {id:"kw_skrzynia", typ:"skrzynia", n:"Schowek pod kołem trzecim", zloto:160, zbierz:{mikst_zycia:1},
+       wynik:"Woda go nie sięga, bo koło trzecie stoi od zimy."}
+    ]
+  },
+  kobylniki_teren:{
+    n:"Pastwiska za wsią", wraca:"kobylniki",
+    opis:"Trawa po pas, wszędzie ślady kopyt i jeden wykrot, do którego bydło nie podchodzi.",
+    punkty:[
+      {id:"kb_ziolo", typ:"zasob", n:"Krwawnik przy wykrocie", wymaga:"zielarstwo", zbierz:{krwawnik:3},
+       wynik:"Rośnie gęsto tam, gdzie ziemia była ruszana."},
+      {id:"kb_wilk", typ:"mob", n:"Bydło zbiło się w kupę", walka:"wilk"},
+      {id:"kb_skrzynia", typ:"skrzynia", n:"Sakwa zgubiona przy wadze", zloto:55,
+       wynik:"Rzemień przecięty równo. Zgubiona to złe słowo."}
+    ]
+  },
+  smolarze_teren:{
+    n:"Między mielerzami", wraca:"smolarze",
+    opis:"Kopce ziemi dymią z wierzchołków. Grunt jest ciepły przez cały rok.",
+    punkty:[
+      {id:"sm_smola", typ:"zasob", n:"Świeży spust smoły", zbierz:{smola_okretowa:2},
+       wynik:"Gęsta i gorąca, trzeba ją zbierać przez szmatę."},
+      {id:"sm_grzyb", typ:"zasob", n:"Grzyby przy wypaleniu", wymaga:"zielarstwo", zbierz:{arcydziegiel:1},
+       wynik:"Na starym wypaleniu rośnie to, czego nie ma nigdzie indziej."},
+      {id:"sm_mob", typ:"mob", n:"Ktoś obserwuje cię zza kopca", walka:"kanalarz"}
+    ]
+  },
+  grobla_teren:{
+    n:"Stawy solne", wraca:"grobla_nw",
+    opis:"Kwadraty płytkiej wody odgrodzone wałami. Sól wychodzi z niej sama, trzeba tylko czekać.",
+    punkty:[
+      {id:"gr_sol", typ:"zasob", n:"Panwie z odparowaną solą", zbierz:{sol_kamienna:2},
+       wynik:"Zgarniasz sól z brzegu panwi, tak jak robią to warzelnicy."},
+      {id:"gr_ryba", typ:"ryba", n:"Przypływ zostawił rybę w rowie", wymaga:"wedkarstwo", zbierz:{sledz_solony:3},
+       wynik:"Śledzie zostają w rowach po każdym przypływie."},
+      {id:"gr_mob", typ:"mob", n:"Ktoś kradnie sól z panwi", walka:"portowiec"}
+    ]
+  }
+  };
+  for(var tk in T) if(!TERENY[tk]) TERENY[tk] = T[tk];
+
+  /* --- zadania --- */
+  var Z = {
+  nw_waga1:{t:"Wagi Ostrowa: fałszywa miara", od:"Wagmistrzyni Nawoja",
+    pelny:"<span class='mowa'>„Trzy wozy z Kuźnic przyszły lżejsze, niż wyjechały, a wszystkie ważono w Miedzianej Wadze.<br><br>Nie chcę awantury z cechem. Chcę wiedzieć, czy ich odważniki są uczciwe.”</span>",
+    opis:"Ktoś oszukuje na wadze między Kuźnicami a Ostrowem.",
+    cel:"Sprawdź odważniki u cechmistrza Dobiegniewa w Miedzianej Wadze.", nagroda:{exp:200, zloto:60, rep:{nw:2}}},
+  nw_waga2:{t:"Wagi Ostrowa: cudzy stempel", od:"Cechmistrz Dobiegniew",
+    pelny:"<span class='mowa'>„Odważniki są moje i są uczciwe. Ale ktoś bije stemple moim znakiem, a ja go nie bijam.<br><br>Pisarka Wszebora prowadzi rejestr wydanych stempli. Niech ci pokaże, komu wydała ostatni.”</span>",
+    opis:"Ktoś podrabia cechowe stemple mennicy.",
+    cel:"Zajrzyj do rejestru u pisarki Wszebory.", nagroda:{exp:220, zloto:70, rep:{nw:2}}},
+  nw_waga3:{t:"Wagi Ostrowa: smoła i sadza", od:"Pisarka Wszebora",
+    pelny:"Ostatni stempel wydano na wozy jadące do Smolarzy - i nigdy nie wrócił.<br><br><span class='mowa'>„Radzim wie, czyje wozy tam stają. Tylko on nie mówi bez powodu.”</span>",
+    opis:"Ślad stempla prowadzi do Smolarzy.",
+    cel:"Przynieś Radzimowi trzy bochny chleba i wypytaj go o wozy.", nagroda:{exp:240, zloto:80, rep:{nw:2}}},
+  nw_waga4:{t:"Wagi Ostrowa: ludzie z młotami", od:"Smolarz Radzim",
+    pelny:"<span class='mowa'>„Wozy stają u nas nocą, a jadą do Kuźnic. Ludzie przy nich są kuźniccy, tylko nie w robocie.<br><br>Kto tam rządzi po ciemku, wie hutmistrz. Kto nie chce, żeby wiedział - stoi na pomostach.”</span>",
+    opis:"Trzeba przejść przez pomosty Kuźnic i dojść do hutmistrza.",
+    cel:"Rozmów się z hutmistrzem Ninogniewem w Kuźnicach Wodnych.", nagroda:{exp:280, zloto:100, rep:{nw:3}}},
+  nw_waga5:{t:"Wagi Ostrowa: rozliczenie przy stole", od:"Hutmistrz Ninogniew",
+    pelny:"Fałszywy stempel bili czeladnicy, którym cech obciął zapłatę o jedną trzecią. Kradli tyle, ile im zabrano - co do grama.<br><br>Teraz wracasz do Ostrowa i mówisz, co widziałeś. Albo mówisz to inaczej.",
+    opis:"Wiesz już, kto i dlaczego. Zostaje sposób, w jaki to powiesz.",
+    cel:"Wróć do syndyka Bożydara i zamknij sprawę.", nagroda:{exp:420, zloto:250, rep:{nw:6}, przedmiot:"kord_ostrowski"}},
+
+  nw_latarnia:{t:"Ogień, który nie gaśnie", od:"Latarniczka Świętosława",
+    pelny:"<span class='mowa'>„Oleju starczy mi na cztery noce. Piąta noc bez ognia i ktoś wjedzie na mieliznę.<br><br>Przynieś smołę z pochylni albo od smolarzy. Nie pytam, jak ją zdobędziesz.”</span>",
+    opis:"Latarnia w Latarnicy potrzebuje smoły.",
+    cel:"Przynieś Świętosławie cztery beczułki smoły okrętowej.", nagroda:{exp:200, zloto:90, rep:{nw:2}, przedmiot:"naszyjnik_latarni"}},
+  nw_port:{t:"Trzech przy pochylni", od:"Kapitan portu Trojan",
+    pelny:"<span class='mowa'>„Ściągają myto od szkutników, a ja nie mogę posłać straży, bo połowa straży pije z nimi.<br><br>Ty nie jesteś stąd. Ciebie nikt nie rozpozna.”</span>",
+    opis:"Portowi zbiry ściągają myto na pochylniach.",
+    cel:"Rozgoń zbirów przy pochylniach w Latarnicy (2).", nagroda:{exp:300, zloto:140, rep:{nw:2}}},
+  nw_wreg:{t:"Wręga z jednego pnia", od:"Szkutnik Wit",
+    pelny:"<span class='mowa'>„Potrzebuję żelaza, które nie pęknie na mrozie. Kuźnickie się nada, jeśli je dostanę, zanim skończę kadłub.”</span>",
+    opis:"Szkutnik czeka na dobre żelazo.",
+    cel:"Przynieś Witowi pięć brył rudy kuźnickiej.", nagroda:{exp:220, zloto:110, rep:{nw:1}}},
+  nw_sol:{t:"Panwie i przypływ", od:"Warzelnik Sulisław",
+    pelny:"<span class='mowa'>„Ktoś podchodzi nocą i zgarnia sól z panwi. Jednego już goniłem, ale mam pięćdziesiąt lat i krótki oddech.”</span>",
+    opis:"Ktoś kradnie sól ze stawów w Grobli.",
+    cel:"Złap złodzieja soli na stawach solnych.", nagroda:{exp:260, zloto:100, rep:{nw:2}}},
+  nw_konie:{t:"Wozy bez woźnicy", od:"Sołtys Miłosz",
+    pelny:"<span class='mowa'>„Dwa wozy przyszły z pustym kozłem. Konie znały drogę, woźnice nie wrócili.<br><br>W rowach przy trakcie coś siedzi. Zajrzyj tam, jeśli ci życie niemiłe albo miłe złoto.”</span>",
+    opis:"Na Trakcie Wagowym giną woźnice.",
+    cel:"Przeszukaj rowy przy Trakcie Wagowym i skończ z tym, co tam siedzi.", nagroda:{exp:240, zloto:120, rep:{nw:2}}},
+  nw_kanal:{t:"Ci spod mostów", od:"Syndyk Bożydar",
+    pelny:"<span class='mowa'>„Giełda nie ma sumienia, ma rachunek. A rachunek mówi, że kupcy przestają wchodzić na mosty po zmroku.<br><br>Zrób z tym porządek. Nie pytam, jaki.”</span>",
+    opis:"Pod mostami Ostrowa robi się niebezpiecznie.",
+    cel:"Rozpraw się z dwoma kanalarzami pod mostami.", nagroda:{exp:320, zloto:150, rep:{nw:3}}},
+  nw_ksiega:{t:"Miary obu królestw", od:"Pisarka Wszebora",
+    pelny:"<span class='mowa'>„Przepisałam księgę wag i miar dla kogoś, kto po nią nie przyszedł. Zanieś ją wagmistrzyni, a przeczytać możesz po drodze. I tak przeczytasz.”</span>",
+    opis:"Księga wag i miar czeka na odbiorcę.",
+    cel:"Zanieś księgę wag Nawoi do Nowego Ostrowa.", nagroda:{exp:180, zloto:60, rep:{nw:1}}},
+  nw_zbroja:{t:"Próba ostrza", od:"Zbrojmistrz Domasław",
+    pelny:"<span class='mowa'>„Kuję nowy wzór dla straży i muszę wiedzieć, czy trzyma. Nie na słomie - na kimś, kto oddaje.<br><br>Weź kaftan, idź na pomosty i wróć w nim albo nie wracaj wcale.”</span>",
+    opis:"Zbrojmistrz chce sprawdzić nowy kaftan w prawdziwej walce.",
+    cel:"Pokonaj buntownika na pomostach Kuźnic i wróć do Domasława.", nagroda:{exp:340, zloto:80, rep:{nw:2}, przedmiot:"kaftan_syndyka"}}
+  };
+  for(var zk in Z) if(!ZADANIA[zk]) ZADANIA[zk] = Z[zk];
+
+}
+rozszerzNowozytnych();
+
+
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
   PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,
   RECEPTURY:RECEPTURY, ZAKLECIA:ZAKLECIA, PROFESJE:PROFESJE, ekranWytwarzania:ekranWytwarzania,
