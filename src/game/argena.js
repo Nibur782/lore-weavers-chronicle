@@ -6341,11 +6341,11 @@ function rozdzialDrugi(){
 
   SCENY.ostoja_kariera1 = {portret:"weteran", kto:"Legat Ostoja",
     tekst:"Ogląda cię tak, jak ogląda się konia przed kupnem, i nie udaje, że robi co innego.<br><br><span class='mowa'>„Zapamiętam. A skoro już tu jesteś, zrobisz coś, czego żaden z nich nie może zrobić w swoich barwach.”</span>",
-    opcje:[{l:"Mów, o co chodzi.", ef:function(){ oddajZadanie("kariera1"); }, dajZ:"kariera2", idz:"ostoja"}]};
+    opcje:[{l:"Mów, o co chodzi.", ef:function(){ gotoweZadanie("kariera1"); oddajZadanie("kariera1"); }, dajZ:"kariera2", idz:"ostoja"}]};
 
   SCENY.ostoja_kariera2 = {portret:"weteran", kto:"Legat Ostoja",
     tekst:"Bierze pieczęć, przykłada do świecy i patrzy pod światło dłużej, niż trzeba.<br><br><span class='mowa'>„Prawdziwa. Ktoś ją wyniósł stąd, z tej sali. Zanieś ją swoim i powiedz, że proszę o człowieka do stołu - o ciebie.”</span>",
-    opcje:[{l:"Wezmę pieczęć.", ef:function(){ oddajZadanie("kariera2"); }, dajZ:"kariera3", idz:"ostoja"}]};
+    opcje:[{l:"Wezmę pieczęć.", ef:function(){ gotoweZadanie("kariera2"); oddajZadanie("kariera2"); }, dajZ:"kariera3", idz:"ostoja"}]};
 
   SCENY.ostoja_posel1 = {portret:"weteran", kto:"Legat Ostoja",
     tekst:function(){ return ZADANIA.posel1.pelny; },
@@ -6371,7 +6371,7 @@ function rozdzialDrugi(){
   };
   SCENY.swietobor_posel1 = {portret:"urzednik", kto:"Poseł Świętobor",
     tekst:function(){ return ZADANIA.posel2.pelny; },
-    opcje:[{l:"Pomówię z kanclerz.", ef:function(){ oddajZadanie("posel1"); }, dajZ:"posel2", idz:"swietobor"}]};
+    opcje:[{l:"Pomówię z kanclerz.", ef:function(){ gotoweZadanie("posel1"); oddajZadanie("posel1"); }, dajZ:"posel2", idz:"swietobor"}]};
   SCENY.swietobor_zgoda = {portret:"urzednik", kto:"Poseł Świętobor",
     tekst:"Milknie pierwszy raz, odkąd go poznałeś.<br><br><span class='mowa'>„Skoro podpisała, to usiądę. Ale siadam z tobą, nie z nią.”</span>",
     opcje:[{l:"Wystarczy.", idz:"swietobor"}]};
@@ -6393,7 +6393,7 @@ function rozdzialDrugi(){
   };
   SCENY.radomila_posel2 = {portret:"kobieta", kto:"Kanclerz Radomiła",
     tekst:function(){ return ZADANIA.posel3.pelny; },
-    opcje:[{l:"Przywiozę ten list.", ef:function(){ oddajZadanie("posel2"); }, dajZ:"posel3", idz:"radomila"}]};
+    opcje:[{l:"Przywiozę ten list.", ef:function(){ gotoweZadanie("posel2"); oddajZadanie("posel2"); }, dajZ:"posel3", idz:"radomila"}]};
   SCENY.radomila_posel3 = {portret:"kobieta", kto:"Kanclerz Radomiła",
     tekst:"Czyta trzy razy, potem odkłada pióro - i to jest najgorsze, co dziś zrobiła.<br><br><span class='mowa'>„To ręka mojego prokurenta. Do wieczora będzie siedział, a cło zniosę jeszcze dziś, żeby nie mieli o czym mówić.”</span>",
     opcje:[{l:"Zostaje puszcza.", oddajZ:"posel3", wymagaPrzedmiotu:"list_kontorowy",
@@ -6421,7 +6421,7 @@ function rozdzialDrugi(){
             dajZ:"posel5", idz:"wierzchoslawa"}]};
   SCENY.wierzchoslawa_posel5 = {portret:"kobieta", kto:"Szeptucha Wierzchosława",
     tekst:"Słucha trzech słów i zamyka oczy na tyle długo, że myślisz, iż zasnęła.<br><br><span class='mowa'>„Piasek, brama, oni. Znam tę przepowiednię z drugiej strony i wolałabym jej nie znać.<br><br>Siądziemy do stołu. Wszyscy czterej.”</span>",
-    opcje:[{l:"Idę po legata.", ef:function(){ oddajZadanie("posel5"); }, dajZ:"posel6", idz:"wierzchoslawa"}]};
+    opcje:[{l:"Idę po legata.", ef:function(){ gotoweZadanie("posel5"); oddajZadanie("posel5"); }, dajZ:"posel6", idz:"wierzchoslawa"}]};
 
 
   SCENY.ostoja_nauka = {portret:"weteran", kto:"Legat Ostoja", trener:true, uczy:"ostoja",
@@ -6470,7 +6470,7 @@ function rozdzialDrugi(){
         + (info ? "Twoi zapisują to jako twoją zasługę. " + info.n + " nie zapomina takich rzeczy." : "");
     },
     opcje:[{l:"Przemów przy stole", oddajZ:"posel6",
-            ef:function(){
+            ef:function(){ gotoweZadanie("posel6");
               S.rozdzial = 3;
               S.rep.sk += 2; S.rep.nw += 2; S.rep.od += 2; S.rep.pl += 2;
               S.poznane.rozejm = true;
