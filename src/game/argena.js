@@ -5568,6 +5568,9 @@ function rozszerzGre(){
 /* ---------- ROZDZIAŁ PIERWSZY: ROZSZERZENIE ---------- */
 rozszerzGre();
 
+if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
+  PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji};
+
 rysujPasek();
 pokaz("start");
 }
