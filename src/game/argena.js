@@ -6463,15 +6463,14 @@ function rozdzialDrugi(){
 
   SCENY.posel_final = {portret:"weteran", kto:"Stół Rozjemczy",
     tekst:function(){
-      gotoweZadanie("posel6");
       var info = wlasnaFrakcja();
       return "Cztery chorągwie u czterech masztów, cztery krzesła przy stole bez szczytu i ty, stojący pośrodku, bo dla ciebie nie przewidziano krzesła.<br><br>"
         + "Mówisz krótko: piasek, brama, oni. Nikt nie przerywa, choć każdy z nich przerywa zawsze.<br><br>"
         + "<span class='mowa'>„Zawieszenie broni na czas nieokreślony”</span> - mówi Ostoja i to nie brzmi jak zwycięstwo, tylko jak coś, co się robi przed burzą.<br><br>"
         + (info ? "Twoi zapisują to jako twoją zasługę. " + info.n + " nie zapomina takich rzeczy." : "");
     },
-    opcje:[{l:"Przemów przy stole", oddajZ:"posel6",
-            ef:function(){
+    opcje:[{l:"Przemów przy stole",
+            ef:function(){ gotoweZadanie("posel6"); oddajZadanie("posel6");
               S.rozdzial = 3;
               S.rep.sk += 2; S.rep.nw += 2; S.rep.od += 2; S.rep.pl += 2;
               S.poznane.rozejm = true;
