@@ -6463,6 +6463,7 @@ function rozdzialDrugi(){
 
   SCENY.posel_final = {portret:"weteran", kto:"Stół Rozjemczy",
     tekst:function(){
+      gotoweZadanie("posel6");
       var info = wlasnaFrakcja();
       return "Cztery chorągwie u czterech masztów, cztery krzesła przy stole bez szczytu i ty, stojący pośrodku, bo dla ciebie nie przewidziano krzesła.<br><br>"
         + "Mówisz krótko: piasek, brama, oni. Nikt nie przerywa, choć każdy z nich przerywa zawsze.<br><br>"
