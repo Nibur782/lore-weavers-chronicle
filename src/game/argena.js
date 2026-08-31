@@ -5820,6 +5820,235 @@ function rozszerzGre(){
 /* ---------- ROZDZIAŁ PIERWSZY: ROZSZERZENIE ---------- */
 rozszerzGre();
 
+/* ================= PROFESJE, RECEPTURY, MAGIA, HANDEL ================= */
+
+var PROFESJE = [
+  {id:"gornictwo",  n:"Górnictwo",   um:"gornictwo",  o:"Kucie rudy w żyle. Wprawa daje więcej urobku z jednego wyrobiska."},
+  {id:"kowalstwo",  n:"Kowalstwo",   um:"kowalstwo",  o:"Wytop i kucie. Od sztaby do porządnego ostrza."},
+  {id:"alchemia",   n:"Alchemia",    um:"zielarstwo", o:"Warzenie wywarów z tego, co rośnie po miedzach."},
+  {id:"rybolostwo", n:"Rybołówstwo", um:"rybolostwo", o:"Sieć, ość i cierpliwość. Lepsza wprawa - grubsza ryba."},
+  {id:"gotowanie",  n:"Gotowanie",   um:null,         o:"Kocioł nad ogniem. Sycące jadło leczy więcej niż surowe."}
+];
+
+function nazwaProfesji(id){
+  for(var i=0;i<PROFESJE.length;i++) if(PROFESJE[i].id === id) return PROFESJE[i].n;
+  return id;
+}
+function profStan(id){
+  if(!S.prof) S.prof = {};
+  if(!S.prof[id]) S.prof[id] = {p:1, e:0};
+  return S.prof[id];
+}
+function profP(id){ return profStan(id).p; }
+function progProf(poz){ return 60 + (poz - 1) * 55; }
+function dodajProfExp(id, ile){
+  var st = profStan(id), awans = false;
+  st.e += ile;
+  while(st.p < 10 && st.e >= progProf(st.p)){ st.e -= progProf(st.p); st.p++; awans = true; }
+  return awans;
+}
+
+/* ---------- ZAKLĘCIA ---------- */
+var ZAKLECIA = [
+  {id:"iskra",  um:"iskra",  n:"Iskra",           mana:5,  baza:4,  wsp:1.2, typ:"ogien",
+   o:"Pierwsza runa, jakiej uczy Ożóg. Krótkie, gorące uderzenie w pierś."},
+  {id:"sopel",  um:"sopel",  n:"Sopel",           mana:8,  baza:7,  wsp:1.5, typ:"lod", stun:true,
+   o:"Powietrze tężeje i pęka. Trafiony traci rytm i nie odpowiada od razu."},
+  {id:"popiol", um:"popiol", n:"Popiół",          mana:12, baza:12, wsp:1.9, typ:"ogien",
+   o:"Runa z opactwa. Zostawia po sobie zapach spalenizny na cały dzień."},
+  {id:"tarcza", um:"tarcza", n:"Tarcza runiczna", mana:10, baza:0,  wsp:0,   tarcza:8,
+   o:"Osłona z powietrza i znaków. Pochłania obrażenia, zanim dosięgną skóry."}
+];
+function opisZaklecia(z){
+  if(z.tarcza) return "Pochłania " + (z.tarcza + S.intelekt) + " obrażeń (rośnie z intelektem).";
+  return "Obrażenia " + Math.round(z.baza + S.intelekt * z.wsp) + (z.stun ? ", przeciwnik traci turę." : ".");
+}
+function znaneZaklecia(){
+  return ZAKLECIA.filter(function(z){ return !!S.umie[z.um]; });
+}
+function kolejnoscZaklec(){
+  var zn = znaneZaklecia();
+  if(!S.zakleciaKolejnosc) S.zakleciaKolejnosc = [];
+  zn.forEach(function(z){ if(S.zakleciaKolejnosc.indexOf(z.id) < 0) S.zakleciaKolejnosc.push(z.id); });
+  return S.zakleciaKolejnosc.map(function(id){
+    for(var i=0;i<zn.length;i++) if(zn[i].id === id) return zn[i];
+    return null;
+  }).filter(Boolean);
+}
+function zakleciaWWalce(){
+  return kolejnoscZaklec().filter(function(z){ return !S.zakleciaUkryte[z.id]; });
+}
+function przesunZaklecie(id, kier){
+  var l = kolejnoscZaklec().map(function(z){ return z.id; });
+  var i = l.indexOf(id), j = i + kier;
+  if(i < 0 || j < 0 || j >= l.length) return;
+  l[i] = l[j]; l[j] = id;
+  S.zakleciaKolejnosc = l;
+}
+
+/* ---------- RECEPTURY ---------- */
+var RECEPTURY = [
+  {id:"sztaba",        prof:"kowalstwo",  lvl:1, n:"Sztaba żelaza",        daje:"sztaba",        ile:1, sklad:{ruda_darniowa:2}, exp:18},
+  {id:"grot",          prof:"kowalstwo",  lvl:2, n:"Tuzin grotów",         daje:"strzaly",       ile:12, sklad:{sztaba:1}, exp:20},
+  {id:"noz_kuty",      prof:"kowalstwo",  lvl:3, n:"Nóż kuty",             daje:"noz_kuty",      ile:1, sklad:{sztaba:2}, exp:34},
+  {id:"stal",          prof:"kowalstwo",  lvl:5, n:"Stal wietrzna",        daje:"stal_wietrzna", ile:1, sklad:{sztaba:2, ruda_wietrzna:1}, exp:48},
+  {id:"kord_kuty",     prof:"kowalstwo",  lvl:7, n:"Kord z wietrznej stali", daje:"kord_kuty",   ile:1, sklad:{stal_wietrzna:2, skora:2}, exp:80},
+  {id:"wywar_maly",    prof:"alchemia",   lvl:1, n:"Wywar z dziewanny",    daje:"wywar_maly",    ile:1, sklad:{dziewanna:2}, exp:16},
+  {id:"wywar_many",    prof:"alchemia",   lvl:3, n:"Napar runiczny",       daje:"wywar_many",    ile:1, sklad:{arcydziegiel:2, bagno:1}, exp:30},
+  {id:"jad_tojad",     prof:"alchemia",   lvl:4, n:"Jad z tojadu",         daje:"jad_tojad",     ile:1, sklad:{tojad:2}, exp:36},
+  {id:"wywar_duzy",    prof:"alchemia",   lvl:6, n:"Wywar mocny",          daje:"wywar_duzy",    ile:1, sklad:{dziewanna:3, arcydziegiel:2}, exp:60},
+  {id:"ryba_pieczona", prof:"gotowanie",  lvl:1, n:"Ryba pieczona",        daje:"ryba_pieczona", ile:1, sklad:{ryba:1}, exp:14},
+  {id:"polewka",       prof:"gotowanie",  lvl:2, n:"Polewka z kotła",      daje:"polewka",       ile:1, sklad:{ryba:1, chleb:1}, exp:22},
+  {id:"pieczen",       prof:"gotowanie",  lvl:4, n:"Pieczeń myśliwska",    daje:"pieczen",       ile:1, sklad:{mieso:2, dziewanna:1}, exp:40},
+  {id:"uczta",         prof:"gotowanie",  lvl:6, n:"Uczta w kotle",        daje:"uczta",         ile:1, sklad:{mieso:2, ryba:2, chleb:1}, exp:64}
+];
+function skladnikiOpis(r){
+  var t = [];
+  for(var k in r.sklad) t.push((PRZEDMIOTY[k] ? PRZEDMIOTY[k].n : k) + " ×" + r.sklad[k]);
+  return t.join(", ") + " → " + (PRZEDMIOTY[r.daje] ? PRZEDMIOTY[r.daje].n : r.daje) + (r.ile > 1 ? " ×"+r.ile : "");
+}
+function maSkladniki(r){
+  for(var k in r.sklad) if((S.plecak[k] || 0) < r.sklad[k]) return false;
+  return true;
+}
+
+function ekranWytwarzania(profId, wraca){
+  uzupelnijStan();
+  var st = profStan(profId);
+  var lista = RECEPTURY.filter(function(r){ return r.prof === profId; });
+  var h = '<p class="tekst"><em>'+nazwaProfesji(profId)+' - poziom '+st.p+'/10 ('+st.e+'/'+progProf(st.p)+' wprawy).</em><br>'
+    + 'Robota idzie tak, jak umiesz. Czego nie umiesz jeszcze, tego nie tkniesz.</p>';
+  var opcje = [], akcje = [];
+  lista.forEach(function(r){
+    var mozna = st.p >= r.lvl && maSkladniki(r);
+    opcje.push({l:r.n + " — " + skladnikiOpis(r),
+                koszt:(st.p >= r.lvl ? "" : "poziom "+r.lvl),
+                wylacz:!mozna});
+    akcje.push(function(){
+      if(!mozna) return;
+      for(var k in r.sklad) usun(k, r.sklad[k]);
+      dodaj(r.daje, r.ile);
+      mijaCzas(45);
+      var aw = dodajProfExp(profId, r.exp);
+      var expG = Math.round(r.exp / 2);
+      var awG = dodajExp(expG);
+      g.innerHTML = '<p class="tekst">Robota skończona: <em>'+(PRZEDMIOTY[r.daje] ? PRZEDMIOTY[r.daje].n : r.daje)+'</em>'
+        + (r.ile > 1 ? " ×"+r.ile : "") + '.<br><br>Wprawa +'+r.exp+', doświadczenie +'+expG+'.'
+        + (aw ? '<br><em>'+nazwaProfesji(profId)+' - poziom '+profP(profId)+'.</em>' : '')
+        + (awG ? '<br><em>Awans na poziom '+S.poziom+'.</em>' : '') + '</p>'
+        + przyciski([{l:"Rób dalej"},{l:"Odejdź od warsztatu"}]);
+      podepnij([function(){ ekranWytwarzania(profId, wraca); }, function(){ pokaz(wraca); }]);
+    });
+  });
+  opcje.push({l:"Odejdź od warsztatu"});
+  akcje.push(function(){ pokaz(wraca); });
+  g.innerHTML = h + przyciski(opcje);
+  podepnij(akcje);
+}
+
+/* ---------- ZAPASY W SKLEPACH ---------- */
+function limitTowaru(k){
+  var p = PRZEDMIOTY[k];
+  if(!p) return 0;
+  var kat = katPrzedmiotu(p);
+  if(kat === "bron" || kat === "pancerz" || kat === "bizuteria") return 1;
+  if(kat === "amunicja") return 24 + 12 * (S.rozdzial - 1);
+  if(kat === "pismo") return 1;
+  if(kat === "mikstura" || kat === "roslina") return 3;
+  if(kat === "zywnosc") return 5;
+  return 4;
+}
+function zapasSklepu(sklepId, k){
+  if(!S.sklepy) S.sklepy = {};
+  if(!S.sklepy[sklepId]) S.sklepy[sklepId] = {};
+  var m = S.sklepy[sklepId];
+  if(m[k] === undefined) m[k] = limitTowaru(k);
+  return m[k];
+}
+function kupionoWSklepie(sklepId, k){
+  var ile = zapasSklepu(sklepId, k);
+  S.sklepy[sklepId][k] = Math.max(0, ile - 1);
+}
+/* oferta rośnie z rozdziałem - lepszy towar pojawia się później */
+var TOWARY_ROZDZIALU = {
+  2:{kowal:["kord_kuty","stal_wietrzna"], zbrojmistrz:["kolczuga"], zielarka:["wywar_duzy"]},
+  3:{kowal:["dwurecz"], zbrojmistrz:["bryg"], zielarka:["wywar_many"]}
+};
+function dodatkoweTowary(sklepId){
+  var out = [];
+  for(var r = 2; r <= S.rozdzial; r++){
+    var tab = TOWARY_ROZDZIALU[r];
+    if(!tab) continue;
+    for(var grupa in tab){
+      if(sklepId && sklepId.indexOf(grupa) >= 0) out = out.concat(tab[grupa]);
+    }
+  }
+  return out.filter(function(k){ return !!PRZEDMIOTY[k]; });
+}
+
+/* ---------- DOPRACOWANIE: przedmioty rzemieślnicze i warsztaty ---------- */
+function dopracujGre(){
+  var nowe = {
+    sztaba:{n:"Sztaba żelaza", kat:"surowiec", typ:"towar", cena:45,
+      o:"Wytopiona z rudy darniowej, jeszcze ciepła od kuźni.",
+      dz:"Materiał na broń i groty. Kowale kupują ją zawsze."},
+    stal_wietrzna:{n:"Stal wietrzna", kat:"surowiec", typ:"towar", cena:140,
+      o:"Ciemna, z jasnym rysunkiem na przełomie. Wietrznica z tego żyje.",
+      dz:"Najlepszy materiał, jaki umie dać ten kraj."},
+    noz_kuty:{n:"Nóż kuty własnoręcznie", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[7,11], cena:70, wym:{sila:12},
+      o:"Rękojeść owinięta rzemieniem, bo na okładziny zabrakło.",
+      dz:"Obrażenia cięte 7-11."},
+    kord_kuty:{n:"Kord z wietrznej stali", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[15,21], cena:340, wym:{sila:24},
+      o:"Klinga trzyma ostrze przez cały dzień rąbania.",
+      dz:"Obrażenia cięte 15-21."},
+    jad_tojad:{n:"Jad z tojadu", kat:"napoj", typ:"jadalne", jad:true, cena:60,
+      o:"Gęsty, o barwie starego miodu. Trzymaj z dala od ust.",
+      dz:"Natarte ostrze zatruwa wroga na kilka tur."},
+    wywar_duzy:{n:"Wywar mocny", kat:"napoj", typ:"jadalne", hp:45, cena:90,
+      o:"Warzony długo, gorzki tak, że łzy idą.", dz:"Przywraca 45 życia."},
+    ryba_pieczona:{n:"Ryba pieczona", kat:"zywnosc", typ:"jadalne", hp:14, cena:12,
+      o:"Skóra chrupie, ość wychodzi jednym ruchem.", dz:"Przywraca 14 życia."},
+    polewka:{n:"Polewka z kotła", kat:"zywnosc", typ:"jadalne", hp:24, cena:20,
+      o:"Gorąca, tłusta, z pływającym okiem tłuszczu.", dz:"Przywraca 24 życia."},
+    pieczen:{n:"Pieczeń myśliwska", kat:"zywnosc", typ:"jadalne", hp:38, cena:38,
+      o:"Przypiekana na rożnie, z ziołami wetkniętymi pod skórę.", dz:"Przywraca 38 życia."},
+    uczta:{n:"Uczta w kotle", kat:"zywnosc", typ:"jadalne", hp:60, cena:70,
+      o:"Tyle jedzenia, że wstyd zjeść samemu.", dz:"Przywraca 60 życia."}
+  };
+  for(var k in nowe) if(!PRZEDMIOTY[k]) PRZEDMIOTY[k] = nowe[k];
+
+  /* każdy przedmiot ma opis - żadnych pustych */
+  for(var kk in PRZEDMIOTY){
+    var p = PRZEDMIOTY[kk];
+    if(!p.o) p.o = "Zwyczajna rzecz, jakich pełno na Ziemiach Niczyich.";
+  }
+
+  /* warsztaty u rzemieślników */
+  var warsztaty = [
+    {sceny:["przybyslaw","bolko","hutnik","kowal","zelislaw"], prof:"kowalstwo", l:"Stań przy kowadle (kucie)"},
+    {sceny:["bogna","zbyslawa","znachorka","milocha"], prof:"alchemia", l:"Rozpal palenisko (warzenie)"},
+    {sceny:["bodzieta","ludmila","karczma"], prof:"gotowanie", l:"Weź się za kocioł (gotowanie)"}
+  ];
+  warsztaty.forEach(function(w){
+    w.sceny.forEach(function(id){
+      var sc = SCENY[id];
+      if(!sc || !sc.opcje || sc.__warsztat) return;
+      sc.__warsztat = true;
+      sc.opcje.unshift({l:w.l, warsztat:w.prof});
+    });
+  });
+
+  /* nocleg w karczmie w Popielnicy */
+  if(SCENY.karczma && SCENY.karczma.opcje && !SCENY.karczma.__lozko){
+    SCENY.karczma.__lozko = true;
+    SCENY.karczma.opcje.unshift({l:"Wynajmij izbę na noc", warunek:function(){ return S.zloto >= 4; },
+      odpoczynek:{lozko:true, wraca:"karczma", tekst:"Izba na piętrze pachnie dymem i cudzym snem. Drzwi zamykasz na kołek."}});
+  }
+}
+dopracujGre();
+
+
+
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
   PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji};
 
