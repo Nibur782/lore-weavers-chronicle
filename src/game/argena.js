@@ -477,9 +477,10 @@ function kosztZl(w){
 /* ---------- PLECAK ---------- */
 
 function dodaj(id, ile){ S.plecak[id] = (S.plecak[id] || 0) + (ile || 1); }
-function usun(id){
+function usun(id, ile){
+  ile = ile || 1;
   if(!S.plecak[id]) return;
-  S.plecak[id]--;
+  S.plecak[id] -= ile;
   if(S.plecak[id] <= 0) delete S.plecak[id];
 }
 function ileZListy(lista){
@@ -3991,6 +3992,7 @@ function pokaz(id){
 
       if(o.kradziez){ probaKradziezy(o.kradziez, id); return; }
       if(o.odpoczynek){ odpocznij(o.odpoczynek, id); return; }
+      if(o.warsztat){ ekranWytwarzania(o.warsztat, id); return; }
       if(o.czas) mijaCzas(o.czas);
       if(o.natret) S.cierpliwosc[o.natret] = (S.cierpliwosc[o.natret]||0) + 1;
       if(o.poznaj) poznaj(o.poznaj);
