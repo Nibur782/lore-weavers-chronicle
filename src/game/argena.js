@@ -6528,6 +6528,170 @@ function rozdzialDrugi(){
 }
 rozdzialDrugi();
 
+/* ================= ŚCIEŻKI KARIER WE FRAKCJACH ================= */
+
+var PROG_FRAKCJI = 50;
+
+var SCIEZKI = {
+  pl:[
+    {id:"pl_luk", n:"Droga łuku", rodzaj:"strzelecka",
+     s:[{n:"Goniec leśny", o:"Nosisz wieści borem i uczysz się chodzić bez hałasu.", b:{zrecz:2, pn:2}},
+        {n:"Strażnik Leśny", o:"Łucznik puszczy. Strzelasz spomiędzy drzew i nikt nie wie skąd.", b:{zrecz:3, hpMax:10, pn:3}},
+        {n:"Wielki Łowczy", o:"Mistrz łucznictwa. Puszcza sama ustawia ci cel.", b:{zrecz:5, sila:2, hpMax:15, pn:5}}]},
+    {id:"pl_ostrza", n:"Droga dwóch ostrzy", rodzaj:"biala",
+     s:[{n:"Goniec leśny", o:"Nosisz wieści borem i uczysz się chodzić bez hałasu.", b:{zrecz:2, pn:2}},
+        {n:"Zbrojny Leśny", o:"Broń biała oparta na zręczności, nie na sile ramienia.", b:{zrecz:3, hpMax:12, pn:3}},
+        {n:"Tancerz Śmierci", o:"Mistrz walki dwoma ostrzami. Nie zatrzymujesz się między ciosami.", b:{zrecz:5, sila:2, hpMax:18, pn:5}}]},
+    {id:"pl_druid", n:"Droga natury", rodzaj:"magia",
+     s:[{n:"Nowicjusz natury", o:"Uczysz się słuchać korzenia, zanim się go dotknie.", b:{intelekt:2, manaMax:10, pn:2}},
+        {n:"Druid", o:"Puszcza odpowiada, kiedy pytasz jej właściwym słowem.", b:{intelekt:3, manaMax:20, pn:3}},
+        {n:"Arcydruid", o:"Głos matecznika. Puszcza mówi twoimi ustami.", b:{intelekt:5, manaMax:35, hpMax:10, pn:5}}]}
+  ],
+  sk:[
+    {id:"sk_rycerz", n:"Droga miecza i tarczy", rodzaj:"biala",
+     s:[{n:"Rekrut", o:"Musztra, warty i pierwszy własny ekwipunek strażnicy.", b:{sila:2, hpMax:8, pn:2}},
+        {n:"Strażnik", o:"Stoisz w szeregu i szereg stoi dzięki tobie.", b:{sila:3, hpMax:18, pn:3}},
+        {n:"Rycerz", o:"Miecz i tarcza. Zakuty tak, że mało co cię rusza.", b:{sila:5, hpMax:30, pn:5}}]},
+    {id:"sk_kusza", n:"Droga kuszy", rodzaj:"strzelecka",
+     s:[{n:"Rekrut", o:"Musztra, warty i pierwszy własny ekwipunek strażnicy.", b:{sila:2, hpMax:8, pn:2}},
+        {n:"Kusznik", o:"Bełt przebija to, czego strzała nie tknie.", b:{zrecz:3, sila:1, hpMax:12, pn:3}},
+        {n:"Strzelec", o:"Mistrz kuszy. Z muru zdejmujesz cel, zanim podejdzie.", b:{zrecz:5, sila:2, hpMax:18, pn:5}}]},
+    {id:"sk_ogien", n:"Droga ognia", rodzaj:"magia",
+     s:[{n:"Nowicjusz ognia", o:"Iskra na dłoni i poparzone rękawy.", b:{intelekt:2, manaMax:10, pn:2}},
+        {n:"Mag Ognia", o:"Ogień słucha, dopóki go pilnujesz.", b:{intelekt:3, manaMax:22, pn:3}},
+        {n:"Arcymag Ognia", o:"Palisz to, co wskażesz, i tyle, ile zechcesz.", b:{intelekt:5, manaMax:40, pn:5}}]},
+    {id:"sk_ciemnosc", n:"Droga ciemności", rodzaj:"magia",
+     s:[{n:"Nowicjusz ciemności", o:"Uczysz się patrzeć tam, gdzie królestwo zabrania patrzeć.", b:{intelekt:2, manaMax:12, pn:2}},
+        {n:"Nekromanta", o:"Umarli nie kłamią, tylko trzeba umieć ich pytać.", b:{intelekt:3, manaMax:24, hpMax:8, pn:3}},
+        {n:"Mistrz Ciemności", o:"Cień idzie przed tobą i wraca z tym, po co go wysłałeś.", b:{intelekt:5, manaMax:40, hpMax:12, pn:5}}]}
+  ],
+  nw:[
+    {id:"nw_wojownik", n:"Droga broni dwuręcznej", rodzaj:"biala",
+     s:[{n:"Rekrut", o:"Kontor płaci za musztrę i odlicza ją z żołdu.", b:{sila:2, hpMax:8, pn:2}},
+        {n:"Wojownik", o:"Ciężka stal i szeroki zamach.", b:{sila:4, hpMax:18, pn:3}},
+        {n:"Najwyższy Strażnik", o:"Mistrz broni dwuręcznej. Jeden zamach robi miejsce dla całego oddziału.", b:{sila:6, hpMax:30, pn:5}}]},
+    {id:"nw_szpieg", n:"Droga skrytobójcy", rodzaj:"strzelecka",
+     s:[{n:"Rekrut", o:"Kontor płaci za musztrę i odlicza ją z żołdu.", b:{zrecz:2, pn:2}},
+        {n:"Zwiadowca", o:"Łuk, mapa i umiejętność niebycia tam, gdzie cię szukają.", b:{zrecz:3, hpMax:12, pn:3}},
+        {n:"Szpieg", o:"Łuk i ukryte sztylety. Rejestr nie zna twojego imienia.", b:{zrecz:5, sila:2, hpMax:16, pn:5}}]},
+    {id:"nw_ogien", n:"Droga ognia", rodzaj:"magia",
+     s:[{n:"Nowicjusz ognia", o:"Kontor traktuje magię jak każde inne narzędzie.", b:{intelekt:2, manaMax:10, pn:2}},
+        {n:"Mag Ognia", o:"Ogień na etacie i w rejestrze.", b:{intelekt:3, manaMax:22, pn:3}},
+        {n:"Arcymag Ognia", o:"Kontor liczy twoje zaklęcia jak sprzęt oblężniczy.", b:{intelekt:5, manaMax:40, pn:5}}]}
+  ],
+  od:[
+    {id:"od_najemnik", n:"Droga najemna", rodzaj:"biala",
+     s:[{n:"Świeżak", o:"Nikt cię jeszcze nie zna, więc dostajesz najgorsze roboty.", b:{sila:1, zrecz:1, hpMax:8, pn:2}},
+        {n:"Buntownik", o:"Bijesz się wszystkim, co wpadnie w rękę - i coraz lepiej.", b:{sila:2, zrecz:2, hpMax:16, pn:3}},
+        {n:"Najemnik", o:"U Odeszłych znajdziesz trenerów każdego stylu - białego i strzeleckiego.", b:{sila:4, zrecz:4, hpMax:24, pn:6}}]},
+    {id:"od_woda", n:"Droga wody", rodzaj:"magia",
+     s:[{n:"Nowicjusz wody", o:"Najsłabsza z magii i jedyna, której nikt tu nie zabrania.", b:{intelekt:2, manaMax:10, pn:2}},
+        {n:"Mag Wody", o:"Woda nie pali. Woda po prostu jest wszędzie.", b:{intelekt:3, manaMax:18, hpMax:8, pn:3}},
+        {n:"Arcymag Wody", o:"Nie zabijesz nią szybko, ale przeżyjesz to, czego inni nie przeżyją.", b:{intelekt:4, manaMax:30, hpMax:20, pn:5}}]}
+  ]
+};
+
+var WYM_SCIEZKI = [
+  {poziom:15, rep:50},
+  {poziom:22, rep:65},
+  {poziom:30, rep:85}
+];
+
+function mojaSciezka(){
+  if(!S.frakcja || !S.sciezka) return null;
+  var l = SCIEZKI[S.frakcja] || [];
+  for(var i=0;i<l.length;i++) if(l[i].id === S.sciezka) return l[i];
+  return null;
+}
+function opisSciezki(){
+  var sc = mojaSciezka();
+  if(!sc) return "jeszcze nie obrana";
+  var st = sc.s[Math.max(0, Math.min((S.stopien||1) - 1, sc.s.length - 1))];
+  return st.n + " (" + sc.n + ", stopień " + (S.stopien||1) + "/3)";
+}
+function brakiSciezki(nowyStopien){
+  var w = WYM_SCIEZKI[nowyStopien - 1], b = [];
+  if(S.poziom < w.poziom) b.push(w.poziom + " poziom");
+  if((S.rep[S.frakcja]||0) < w.rep) b.push(w.rep + " reputacji");
+  return b;
+}
+function nadajStopien(sciezkaId){
+  uzupelnijStan();
+  var l = SCIEZKI[S.frakcja] || [], sc = null;
+  for(var i=0;i<l.length;i++) if(l[i].id === sciezkaId) sc = l[i];
+  if(!sc) return;
+  S.sciezka = sciezkaId;
+  S.stopien = Math.min((S.stopien || 0) + 1, 3);
+  var b = sc.s[S.stopien - 1].b || {};
+  if(b.sila) S.sila += b.sila;
+  if(b.zrecz) S.zrecz += b.zrecz;
+  if(b.intelekt) S.intelekt += b.intelekt;
+  if(b.hpMax){ S.hpMax += b.hpMax; S.hp = S.hpMax; }
+  if(b.manaMax){ S.manaMax += b.manaMax; S.mana = S.manaMax; }
+  if(b.pn) S.pn += b.pn;
+  S.poznane["sciezka_"+sciezkaId] = true;
+}
+
+function sciezkiKarier(){
+  uzupelnijStan();
+  var wejscia = {sk:"dobroslawa", nw:"sedziwoj", od:"sedzimir", pl:"jarogniewa"};
+
+  Object.keys(SCIEZKI).forEach(function(f){
+    var wraca = wejscia[f];
+    var idWybor = "sciezka_wybor_" + f;
+    var sc = SCENY[wraca];
+    if(!sc) return;
+
+    var opcje = SCIEZKI[f].map(function(s){
+      return {
+        l:function(){
+          var kolejny = (S.sciezka === s.id ? (S.stopien||0) + 1 : 1);
+          var braki = brakiSciezki(Math.min(kolejny,3));
+          var nazwa = s.s[Math.min(kolejny,3) - 1].n;
+          if(S.sciezka && S.sciezka !== s.id) return s.n + " - już idziesz inną drogą";
+          if(kolejny > 3) return s.n + " - doszedłeś na sam szczyt";
+          return nazwa + " (" + s.n + ")" + (braki.length ? " - wymaga " + braki.join(" i ") : "");
+        },
+        warunek:function(){
+          if(S.sciezka && S.sciezka !== s.id) return false;
+          var kolejny = (S.sciezka === s.id ? (S.stopien||0) + 1 : 1);
+          if(kolejny > 3) return false;
+          return !brakiSciezki(kolejny).length;
+        },
+        ef:function(){ nadajStopien(s.id); },
+        idz:"sciezka_nadanie"
+      };
+    });
+    opcje.push({l:"Jeszcze się zastanowię.", idz:wraca});
+
+    SCENY[idWybor] = {
+      portret:SCENY[wraca].portret || "weteran", kto:SCENY[wraca].kto,
+      tekst:function(){
+        return "<span class='mowa'>„Barwy to dopiero początek. Teraz powiedz, czym masz dla nas być - bo każdy, kto nosi nasz znak, coś w nim znaczy.”</span><br><br>"
+          + "Twoja ścieżka: <em>" + opisSciezki() + "</em>. Kolejne stopnie otwiera poziom i reputacja, nie chęci.";
+      },
+      opcje:opcje
+    };
+
+    sc.opcje.unshift({l:"Chcę mówić o mojej ścieżce.",
+      warunek:function(){ return S.frakcja === f; }, idz:idWybor});
+  });
+
+  SCENY.sciezka_nadanie = {
+    portret:null, kto:"Awans",
+    tekst:function(){
+      var sc = mojaSciezka();
+      if(!sc) return "Nic się nie zmieniło.";
+      var st = sc.s[(S.stopien||1) - 1];
+      return "<p class='tekst'>" + st.n + "</p>" + st.o
+        + "<br><br>Od dziś tak cię tu nazywają - i tak z tobą rozmawiają.";
+    },
+    opcje:[{l:"Wracam do służby", idz:function(){ return {sk:"dobroslawa", nw:"sedziwoj", od:"sedzimir", pl:"jarogniewa"}[S.frakcja] || "__lok_kruczy"; }}]
+  };
+}
+sciezkiKarier();
+
+
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
   PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,
   RECEPTURY:RECEPTURY, ZAKLECIA:ZAKLECIA, PROFESJE:PROFESJE, ekranWytwarzania:ekranWytwarzania,
