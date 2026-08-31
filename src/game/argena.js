@@ -6644,14 +6644,7 @@ function sciezkiKarier(){
 
     var opcje = SCIEZKI[f].map(function(s){
       return {
-        l:function(){
-          var kolejny = (S.sciezka === s.id ? (S.stopien||0) + 1 : 1);
-          var braki = brakiSciezki(Math.min(kolejny,3));
-          var nazwa = s.s[Math.min(kolejny,3) - 1].n;
-          if(S.sciezka && S.sciezka !== s.id) return s.n + " - już idziesz inną drogą";
-          if(kolejny > 3) return s.n + " - doszedłeś na sam szczyt";
-          return nazwa + " (" + s.n + ")" + (braki.length ? " - wymaga " + braki.join(" i ") : "");
-        },
+        l:s.n,
         warunek:function(){
           if(S.sciezka && S.sciezka !== s.id) return false;
           var kolejny = (S.sciezka === s.id ? (S.stopien||0) + 1 : 1);
@@ -6659,7 +6652,7 @@ function sciezkiKarier(){
           return !brakiSciezki(kolejny).length;
         },
         ef:function(){ nadajStopien(s.id); },
-        idz:"sciezka_nadanie"
+        idz:"sciezka_nadanie_" + f
       };
     });
     opcje.push({l:"Jeszcze się zastanowię.", idz:wraca});
@@ -6667,27 +6660,36 @@ function sciezkiKarier(){
     SCENY[idWybor] = {
       portret:SCENY[wraca].portret || "weteran", kto:SCENY[wraca].kto,
       tekst:function(){
-        return "<span class='mowa'>„Barwy to dopiero początek. Teraz powiedz, czym masz dla nas być - bo każdy, kto nosi nasz znak, coś w nim znaczy.”</span><br><br>"
-          + "Twoja ścieżka: <em>" + opisSciezki() + "</em>. Kolejne stopnie otwiera poziom i reputacja, nie chęci.";
+        var lista = SCIEZKI[f].map(function(s){
+          var kolejny = (S.sciezka === s.id ? (S.stopien||0) + 1 : 1);
+          if(S.sciezka && S.sciezka !== s.id) return "<b>" + s.n + "</b> - zamknięta, idziesz inną drogą";
+          if(kolejny > 3) return "<b>" + s.n + "</b> - szczyt osiągnięty";
+          var braki = brakiSciezki(kolejny);
+          return "<b>" + s.n + "</b>: " + s.s[kolejny-1].n + " - " + s.s[kolejny-1].o
+            + (braki.length ? " <em>(wymaga " + braki.join(" i ") + ")</em>" : " <em>(możesz to wziąć teraz)</em>");
+        }).join("<br><br>");
+        return "<span class='mowa'>„Barwy to dopiero początek. Powiedz, czym masz dla nas być - bo każdy, kto nosi nasz znak, coś w nim znaczy.”</span><br><br>"
+          + "Twoja ścieżka: <em>" + opisSciezki() + "</em>.<br><br>" + lista;
       },
       opcje:opcje
+    };
+
+    SCENY["sciezka_nadanie_" + f] = {
+      portret:SCENY[wraca].portret || "weteran", kto:SCENY[wraca].kto,
+      tekst:function(){
+        var m = mojaSciezka();
+        if(!m) return "Nic się nie zmieniło.";
+        var st = m.s[(S.stopien||1) - 1];
+        return "<p class='tekst'>" + st.n + "</p>" + st.o
+          + "<br><br>Od dziś tak cię tu nazywają - i tak z tobą rozmawiają.";
+      },
+      opcje:[{l:"Wracam do służby", idz:wraca}]
     };
 
     sc.opcje.unshift({l:"Chcę mówić o mojej ścieżce.",
       warunek:function(){ return S.frakcja === f; }, idz:idWybor});
   });
 
-  SCENY.sciezka_nadanie = {
-    portret:null, kto:"Awans",
-    tekst:function(){
-      var sc = mojaSciezka();
-      if(!sc) return "Nic się nie zmieniło.";
-      var st = sc.s[(S.stopien||1) - 1];
-      return "<p class='tekst'>" + st.n + "</p>" + st.o
-        + "<br><br>Od dziś tak cię tu nazywają - i tak z tobą rozmawiają.";
-    },
-    opcje:[{l:"Wracam do służby", idz:function(){ return {sk:"dobroslawa", nw:"sedziwoj", od:"sedzimir", pl:"jarogniewa"}[S.frakcja] || "__lok_kruczy"; }}]
-  };
 }
 sciezkiKarier();
 
