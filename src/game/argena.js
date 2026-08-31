@@ -15,7 +15,9 @@ function nowyStan(){
     zasadzka:false,
     scena:"start", autozapis:false, widok:"lokacja", trybZapisu:false,
     poWalce:null, wrog:null, log:[], odwiedzone:{},
-    czas:6*60, dzien:1, frakcja:null, ukradzione:{}, zlapania:0, rozdzial:1
+    czas:6*60, dzien:1, frakcja:null, ukradzione:{}, zlapania:0, rozdzial:1,
+    prof:{}, przeczytane:{}, sklepy:{}, sklepyRozdzial:1,
+    zakleciaKolejnosc:[], zakleciaUkryte:{}, tarcza:0
   };
 }
 var S = nowyStan();
@@ -458,9 +460,18 @@ function ileAktywnych(){
 }
 
 function kosztPn(w){
-  if(w.id==="sila")  return S.sila  < 10 ? 1 : (S.sila  < 20 ? 2 : 3);
-  if(w.id==="zrecz") return S.zrecz < 10 ? 1 : (S.zrecz < 20 ? 2 : 3);
+  if(w.id==="sila"||w.id==="sila2")   return S.sila  < 15 ? 1 : (S.sila  < 25 ? 2 : 3);
+  if(w.id==="zrecz"||w.id==="zrecz2") return S.zrecz < 15 ? 1 : (S.zrecz < 25 ? 2 : 3);
+  if(w.id==="mana"||w.id==="mana2")   return S.manaMax < 30 ? 1 : (S.manaMax < 60 ? 2 : 3);
   return w.pn;
+}
+
+/* jednolity cennik treningów - te same atrybuty kosztują tyle samo u każdego */
+function kosztZl(w){
+  if(w.id==="sila"||w.id==="sila2")   return 4 + Math.max(0, S.sila - 10) * 2;
+  if(w.id==="zrecz"||w.id==="zrecz2") return 4 + Math.max(0, S.zrecz - 10) * 2;
+  if(w.id==="mana"||w.id==="mana2")   return 10 + Math.max(0, S.manaMax - 10);
+  return w.zl;
 }
 
 /* ---------- PLECAK ---------- */
@@ -2617,7 +2628,17 @@ function akcjaTerenu(pk, id, brak){
     mijaCzas(30);
     if(pk.zloto) S.zloto += pk.zloto;
     if(pk.zbierz) for(var k in pk.zbierz) dodaj(k, pk.zbierz[k]);
-    g.innerHTML = '<p class="tekst">'+pk.wynik+'</p>' + przyciski([{l:"Dalej"}]);
+    var dodatek = "";
+    var profId = pk.typ === "ruda" ? "gornictwo" : (pk.typ === "ryba" ? "rybolostwo" : (pk.typ === "zasob" ? "alchemia" : null));
+    if(profId){
+      var poz = profP(profId);
+      if(pk.zbierz && poz > 1 && Math.random()*10 < poz){
+        for(var kk in pk.zbierz){ dodaj(kk, 1); dodatek = "<br><br><em>Wprawa robi swoje: dokładasz jeszcze jedną sztukę ("+PRZEDMIOTY[kk].n.toLowerCase()+").</em>"; break; }
+      }
+      var aw = dodajProfExp(profId, 14);
+      if(aw) dodatek += '<br><br><em>'+nazwaProfesji(profId)+' - poziom '+profP(profId)+'.</em>';
+    }
+    g.innerHTML = '<p class="tekst">'+pk.wynik+dodatek+'</p>' + przyciski([{l:"Dalej"}]);
     podepnij([function(){ ekranLokacji(S.lokacja); }]);
   };
 }
@@ -2659,21 +2680,21 @@ function ekranTrenera(sc){
     if(!wGrupie.length) return;
     html += '<div class="grupa">'+nazwyGrup[grupa]+'</div>';
     wGrupie.forEach(function(w){
-      var pn = kosztPn(w);
+      var pn = kosztPn(w), cenaN = kosztZl(w);
       var umie = w.raz && S.kupione[w.id];
-      var stac = (S.pn >= pn && S.zloto >= w.zl) && (!w.wymagaUm || S.umie[w.wymagaUm]);
+      var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm]);
       if(!umie && stac) cokolwiek = true;
       var etykieta = umie ? (w.l.replace(/ \+1$/,"") + " - już to umiesz")
         : (w.uczy === "nikt" ? w.l + " - nikt tu tego nie uczy"
         : ((w.wymagaUm && !S.umie[w.wymagaUm]) ? w.l + " - najpierw " + nazwaUmiejetnosci(w.wymagaUm) : w.l));
       html += '<button data-i="'+i+'"'+((umie||!stac)?" disabled":"")+'>'
-            + (umie ? "" : '<span class="koszt">'+pn+' pn &middot; '+w.zl+' zł</span>')
+            + (umie ? "" : '<span class="koszt">'+pn+' pn &middot; '+cenaN+' zł</span>')
             + etykieta + '</button>';
       akcje.push(function(){
-        var p = kosztPn(w);
-        if(S.pn < p || S.zloto < w.zl) return;
+        var p = kosztPn(w), c = kosztZl(w);
+        if(S.pn < p || S.zloto < c) return;
         if(w.raz && S.kupione[w.id]) return;
-        S.pn -= p; S.zloto -= w.zl;
+        S.pn -= p; S.zloto -= c;
         if(w.raz) S.kupione[w.id] = true;
         w.ef();
         pokaz(sc.__id || "weteran_nauka");
@@ -2704,17 +2725,28 @@ function ekranSklepu(sc){
   var akcje = [], i = 0;
 
   h += '<div class="kat">Na sprzedaż</div>';
+  var sklepId = sc.__id || S.scena;
+  sklep = sklep.concat(dodatkoweTowary(sklepId));
+  var puste = 0;
   sklep.forEach(function(k){
+    if(!PRZEDMIOTY[k]) return;
     var p = PRZEDMIOTY[k], cena = Math.round(p.cena * mnoznik);
-    h += '<button data-i="'+i+'"'+(S.zloto < cena ? " disabled" : "")+'>'
-       + '<span class="koszt">'+cena+' zł</span>'+p.n+'</button>';
+    var zostalo = zapasSklepu(sklepId, k);
+    if(zostalo <= 0){ puste++; return; }
+    var braknie = S.zloto < cena;
+    h += '<button data-i="'+i+'"'+(braknie ? " disabled" : "")+'>'
+       + '<span class="koszt">'+cena+' zł</span>'+p.n
+       + '<b>zostało: '+zostalo+'</b></button>';
     akcje.push(function(){
       if(S.zloto < cena) return;
+      if(zapasSklepu(sklepId, k) <= 0) return;
       S.zloto -= cena; dodaj(k);
+      kupionoWSklepie(sklepId, k);
       pokaz(S.scena);
     });
     i++;
   });
+  if(puste) h += '<p class="tekst" style="font-size:14px;color:var(--tekst-cichy)">Część towaru rozeszła się już z półek. Kupiec sprowadzi nowy, gdy świat ruszy dalej.</p>';
 
   var moje = Object.keys(S.plecak).filter(function(k){
     return PRZEDMIOTY[k].cena > 0 && PRZEDMIOTY[k].typ !== "ksiega";
@@ -2801,6 +2833,7 @@ function zacznijWalke(id, po){
   S.poWalce = po;
   S.sekwencja = [];
   S.stun = false;
+  S.tarcza = 0;
   S.log = [];
   if(id === "zbir" && S.zasadzka){
     var d = obrazenia();
@@ -2841,10 +2874,10 @@ function ekranWalki(){
   var opcje = [{l:"Blok"}];
   akcje.push(blokuj);
 
-  if(S.umie.iskra){
-    opcje.push({l:"Iskra", koszt:"5 many", wylacz:(S.mana < 5)});
-    akcje.push(iskra);
-  }
+  zakleciaWWalce().forEach(function(z){
+    opcje.push({l:"Zaklęcie: "+z.n, koszt:z.mana+" many"});
+    akcje.push(function(){ rzucZaklecie(z); });
+  });
 
   opcje.push({l:"Uciekaj"});
   akcje.push(uciekaj);
@@ -2863,10 +2896,10 @@ function ekranWalki(){
 }
 
 function odliczaj(){
-  var pozostalo = 5000, pasek = document.getElementById("czas-pasek");
+  var pozostalo = 10000, pasek = document.getElementById("czas-pasek");
   zegar = setInterval(function(){
     pozostalo -= 100;
-    if(pasek) pasek.style.width = Math.max(0, pozostalo/5000*100) + "%";
+    if(pasek) pasek.style.width = Math.max(0, pozostalo/10000*100) + "%";
     if(pozostalo <= 0){
       stopZegar();
       S.log.push("Zwlekasz - uderzasz w środek.");
@@ -2915,14 +2948,28 @@ function blokuj(){
   turaWroga(true);
 }
 
-function iskra(){
+function iskra(){ rzucZaklecie(ZAKLECIA[0]); }
+
+function rzucZaklecie(z){
   stopZegar();
-  if(S.mana < 5) return;
-  S.mana -= 5;
+  if(!S.wrog) return;
+  if(S.mana < z.mana){
+    S.log.push("Brakuje many na "+z.n+" (potrzeba "+z.mana+").");
+    ekranWalki();
+    return;
+  }
+  S.mana -= z.mana;
   S.sekwencja = [];
-  var d = 4 + Math.round(S.intelekt * 1.2);
-  S.wrog.hp -= d;
-  S.log.push("Iskra trafia w pierś: -"+d+". Sekwencja przepada.");
+  if(z.tarcza){
+    var ile = z.tarcza + S.intelekt;
+    S.tarcza = (S.tarcza||0) + ile;
+    S.log.push("Runy układają się w osłonę: pochłonie "+ile+" obrażeń.");
+  } else {
+    var d = Math.round(z.baza + S.intelekt * z.wsp);
+    S.wrog.hp -= d;
+    S.log.push(z.n+" trafia: -"+d+". Sekwencja przepada.");
+    if(z.stun){ S.stun = true; }
+  }
   if(S.wrog.hp <= 0){ ekranZwyciestwa(); return; }
   turaWroga(false);
 }
@@ -2984,6 +3031,11 @@ function turaWroga(zblok){
   var przed = e;
   e = poRedukcji(e, typObr);
   if(przed > e) S.log.push("Pancerz przyjmuje część ciosu (-"+redukcja(typObr)+"% obrażeń "+NAZWY_OBRAZEN[typObr]+").");
+  if(S.tarcza > 0 && e > 0){
+    var poch = Math.min(S.tarcza, e);
+    S.tarcza -= poch; e -= poch;
+    S.log.push("Tarcza runiczna pochłania "+poch+(S.tarcza?" (zostaje "+S.tarcza+")":" i gaśnie")+".");
+  }
   S.hp -= e;
 
   if(finalny){
@@ -3288,9 +3340,10 @@ if(a === "czytaj"){
         }
         S.przeczytane = S.przeczytane || {};
         var nowa = !S.przeczytane[k];
-        if(nowa){ S.przeczytane[k] = true; S.intelekt += (kw.intelekt||0); }
+        var expKsiegi = 0;
+        if(nowa){ S.przeczytane[k] = true; S.intelekt += (kw.intelekt||0); expKsiegi = kw.exp || (30 + 25*(kw.intelekt||1)); S.awans = dodajExp(expKsiegi); }
         d.innerHTML = naglowek(kw.n, kw.o)
-          + (nowa && kw.intelekt ? '<div class="zamkniete" style="border-color:var(--zloto);color:var(--zloto)">Czytasz to pierwszy raz. Intelekt +'+kw.intelekt+'.</div>' : '')
+          + (nowa ? '<div class="zamkniete" style="border-color:var(--zloto);color:var(--zloto)">Czytasz to pierwszy raz. '+(kw.intelekt?'Intelekt +'+kw.intelekt+'. ':'')+'Doświadczenie +'+expKsiegi+'.'+(S.awans?' Awans na poziom '+S.poziom+'!':'')+'</div>' : '')
           + trescKsiegi(k)
           + '<button data-akcja="zamknijKsiege" data-klucz="0">Odłóż księgę</button>';
         podepnijPanel(d);
@@ -3715,7 +3768,15 @@ function pokaz(id){
   S.scena = id;
   S.odwiedzone[id] = true;
   var sc = SCENY[id];
-  if(sc) sc.__id = id;
+  if(!sc){
+    if(typeof LOKACJE !== "undefined" && LOKACJE[id]){ S.widok = "lokacja"; ekranLokacji(id); return; }
+    var wroc = S.lokacja && LOKACJE[S.lokacja] ? S.lokacja : "popielnica";
+    g.innerHTML = '<p class="tekst">Rozmowa się urywa. Odchodzisz bez pożegnania.</p>'
+      + przyciski([{l:"Wróć"}]);
+    podepnij([function(){ S.widok="lokacja"; ekranLokacji(wroc); }]);
+    return;
+  }
+  sc.__id = id;
 
   if(id === "osada" && !S.autozapis){ S.autozapis = true; zapiszDoSlotu(1, "Początek drogi"); }
 
@@ -3848,6 +3909,14 @@ function uzupelnijStan(){
   if(S.zlapania === undefined) S.zlapania = 0;
   if(S.frakcja === undefined) S.frakcja = null;
   if(S.rozdzial === undefined) S.rozdzial = 1;
+  if(!S.prof) S.prof = {};
+  if(!S.przeczytane) S.przeczytane = {};
+  if(!S.sklepy) S.sklepy = {};
+  if(S.sklepyRozdzial === undefined) S.sklepyRozdzial = S.rozdzial;
+  if(!S.zakleciaKolejnosc) S.zakleciaKolejnosc = [];
+  if(!S.zakleciaUkryte) S.zakleciaUkryte = {};
+  if(S.tarcza === undefined) S.tarcza = 0;
+  if(S.sklepyRozdzial !== S.rozdzial){ S.sklepy = {}; S.sklepyRozdzial = S.rozdzial; }
 }
 
 function mijaCzas(min){
@@ -3886,20 +3955,51 @@ function blokCzasu(){
 /* ---------- ODPOCZYNEK ---------- */
 
 function odpocznij(o, wracaScena){
-  var godzin = o.godzin || 6;
-  mijaCzas(godzin*60);
-  var przed = S.hp;
-  S.hp = Math.min(S.hpMax, S.hp + Math.round(S.hpMax * (o.udzial || 0.5)));
-  S.mana = S.manaMax;
-  var tekst = (o.tekst || "Siadasz przy studni i pozwalasz, żeby czas zrobił swoje.")
-    + "<br><br><em>Mija " + godzin + " godzin. Jest " + godzinaGry() + ", " + poraDnia() + ".</em>"
-    + "<br>Odzyskujesz " + (S.hp - przed) + " życia i pełną manę.";
-  g.innerHTML = '<p class="tekst">'+tekst+'</p>' + przyciski([{l:"Wstań"}]);
-  podepnij([function(){
+  uzupelnijStan();
+  var lozko = o.lozko === true;
+  var wroc = function(){
     if(o.lok){ S.widok="lokacja"; ekranLokacji(o.lok); return; }
     pokaz(o.wraca || wracaScena);
-  }]);
+  };
+  var opcje = [1,2,4,8];
+  var h = '<p class="tekst">'+(o.tekst || "Siadasz i pozwalasz, żeby czas zrobił swoje.")
+    + '<br><br><em>' + godzinaGry() + ", " + poraDnia() + '.</em></p>';
+  h += lozko
+    ? '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Sen w łóżku pod dachem przywraca pełnię sił - za to się płaci.</p>'
+    : '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Przy ogniu i studni odpoczywa się tylko z nazwy: mija czas, sił nie przybywa. Tu za to można zapisać drogę.</p>';
+  h += przyciski(opcje.map(function(gg){
+    return {l:"Czekaj "+gg+(gg===1?" godzinę":(gg<5?" godziny":" godzin")),
+            koszt: lozko ? (kosztNoclegu(gg)+" zł") : "",
+            wylacz: lozko && S.zloto < kosztNoclegu(gg)};
+  }).concat(lozko ? [{l:"Wstań"}] : [{l:"Zapisz drogę"},{l:"Wstań"}]));
+  var akcje = opcje.map(function(gg){
+    return function(){
+      var cena = lozko ? kosztNoclegu(gg) : 0;
+      if(lozko && S.zloto < cena) return;
+      S.zloto -= cena;
+      mijaCzas(gg*60);
+      var przedHp = S.hp, przedM = S.mana;
+      if(lozko){ S.hp = S.hpMax; S.mana = S.manaMax; }
+      var t = (lozko
+          ? "Śpisz twardo i nikt cię nie budzi."
+          : "Siedzisz, patrzysz w ogień, prostujesz plecy. Nic więcej się z tego nie bierze.")
+        + "<br><br><em>Mija " + gg + " godz. Jest " + godzinaGry() + ", " + poraDnia() + ".</em>"
+        + (lozko ? "<br>Odzyskujesz " + (S.hp-przedHp) + " życia i " + (S.mana-przedM) + " many." : "");
+      g.innerHTML = '<p class="tekst">'+t+'</p>' + przyciski([{l:"Wstań"}]);
+      podepnij([wroc]);
+    };
+  });
+  if(!lozko) akcje.push(function(){
+    S.trybZapisu = true; panel = "zapisy";
+    var dz = document.getElementById("panel");
+    dz.hidden = false; odswiezPanel(); rysujPasek();
+  });
+  akcje.push(wroc);
+  g.innerHTML = h;
+  podepnij(akcje);
 }
+
+function kosztNoclegu(godzin){ return Math.max(4, godzin * 2); }
 
 /* ---------- KRADZIEŻ ---------- */
 
@@ -4670,7 +4770,7 @@ function rozszerzSceny(){
        ef:function(){ gotoweZadanie("nw_1"); dodaj("spis_wietrznicy"); }, idz:"ludmila_spis"},
       {l:"Pokaż, co masz do jedzenia.", idz:"ludmila_sklep"},
       {l:"Wynajmij łóżko na noc (10 zł)", warunek:function(){ return S.zloto >= 10; },
-       odpoczynek:{godzin:10, udzial:1, lok:"wietrznica", tekst:"Płacisz dziesięć sztuk i dostajesz siennik przy kominie. Nikt cię nie budzi."},
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"wietrznica", tekst:"Płacisz dziesięć sztuk i dostajesz siennik przy kominie. Nikt cię nie budzi."},
        ef:function(){ S.zloto -= 10; }},
       {l:"Co się mówi w Wietrznicy?", idz:"ludmila_plotki", raz:true},
       {l:"(sięgnij po sakwę pod ladą)", warunek:function(){ return !!S.umie.kradziez && !S.ukradzione.ludmila; },
@@ -5251,7 +5351,7 @@ function rozszerzSceny3(){
     tekst:"Namiot noclegowy to płótno rozpięte na żerdziach i dwadzieścia sienników na klepisku. Płaci się z góry i śpi z sakwą pod głową.",
     opcje:[
       {l:"Prześpij noc (10 godzin, 8 zł)", warunek:function(){ return S.zloto >= 8; },
-       odpoczynek:{godzin:10, udzial:1, lok:"jarmark", tekst:"Śpisz między dwoma obcymi i rano wszyscy trzej sprawdzacie sakwy."},
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"jarmark", tekst:"Śpisz między dwoma obcymi i rano wszyscy trzej sprawdzacie sakwy."},
        ef:function(){ S.zloto -= 8; }},
       {l:"Przeczekaj do zmroku (6 godzin)", odpoczynek:{godzin:6, udzial:0.4, lok:"jarmark",
         tekst:"Leżysz z rękami pod głową i słuchasz, jak jarmark zwija kramy."}},
