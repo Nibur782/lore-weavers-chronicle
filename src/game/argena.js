@@ -2697,6 +2697,7 @@ function ekranTrenera(sc){
         var p = kosztPn(w), c = kosztZl(w);
         if(S.pn < p || S.zloto < c) return;
         if(w.raz && S.kupione[w.id]) return;
+        if(w.wymPoziom && S.poziom < w.wymPoziom) return;
         S.pn -= p; S.zloto -= c;
         if(w.raz) S.kupione[w.id] = true;
         w.ef();
