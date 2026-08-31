@@ -5740,7 +5740,7 @@ function gotowyDoFrakcji(f){
 function brakiDoFrakcji(f){
   var info = FRAKCJE_INFO[f], b = [];
   if(S.poziom < 15) b.push("musisz osiągnąć 15 poziom (masz " + S.poziom + ")");
-  if((S.rep[f]||0) < 8) b.push("potrzebujesz mocniejszej reputacji");
+  if((S.rep[f]||0) < PROG_FRAKCJI) b.push("potrzebujesz " + PROG_FRAKCJI + " reputacji u nas (masz " + (S.rep[f]||0) + ")");
   return b;
 }
 
