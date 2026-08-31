@@ -4052,6 +4052,9 @@ function uzupelnijStan(){
   if(S.ukradzione === undefined) S.ukradzione = {};
   if(S.zlapania === undefined) S.zlapania = 0;
   if(S.frakcja === undefined) S.frakcja = null;
+  if(S.sciezka === undefined) S.sciezka = null;
+  if(S.stopien === undefined) S.stopien = 0;
+
   if(S.rozdzial === undefined) S.rozdzial = 1;
   if(!S.prof) S.prof = {};
   if(!S.przeczytane) S.przeczytane = {};
