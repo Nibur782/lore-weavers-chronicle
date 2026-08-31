@@ -204,6 +204,19 @@ var PRZEDMIOTY = {
   list_zap:  {n:"Zapieczętowany list", kat:"pismo", typ:"pismo",                      cena:0,  o:"Pieczęć nietknięta. Lepiej, żeby taka została."}
 };
 
+(function(){
+  for(var k in PRZEDMIOTY){
+    var p = PRZEDMIOTY[k];
+    if(p.bonus && p.bonus.obrona){
+      p.odp = p.odp || {};
+      ["klute","ciete","obuch"].forEach(function(t){
+        p.odp[t] = (p.odp[t] || 0) + p.bonus.obrona * 2;
+      });
+      delete p.bonus.obrona;
+    }
+  }
+})();
+
 /* ---------- DANE: WROGOWIE ---------- */
 
 var WROGOWIE = {
@@ -2374,7 +2387,7 @@ var FRAKCJE = [
 function panelReputacji(){
   return '<div class="rzeczy rama">' + FRAKCJE.map(function(f){
     var v = S.rep[f.id] || 0;
-    var szer = Math.min(100, Math.abs(v) * 12);
+    var szer = Math.min(50, Math.abs(v) * 5);
     return '<div class="rzecz"><span style="width:100%">'
       + '<span style="color:'+f.kolor+'">'+f.n+'</span>'
       + '<span class="rzecz-o" style="float:right">'+(v>0?"+":"")+v+'</span>'
@@ -2720,7 +2733,7 @@ function zapiszDoBestiariusza(id, krok, final){
 function zacznijWalke(id, po){
   var w = WROGOWIE[id];
   S.wrog = {id:id, n:w.n, hp:w.hp, hpMax:w.hp, dmg:w.dmg, exp:w.exp, zloto:w.zloto||0,
-            lup:w.lup, lupWymaga:w.lupWymaga, konczy:w.konczy,
+            lup:w.lup, lupWymaga:w.lupWymaga, konczy:w.konczy, typObr:typObrazenWroga(id),
             sekw:w.sekw, finisz:w.finisz, blokSzansa:w.blokSzansa||0, krok:0};
   S.poWalce = po;
   S.sekwencja = [];
@@ -2902,6 +2915,10 @@ function turaWroga(zblok){
     return;
   }
   if(zblok) e = Math.round(e*0.5);
+  var typObr = w.typObr || "ciete";
+  var przed = e;
+  e = poRedukcji(e, typObr);
+  if(przed > e) S.log.push("Pancerz przyjmuje część ciosu (-"+redukcja(typObr)+"% obrażeń "+NAZWY_OBRAZEN[typObr]+").");
   S.hp -= e;
 
   if(finalny){
@@ -3004,6 +3021,8 @@ dziennik:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-widt
 bestie:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v18H6.5A1.5 1.5 0 0 1 5 19.5z"/><path d="M5 17.5h14"/><path d="M9 7.5 8.4 5.6l1.9 1.1M15 7.5l.6-1.9-1.9 1.1"/><path d="M9 7.5h6l.8 3.6L12 14.5l-3.8-3.4z"/><path d="M11 10.2h.01M13 10.2h.01"/></svg>'
 };
 
+var NAZWY_OBRAZEN = {klute:"kłutych", ciete:"ciętych", obuch:"obuchowych", ogien:"od ognia", lod:"od wody i lodu", energia:"od energii"};
+
 var ODPORNOSCI = [
   {id:"klute",  n:"Kłute"},
   {id:"ciete",  n:"Cięte"},
@@ -3020,6 +3039,18 @@ function zalozonePrzedmioty(){
     if(k && k !== "__zajete" && PRZEDMIOTY[k]) lista.push(PRZEDMIOTY[k]);
   }
   return lista;
+}
+
+var TYPY_WROGOW = {pies:"klute", zbir:"ciete", wilk:"klute", dzik:"klute", borsuk:"klute",
+  szczur:"klute", nietoperz:"klute", wilczyca:"klute", gluszec:"klute", upior:"energia",
+  poborca:"obuch"};
+
+function typObrazenWroga(id){ return TYPY_WROGOW[id] || "ciete"; }
+
+function redukcja(typ){ return Math.min(70, odpornosc(typ)); }
+
+function poRedukcji(ile, typ){
+  return Math.max(1, Math.round(ile * (1 - redukcja(typ)/100)));
 }
 
 function odpornosc(typ){
@@ -3321,7 +3352,6 @@ function widokPostaci(){
      + stat("Życie", S.hp+"/"+S.hpMax, "hp")
      + stat("Mana", S.manaMax ? S.mana+"/"+S.manaMax : "-", "")
      + stat("Intelekt", S.intelekt, "")
-     + stat("Obrona", obronaPancerza(), "")
      + stat("Złoto", S.zloto, "zl")
      + stat("Plecak", sztukWPlecaku(), "")
      + '</div>';
@@ -3331,10 +3361,14 @@ function widokPostaci(){
   if(!u.length) h += '<div class="rzecz"><span class="rzecz-o">Nic jeszcze nie umiesz.</span></div>';
   else u.forEach(function(w){ h += '<div class="rzecz"><span>'+w.l+'</span></div>'; });
   h += '</div>';
-  h += '<div class="kat">Unik i krytyk</div><div class="rzeczy">'
+  h += '<div class="kat">Unik i krytyk</div><div class="rzeczy rama">'
+     + '<div class="rzecz"><span>Unik</span><span class="rzecz-o">'+unikSzansa().toFixed(1)+'%</span></div>'
+     + '<div class="rzecz"><span>Krytyk</span><span class="rzecz-o">'+(5 + (S.zrecz+bonusStatu("zrecz"))/5 + bonusStatu("kryt")).toFixed(1)+'%</span></div>'
      + '</div><div class="kat">Odporności</div><div class="rzeczy rama">'
+     + '<div class="rzecz"><span class="rzecz-o">Odporność zmniejsza obrażenia danego rodzaju o tyle procent (najwyżej 70%).</span></div>'
      + ODPORNOSCI.map(function(o){
-         return '<div class="rzecz"><span>'+o.n+'</span><span class="rzecz-o">'+odpornosc(o.id)+'</span></div>';
+         var v = odpornosc(o.id);
+         return '<div class="rzecz"><span>'+o.n+'</span><span class="rzecz-o">'+(v?"-"+redukcja(o.id)+"% obrażeń":"brak")+'</span></div>';
        }).join("")
      + '</div><div class="kat">Walka</div><div class="rzeczy rama">'
      + '<div class="rzecz"><span>Obrażenia</span><span class="rzecz-o">'+opisObrazen()+'</span></div>'
