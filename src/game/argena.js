@@ -3650,10 +3650,14 @@ function widokPostaci(){
   h += '<div class="kat">Reputacja</div>' + panelReputacji();
   h += '<div class="kat">Czas</div>' + blokCzasu();
   h += '<div class="kat">Frakcja</div><div class="rzeczy rama"><div class="rzecz"><span>'
-     + (S.frakcja ? "Nosisz barwy: "+S.frakcja : "Bez barw. Wszyscy patrzą, nikt nie ufa.")
+     + (S.frakcja ? "Nosisz barwy: " + (FRAKCJE_INFO[S.frakcja] ? FRAKCJE_INFO[S.frakcja].n : S.frakcja)
+                  + '<div class="rzecz-o">Ranga: ' + nazwaRangi() + '</div>'
+                  + '<div class="rzecz-o">Ścieżka: ' + opisSciezki() + '</div>'
+        : "Bez barw. Wszyscy patrzą, nikt nie ufa.")
      + '</span><span class="rzecz-o">rozdział '+S.rozdzial+'</span></div></div>';
   return h;
 }
+
 
 function widokDziennika(){
   var zak = S.zakladka || "zadania";
