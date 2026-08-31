@@ -41,7 +41,10 @@
 ## Wielka rozbudowa (rozdział I i II)
 - [x] 35. Próg wstąpienia do frakcji podniesiony do 50 reputacji + paski reputacji przeskalowane na 0-50
 - [x] 36. Ścieżki karier: 12 dróg (3-stopniowe) dla 4 frakcji, wybór i awanse u zwierzchnika, bonusy do cech, widoczne w karcie postaci
-- [ ] 37. Rozdział I: kilkanaście nowych lokacji — dla każdej frakcji stolica, 3-5 dużych miast, kilkanaście wiosek
+- [~] 37. Rozdział I: lokacje frakcyjne — ZROBIONE: Nowożytni (Nowy Ostrów, Miedziana Waga, Latarnica, Kuźnice Wodne, Kobylniki, Smolarze, Grobla + 2 drogi). Następne: Ismaal, Prastary Lud, Odeszli
+- [ ] 37b. Reszta lokacji: kilkanaście nowych — dla każdej frakcji stolica, 3-5 dużych miast, kilkanaście wiosek
 - [ ] 38. Rozdział I: tyle zadań, by dało się uzbierać 50 rep. u NW lub SK (drugie -25..25) oraz 50 u PL i 50 u OD, bez zmiany skali nagród
 - [ ] 39. Rozdział II: 20 krótkich zadań + 20 długich łańcuchów politycznych i rangowych
 - [ ] 40. Nauczyciele ścieżek (łucznictwo, dwa ostrza, druidzi, magowie ognia/ciemności/wody, kusza, broń dwuręczna, skrytobójstwo) w stolicach
+
+- [x] 41. Dialogi reagujące na frakcję gracza (ocenaFrakcyjna) — NPC Nowożytnych oceniają wybór gracza
