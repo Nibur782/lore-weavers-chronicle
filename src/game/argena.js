@@ -2955,7 +2955,17 @@ function ekranZwyciestwa(){
   if(po === "__teren"){ S.pokonane = S.pokonane || {}; S.pokonane[S.mobId] = true; }
   var awans = dodajExp(w.exp);
   S.zloto += w.zloto;
+  S.zabici = S.zabici || {};
+  S.zabici[w.id] = true;
   if(w.konczy) gotoweZadanie(w.konczy);
+
+  var lupZad = ZADANIOWY_LUP[w.id];
+  if(lupZad){
+    for(var kz in lupZad){
+      if(!S.plecak[kz]) { dodaj(kz, lupZad[kz]); }
+      else if(!w.lup || !w.lup[kz] || !S.umie[w.lupWymaga||"__"]) { dodaj(kz, lupZad[kz]); }
+    }
+  }
 
   var zdobyte = [];
   if(w.exp) zdobyte.push(w.exp + " doświadczenia");
@@ -3056,6 +3066,8 @@ function zalozonePrzedmioty(){
   }
   return lista;
 }
+
+var ZADANIOWY_LUP = {borsuk:{futro:1}, pies:{kly_psa:1}, gluszec:{pioro_gluszca:1}, wilczyca:{leb_wilczycy:1}};
 
 var TYPY_WROGOW = {pies:"klute", zbir:"ciete", wilk:"klute", dzik:"klute", borsuk:"klute",
   szczur:"klute", nietoperz:"klute", wilczyca:"klute", gluszec:"klute", upior:"energia",
