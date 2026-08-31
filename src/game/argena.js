@@ -6328,8 +6328,8 @@ function rozdzialDrugi(){
       return "<span class='mowa'>„Rozjemcy nie mają wojska ani ziemi. Mamy tylko ten stół i to, że jeszcze nikt go nie porąbał na opał.”</span><br><br>"
         + "Twoja ranga: <em>" + nazwaRangi() + "</em>.";
     },
-    trener:true, uczy:"ostoja", wraca:"__lok_stol_rozjemczy", wracaOpis:"Odejdź od stołu",
     opcje:[
+      {l:"Poucz mnie, legacie.", idz:"ostoja_nauka"},
       {l:"Melduję się z rozkazu swoich.", warunekZ:{id:"kariera1", stan:"aktywne"},
        ef:function(){ gotoweZadanie("kariera1"); }, idz:"ostoja_kariera1"},
       {l:"Zbrojny bez chorągwi nie żyje.", warunekZ:{id:"kariera2", stan:"aktywne"},
@@ -6406,8 +6406,8 @@ function rozdzialDrugi(){
       opcje:[{l:"Na razie z niczym.", poznaj:"wierzchoslawa", idz:"wierzchoslawa"}]
     },
     tekst:"<span class='mowa'>„Ludzie mówią o granicach, a granica jest jedna: to, dokąd sięga korzeń.”</span>",
-    trener:true, uczy:"wierzchoslawa", wraca:"__lok_stol_rozjemczy", wracaOpis:"Odejdź",
     opcje:[
+      {l:"Naucz mnie tego, co wie puszcza.", idz:"wierzchoslawa_nauka"},
       {l:"Trzy czarcie kwiaty dla puszczy.", warunekZ:{id:"posel4", stan:"aktywne"},
        wymagaPrzedmiotu:"czarci_kwiat", ile:3, idz:"wierzchoslawa_posel4"},
       {l:"Twój zwiadowca powiedział trzy słowa.", warunekZ:{id:"posel5", stan:"aktywne"},
@@ -6422,6 +6422,15 @@ function rozdzialDrugi(){
   SCENY.wierzchoslawa_posel5 = {portret:"kobieta", kto:"Szeptucha Wierzchosława",
     tekst:"Słucha trzech słów i zamyka oczy na tyle długo, że myślisz, iż zasnęła.<br><br><span class='mowa'>„Piasek, brama, oni. Znam tę przepowiednię z drugiej strony i wolałabym jej nie znać.<br><br>Siądziemy do stołu. Wszyscy czterej.”</span>",
     opcje:[{l:"Idę po legata.", ef:function(){ oddajZadanie("posel5"); }, dajZ:"posel6", idz:"wierzchoslawa"}]};
+
+
+  SCENY.ostoja_nauka = {portret:"weteran", kto:"Legat Ostoja", trener:true, uczy:"ostoja",
+    tekst:"<span class='mowa'>„Uczyłem ludzi, którzy potem stawali po obu stronach tego samego mostu. Ciebie też nauczę, a co z tym zrobisz, to już nie moja sprawa.”</span>",
+    wraca:"ostoja", wracaOpis:"Wróć do rozmowy"};
+
+  SCENY.wierzchoslawa_nauka = {portret:"kobieta", kto:"Szeptucha Wierzchosława", trener:true, uczy:"wierzchoslawa",
+    tekst:"<span class='mowa'>„Nie uczę sztuczek. Pokazuję, gdzie w tobie jest miejsce na więcej, niż mieści się teraz.”</span>",
+    wraca:"wierzchoslawa", wracaOpis:"Wróć do rozmowy"};
 
   SCENY.bezchoragwi_scena = {portret:"kowal", kto:"Zbrojny bez chorągwi",
     tekst:"Nie wstaje. Dokłada do ognia i mówi w płomień.<br><br><span class='mowa'>„Wiem, po co przyszedłeś. Płacą mi wszyscy czterej, więc wszyscy czterej chcą mnie zabić. To uczciwy układ.”</span>",
