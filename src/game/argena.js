@@ -4056,12 +4056,12 @@ function rozszerzNauke(){
     {id:"kradziez", uczy:"pchla", grupa:"rzemioslo", l:"Kradzież kieszonkowa", pn:2, zl:35, raz:true, ef:function(){S.umie.kradziez=true;}},
     {id:"palce", uczy:"pchla", grupa:"rzemioslo", l:"Zręczne palce", pn:3, zl:80, raz:true, wymagaUm:"kradziez", ef:function(){S.umie.palce=true;}},
     {id:"zamki", uczy:"pchla", grupa:"rzemioslo", l:"Otwieranie zamków", pn:2, zl:60, raz:true, wymagaUm:"kradziez", ef:function(){S.umie.zamki=true;}},
-    {id:"hutnictwo", uczy:"bolko", grupa:"rzemioslo", l:"Hutnictwo", pn:3, zl:70, raz:true, wymagaUm:"gornictwo", ef:function(){S.umie.hutnictwo=true;}},
+    {id:"hutnictwo", uczy:"przybyslaw", grupa:"rzemioslo", l:"Hutnictwo", pn:3, zl:70, raz:true, wymagaUm:"gornictwo", ef:function(){S.umie.hutnictwo=true;}},
     {id:"lucznictwo", uczy:"milena", grupa:"walka", l:"Łucznictwo", pn:2, zl:40, raz:true, ef:function(){S.umie.lucznictwo=true;}},
     {id:"kusznictwo", uczy:"racibor", grupa:"walka", l:"Kusznictwo", pn:3, zl:90, raz:true, ef:function(){S.umie.kusznictwo=true;}},
     {id:"pchniecie", uczy:"racibor", grupa:"walka", l:"Supercios: Pchnięcie strażnicze", pn:4, zl:120, raz:true, ef:function(){S.umie.pchniecie=true;}},
-    {id:"mlyniec", uczy:"nawoj", grupa:"walka", l:"Supercios: Młyniec", pn:5, zl:180, raz:true, ef:function(){S.umie.mlyniec=true;}},
-    {id:"sila2", uczy:"bolko", grupa:"walka", l:"Siła +1", pn:1, zl:6, ef:function(){S.sila+=1;}},
+    {id:"mlyniec", uczy:"smil", grupa:"walka", l:"Supercios: Młyniec", pn:5, zl:180, raz:true, ef:function(){S.umie.mlyniec=true;}},
+    {id:"sila2", uczy:"przybyslaw", grupa:"walka", l:"Siła +1", pn:1, zl:6, ef:function(){S.sila+=1;}},
     {id:"zrecz2", uczy:"milena", grupa:"walka", l:"Zręczność +1", pn:1, zl:6, ef:function(){S.zrecz+=1;}},
     {id:"mana2", uczy:"dobrogost", grupa:"magia", l:"Zasób many +8", pn:2, zl:30, ef:function(){S.manaMax+=8;S.mana+=8;}},
     {id:"lod_strzala", uczy:"dobrogost", grupa:"magia", l:"Zaklęcie: Sopel", pn:3, zl:90, raz:true, wymagaUm:"iskra", ef:function(){S.umie.sopel=true;}},
@@ -4101,7 +4101,7 @@ function rozszerzLokacje(){
           : "Wozy z rudą schodzą w dół, puste wracają w górę. Nikt się nie zatrzymuje, żeby na ciebie popatrzeć.");
     },
     postacie:[
-      {n:"Sztygar Bolko", id:"bolko", nieznany:"Człowiek z lampą przy szybie", rola:"sztygar", scena:"bolko", portret:"kowal"},
+      {n:"Sztygar Przybysław", id:"przybyslaw", nieznany:"Człowiek z lampą przy szybie", rola:"sztygar", scena:"przybyslaw", portret:"kowal"},
       {n:"Ludmiła", id:"ludmila", nieznany:"Karczmarka w wełnianej chuście", rola:"karczmarka", scena:"ludmila", portret:"kobieta"},
       {n:"Bogna", id:"bogna", nieznany:"Kobieta susząca korzenie", rola:"zielarka", scena:"bogna", portret:"kobieta"},
       {n:"Kuna", id:"kuna", nieznany:"Człowiek w za dobrym płaszczu", rola:"przemytnik", scena:"kuna", portret:"weteran",
@@ -4146,7 +4146,7 @@ function rozszerzLokacje(){
           : "Pachnie rybą, smołą i dymem z wędzarni.");
     },
     postacie:[
-      {n:"Starościna Nieszka", id:"nieszka", nieznany:"Kobieta licząca sieci", rola:"starościna", scena:"nieszka", portret:"kobieta"},
+      {n:"Starościna Dobroniega", id:"dobroniega", nieznany:"Kobieta licząca sieci", rola:"starościna", scena:"dobroniega", portret:"kobieta"},
       {n:"Chwalibóg", id:"chwalibog", nieznany:"Przewoźnik przy linie", rola:"przewoźnik", scena:"chwalibog", portret:"kowal"},
       {n:"Milena", id:"milena", nieznany:"Dziewczyna z łukiem", rola:"łuczniczka", scena:"milena", portret:"kobieta"},
       {n:"Dratwa", id:"dratwa", nieznany:"Szkutnik przy kadłubie", rola:"szkutnik", scena:"dratwa", portret:"kowal"}
@@ -4192,7 +4192,7 @@ function rozszerzLokacje(){
       {n:"Brat Dobrogost", id:"dobrogost", nieznany:"Mnich bez habitu", rola:"zakonnik", scena:"dobrogost", portret:"weteran"},
       {n:"Zbysława", id:"zbyslawa", nieznany:"Kobieta przepisująca karty", rola:"kopistka", scena:"zbyslawa", portret:"kobieta"},
       {n:"Wit", id:"wit", nieznany:"Chłopak o spalonych dłoniach", rola:"posługacz", scena:"wit", portret:"kowal"},
-      {n:"Nawoj", id:"nawoj", nieznany:"Człowiek z workiem i łomem", rola:"poszukiwacz", scena:"nawoj", portret:"weteran"}
+      {n:"Śmił", id:"smil", nieznany:"Człowiek z workiem i łomem", rola:"poszukiwacz", scena:"smil", portret:"weteran"}
     ],
     miejsca:[
       {n:"Refektarz - prześpij się na sianie", scena:"refektarz"}
@@ -4234,7 +4234,7 @@ function rozszerzLokacje(){
     postacie:[
       {n:"Marszałek Racibor", id:"racibor", nieznany:"Człowiek z laską i pieczęcią", rola:"marszałek jarmarku", scena:"racibor", portret:"weteran"},
       {n:"Halszka", id:"halszka", nieznany:"Kupcowa z trzema wagami", rola:"kupcowa", scena:"halszka", portret:"kobieta"},
-      {n:"Herold Roszko", id:"roszko", nieznany:"Zbrojny w czerwonym płaszczu", rola:"herold Ismaala", scena:"roszko", portret:"urzednik"},
+      {n:"Herold Racław", id:"raclaw", nieznany:"Zbrojny w czerwonym płaszczu", rola:"herold Ismaala", scena:"raclaw", portret:"urzednik"},
       {n:"Pchła", id:"pchla", nieznany:"Ktoś, kto stoi za blisko", rola:"złodziej", scena:"pchla", portret:"kowal",
        warunek:function(){ return jestNoc() || !!S.poznani.pchla; }}
     ],
@@ -4396,7 +4396,7 @@ function rozszerzTereny(){
 function rozszerzZadania(){
   var Z = {
   /* --- łańcuch: Szlak solny --- */
-  sol1:{t:"Szlak solny: brakująca szychta", od:"Sztygar Bolko", miejsce:0,
+  sol1:{t:"Szlak solny: brakująca szychta", od:"Sztygar Przybysław", miejsce:0,
     pelny:"<span class='mowa'>„Z komory solnej schodzi co tydzień dwanaście brył. Od miesiąca schodzi dziewięć, a rejestr mówi, że dwanaście.<br><br>Nie oskarżam nikogo. Chcę wiedzieć, kto pił z Kuną w zeszłym tygodniu, a Ludmiła wie wszystko, czego ja nie mogę wiedzieć.”</span>",
     opis:"W Wietrznicy znika sól. Sztygar nie chce hałasu, chce nazwiska.",
     cel:"Wypytaj Ludmiłę w karczmie w Wietrznicy.", nagroda:{exp:120, zloto:40}},
@@ -4415,10 +4415,10 @@ function rozszerzZadania(){
   sol5:{t:"Szlak solny: rozliczenie", od:"Rachmistrz Sędziwoj",
     pelny:"Rejestr się zgadza z tym, co mówi Kuna: brakujące bryły spisano na straty, zanim ktokolwiek je stracił.<br><br>Teraz zdecydujesz, komu podasz tę wiedzę: sztygarowi czy kontorowi.",
     opis:"Wiesz już, kto okrada Wietrznicę. Zostało powiedzieć to komuś.",
-    cel:"Wróć do sztygara Bolka i rozlicz sprawę.", nagroda:{exp:260, zloto:150, przedmiot:"obuch_gorniczy"}},
+    cel:"Wróć do sztygara Przybysława i rozlicz sprawę.", nagroda:{exp:260, zloto:150, przedmiot:"obuch_gorniczy"}},
 
   /* --- łańcuch: Rzeka oddaje --- */
-  rzeka1:{t:"Rzeka oddaje: pocięte sieci", od:"Starościna Nieszka",
+  rzeka1:{t:"Rzeka oddaje: pocięte sieci", od:"Starościna Dobroniega",
     pelny:"<span class='mowa'>„Sieci nie rwą się od ryb. Rwą się od noża, i to od noża trzymanego równo, przez kogoś, komu się nie spieszy.<br><br>Milena stoi na warcie przy brodzie od trzech nocy i coś widziała. Mnie nie powie, bo jestem jej ciotką.”</span>",
     opis:"Ktoś nocami tnie sieci w Sokolim Brodzie.",
     cel:"Porozmawiaj z Mileną w Sokolim Brodzie.", nagroda:{exp:120, zloto:30}},
@@ -4452,11 +4452,11 @@ function rozszerzZadania(){
     pelny:"<span class='mowa'>„Miałem siedem lat i pamiętam, że bracia biegli do drzwi, a drzwi nie chciały puścić.<br><br>Jeden z nich chodzi tu jeszcze. Ma na szyi medalion z datą. Jak mi go przyniesiesz, przestanę go widzieć.”</span>",
     opis:"Wit widuje w zgliszczach brata, który się nie wypalił do końca.",
     cel:"Zdobądź medalion opactwa i oddaj go Witowi.", nagroda:{exp:240, zloto:60}},
-  popiol4:{t:"Kroniki popiołu: opat, który nie odszedł", od:"Nawoj",
+  popiol4:{t:"Kroniki popiołu: opat, który nie odszedł", od:"Śmił",
     pelny:"<span class='mowa'>„Kronika mówi, że opat kazał zamknąć drzwi, bo w środku było coś, co nie mogło wyjść. Wyszło i tak.<br><br>Stoi w prezbiterium każdej nocy. Ja tam nie wejdę, ale wejdę zaraz po tobie.”</span>",
     opis:"To, co zostało z opata, stoi nocą w prezbiterium.",
     cel:"Zejdź nocą w zgliszcza i zmierz się z opatem.", nagroda:{exp:450, zloto:220}},
-  popiol5:{t:"Kroniki popiołu: co powiedzieć ludziom", od:"Nawoj",
+  popiol5:{t:"Kroniki popiołu: co powiedzieć ludziom", od:"Śmił",
     pelny:"Opat nie odszedł, bo nikt go nie rozgrzeszył, a rozgrzeszyć go mógł tylko ktoś, kto przeżył pożar.<br><br>Wit przeżył. Dobrogost zdecyduje, co wpisać do nowej kroniki.",
     opis:"Zostało zamknąć tę historię - prawdą albo litością.",
     cel:"Wróć do brata Dobrogosta.", nagroda:{exp:300, przedmiot:"medalion_opactwa", rep:{od:2}}},
@@ -4470,14 +4470,14 @@ function rozszerzZadania(){
     pelny:"<span class='mowa'>„Zabrali mi dwa wozy rudy w Wąwozie Kupieckim i nikt nie widział. Straż jarmarczna kończy się przy ostatnim maszcie.<br><br>Przynieś mi trzy bryły wietrznej rudy z powrotem, żebym miała co pokazać.”</span>",
     opis:"Halszka straciła ładunek w wąwozie.",
     cel:"Przynieś Halszce trzy bryły rudy wietrznej.", nagroda:{exp:200, zloto:120}},
-  chor3:{t:"Trzy chorągwie: odpowiedź Ismaala", od:"Herold Roszko",
+  chor3:{t:"Trzy chorągwie: odpowiedź Ismaala", od:"Herold Racław",
     pelny:"<span class='mowa'>„Ismaal nie odpowiada kupcowej. Ismaal odpowiada kasztelance.<br><br>Zanieś to do strażnicy i stań prosto, kiedy będzie czytać.”</span>",
     opis:"Herold nie pójdzie sam - to byłoby przyznanie, że sprawa jest poważna.",
     cel:"Zanieś odpowiedź kasztelance Dobrosławie w strażnicy.", nagroda:{exp:200, rep:{sk:2}}},
   chor4:{t:"Trzy chorągwie: pieczęć", od:"Pchła",
     pelny:"<span class='mowa'>„Wiem, kto podpisał zgodę na przejazd tych wozów. Wiem, bo mam nos.<br><br>Pieczęć herolda leży w jego rękawie. Jak ją zdejmiesz i pokażesz marszałkowi, sprawa się skończy jednego wieczoru.”</span>",
     opis:"Pieczęć herolda rozstrzygnie, kto wypuścił wozy w wąwóz.",
-    cel:"Wykradnij pieczęć heroldowi Roszce i wróć do Pchły.", nagroda:{exp:280, zloto:100}},
+    cel:"Wykradnij pieczęć heroldowi Racławowi i wróć do Pchły.", nagroda:{exp:280, zloto:100}},
   chor5:{t:"Trzy chorągwie: sąd jarmarczny", od:"Pchła",
     pelny:"Pieczęć jest ta sama, którą opieczętowano zgodę na przejazd. Herold sprzedał trasę i wziął udział w ładunku.<br><br>Marszałek sądzi na jarmarku tylko raz w roku i właśnie mu dałeś powód.",
     opis:"Pozostało położyć pieczęć na stole marszałka.",
@@ -4608,13 +4608,13 @@ function rozszerzSceny(){
     oferta:["obuch_gorniczy","kord_ismaala","kaftan","kolczuga","plaszcz_m","strzaly","belty","chleb","mikstura_mocy"]
   },
 
-  bolko:{
-    portret:"kowal", npc:"bolko", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Bolko",
+  przybyslaw:{
+    portret:"kowal", npc:"przybyslaw", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Przybysław",
     intro:{
       tekst:"Trzyma lampę na wysokości pasa i patrzy w otwór szybu, jakby czekał, aż ktoś stamtąd wyjdzie.<br><br><span class='mowa'>„Nie stój przy krawędzi. Jak spadniesz, będę musiał po ciebie schodzić.”</span>",
       opcje:[
-        {l:"Czekasz na kogoś?", idz:"bolko_w1"},
-        {l:"Kim jesteś?", idz:"bolko_w2"},
+        {l:"Czekasz na kogoś?", idz:"przybyslaw_w1"},
+        {l:"Kim jesteś?", idz:"przybyslaw_w2"},
         {l:"Odejdź", idz:"__lok_wietrznica"}
       ]
     },
@@ -4623,31 +4623,31 @@ function rozszerzSceny(){
       return "<span class='mowa'>„Wietrznica ma trzysta lat i ani razu nie stanęła. Nie zamierzam być tym, za którego stanie.”</span>";
     },
     opcje:[
-      {l:"Masz robotę?", dajZ:"sol1", warunekZ:{id:"sol1", stan:"brak"}, idz:"bolko_sol1"},
+      {l:"Masz robotę?", dajZ:"sol1", warunekZ:{id:"sol1", stan:"brak"}, idz:"przybyslaw_sol1"},
       {l:"Wiem już, kto okrada komorę.", oddajZ:"sol5", warunekZ:{id:"sol5", stan:"aktywne"},
-       ef:function(){ gotoweZadanie("sol5"); }, idz:"bolko_sol5"},
-      {l:"Naucz mnie czegoś o kamieniu i żelazie.", idz:"bolko_nauka"},
-      {l:"Co wydobywacie?", idz:"bolko_ruda", raz:true},
+       ef:function(){ gotoweZadanie("sol5"); }, idz:"przybyslaw_sol5"},
+      {l:"Naucz mnie czegoś o kamieniu i żelazie.", idz:"przybyslaw_nauka"},
+      {l:"Co wydobywacie?", idz:"przybyslaw_ruda", raz:true},
       {l:"Odejdź", idz:"__lok_wietrznica"}
     ]
   },
-  bolko_w1:{portret:"kowal", npc:"bolko", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Bolko",
+  przybyslaw_w1:{portret:"kowal", npc:"przybyslaw", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Przybysław",
     tekst:"<span class='mowa'>„Na dziewiątą szychtę. Zeszło ich dwunastu, wyszło dwunastu, a rudy wyjechało jak po dziewięciu.<br><br>Albo ktoś kradnie, albo góra oddaje mniej. Wolałbym złodzieja.”</span>",
-    opcje:[{l:"Kim jesteś?", idz:"bolko_w2"}]},
-  bolko_w2:{portret:"kowal", npc:"bolko", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Bolko",
-    tekst:"<span class='mowa'>„Bolko. Sztygar, czyli ten, którego biją, kiedy szyb daje mało, i którego nie chwalą, kiedy daje dużo.<br><br>Trzydzieści lat pod ziemią. Wychodzę tylko po to, żeby liczyć.”</span>",
-    opcje:[{l:"Zapamiętam.", idz:"bolko", poznaj:"bolko"}]},
-  bolko_ruda:{portret:"kowal", kto:"Sztygar Bolko",
+    opcje:[{l:"Kim jesteś?", idz:"przybyslaw_w2"}]},
+  przybyslaw_w2:{portret:"kowal", npc:"przybyslaw", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Przybysław",
+    tekst:"<span class='mowa'>„Przybysław. Sztygar, czyli ten, którego biją, kiedy szyb daje mało, i którego nie chwalą, kiedy daje dużo.<br><br>Trzydzieści lat pod ziemią. Wychodzę tylko po to, żeby liczyć.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"przybyslaw", poznaj:"przybyslaw"}]},
+  przybyslaw_ruda:{portret:"kowal", kto:"Sztygar Przybysław",
     tekst:"<span class='mowa'>„Rudę wietrzną i sól kamienną. Ruda idzie do Nowożytnych, bo płacą kwitem, a sól idzie wszędzie, bo płacą złotem.<br><br>Z naszej rudy kują to, czym się potem zabijają na dole, w dolinie. Nie moja sprawa.”</span>",
-    opcje:[{l:"Rozumiem.", idz:"bolko"}]},
-  bolko_sol1:{portret:"kowal", kto:"Sztygar Bolko",
+    opcje:[{l:"Rozumiem.", idz:"przybyslaw"}]},
+  przybyslaw_sol1:{portret:"kowal", kto:"Sztygar Przybysław",
     tekst:function(){ return ZADANIA.sol1.pelny; },
-    opcje:[{l:"Pogadam z Ludmiłą.", idz:"bolko"}]},
-  bolko_sol5:{portret:"kowal", kto:"Sztygar Bolko",
+    opcje:[{l:"Pogadam z Ludmiłą.", idz:"przybyslaw"}]},
+  przybyslaw_sol5:{portret:"kowal", kto:"Sztygar Przybysław",
     tekst:"Słucha do końca i nie przerywa ani razu. Potem odstawia lampę na kamień.<br><br><span class='mowa'>„Więc nie kradną mi ludzie. Kradnie mi papier.<br><br>Weź to. Kilof mojego ojca, przekuty tak, żeby nadawał się do czegoś innego niż skała. Będziesz go potrzebował bardziej niż ja.”</span>",
-    opcje:[{l:"Weź obuch", oddajZ:"sol5", idz:"bolko"}]},
-  bolko_nauka:{portret:"kowal", kto:"Sztygar Bolko", trener:true, uczy:"bolko",
-    wraca:"bolko", wracaOpis:"Dość na dziś",
+    opcje:[{l:"Weź obuch", oddajZ:"sol5", idz:"przybyslaw"}]},
+  przybyslaw_nauka:{portret:"kowal", kto:"Sztygar Przybysław", trener:true, uczy:"przybyslaw",
+    wraca:"przybyslaw", wracaOpis:"Dość na dziś",
     tekst:"<span class='mowa'>„Uczę tego, co umiem: dźwigać i wytapiać. Jedno i drugie robi z człowieka coś twardszego, niż był.”</span>"},
 
   ludmila:{
@@ -4662,7 +4662,7 @@ function rozszerzSceny(){
     },
     tekst:"<span class='mowa'>„Siadaj albo mów. Stojących nie obsługuję.”</span>",
     opcje:[
-      {l:"Bolko pyta, kto pił z Kuną.", oddajZ:"sol1", warunekZ:{id:"sol1", stan:"aktywne"},
+      {l:"Przybysław pyta, kto pił z Kuną.", oddajZ:"sol1", warunekZ:{id:"sol1", stan:"aktywne"},
        ef:function(){ gotoweZadanie("sol1"); }, idz:"ludmila_sol1"},
       {l:"Sól z rozbitego wozu.", oddajZ:"sol2", warunekZ:{id:"sol2", stan:"aktywne"},
        wymagaPrzedmiotu:"gruda", ile:2, idz:"ludmila_sol2"},
@@ -4748,7 +4748,7 @@ function rozszerzSceny(){
     },
     tekst:"<span class='mowa'>„Mów cicho. Tu każdy kamień słucha za pół sztuki srebra.”</span>",
     opcje:[
-      {l:"Wozisz sól z komory Bolka.", oddajZ:"sol3", warunekZ:{id:"sol3", stan:"aktywne"},
+      {l:"Wozisz sól z komory Przybysława.", oddajZ:"sol3", warunekZ:{id:"sol3", stan:"aktywne"},
        ef:function(){ gotoweZadanie("sol3"); }, idz:"kuna_sol3"},
       {l:"Trzej zabici z wpisem kontorowym. Twoi ludzie?", oddajZ:"trakt3", warunekZ:{id:"trakt3", stan:"aktywne"},
        ef:function(){ gotoweZadanie("trakt3"); }, idz:"kuna_trakt3"},
@@ -4857,39 +4857,39 @@ function rozszerzSceny2(){
     ]
   },
 
-  nieszka:{
-    portret:"kobieta", npc:"nieszka", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Nieszka",
+  dobroniega:{
+    portret:"kobieta", npc:"dobroniega", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Dobroniega",
     intro:{
       tekst:"Liczy sieci rozwieszone na żerdziach i przy co czwartej zatrzymuje palec.<br><br><span class='mowa'>„Osiemnaście całych na czterdzieści. Jeszcze dwa tygodnie takiego liczenia i wieś będzie jadła korę.”</span>",
       opcje:[
-        {l:"Kto je tnie?", idz:"nieszka_w1"},
-        {l:"Kim jesteś?", idz:"nieszka_w2"},
+        {l:"Kto je tnie?", idz:"dobroniega_w1"},
+        {l:"Kim jesteś?", idz:"dobroniega_w2"},
         {l:"Odejdź", idz:"__lok_sokoli_brod"}
       ]
     },
     tekst:"<span class='mowa'>„Mów. Ręce mi zajęte, ale uszy nie.”</span>",
     opcje:[
-      {l:"Powiedz, co się tu dzieje.", dajZ:"rzeka1", warunekZ:{id:"rzeka1", stan:"brak"}, idz:"nieszka_rzeka1"},
-      {l:"Rzeka znowu daje.", warunekZ:{id:"rzeka5", stan:"oddane"}, idz:"nieszka_koniec", raz:true},
-      {l:"Kto tu rządzi?", idz:"nieszka_wies", raz:true},
+      {l:"Powiedz, co się tu dzieje.", dajZ:"rzeka1", warunekZ:{id:"rzeka1", stan:"brak"}, idz:"dobroniega_rzeka1"},
+      {l:"Rzeka znowu daje.", warunekZ:{id:"rzeka5", stan:"oddane"}, idz:"dobroniega_koniec", raz:true},
+      {l:"Kto tu rządzi?", idz:"dobroniega_wies", raz:true},
       {l:"Odejdź", idz:"__lok_sokoli_brod"}
     ]
   },
-  nieszka_w1:{portret:"kobieta", npc:"nieszka", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Nieszka",
+  dobroniega_w1:{portret:"kobieta", npc:"dobroniega", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Dobroniega",
     tekst:"<span class='mowa'>„Gdybym wiedziała, tobym nie liczyła sieci, tylko trumny.<br><br>Wiem tyle, że tnie równo i zawsze w tym samym miejscu. To nie zwierzę i nie złość. To robota.”</span>",
-    opcje:[{l:"Kim jesteś?", idz:"nieszka_w2"}]},
-  nieszka_w2:{portret:"kobieta", npc:"nieszka", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Nieszka",
-    tekst:"<span class='mowa'>„Nieszka. Wybrali mnie starościną, bo umiem liczyć i nie piję.<br><br>Sokoli Bród jest wolny, dopóki ma czym płacić obu stronom. Jak zabraknie ryby, zabraknie wolności - w tej kolejności.”</span>",
-    opcje:[{l:"Zapamiętam.", idz:"nieszka", poznaj:"nieszka"}]},
-  nieszka_wies:{portret:"kobieta", kto:"Starościna Nieszka",
+    opcje:[{l:"Kim jesteś?", idz:"dobroniega_w2"}]},
+  dobroniega_w2:{portret:"kobieta", npc:"dobroniega", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Dobroniega",
+    tekst:"<span class='mowa'>„Dobroniega. Wybrali mnie starościną, bo umiem liczyć i nie piję.<br><br>Sokoli Bród jest wolny, dopóki ma czym płacić obu stronom. Jak zabraknie ryby, zabraknie wolności - w tej kolejności.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"dobroniega", poznaj:"dobroniega"}]},
+  dobroniega_wies:{portret:"kobieta", kto:"Starościna Dobroniega",
     tekst:"<span class='mowa'>„Nikt i wszyscy. Prom jest Chwaliboga, sieci są wspólne, a łodzie czyje kto zbudował.<br><br>Ismaal mówi, że jesteśmy ich, bo brzeg jest ich. Nowożytni mówią, że jesteśmy ich, bo droga jest ich. My mówimy, że jesteśmy rzeki.”</span>",
-    opcje:[{l:"Rozumiem.", idz:"nieszka"}]},
-  nieszka_rzeka1:{portret:"kobieta", kto:"Starościna Nieszka",
+    opcje:[{l:"Rozumiem.", idz:"dobroniega"}]},
+  dobroniega_rzeka1:{portret:"kobieta", kto:"Starościna Dobroniega",
     tekst:function(){ return ZADANIA.rzeka1.pelny; },
-    opcje:[{l:"Pogadam z Mileną.", dajZ:"rzeka1", idz:"nieszka"}]},
-  nieszka_koniec:{portret:"kobieta", kto:"Starościna Nieszka",
+    opcje:[{l:"Pogadam z Mileną.", dajZ:"rzeka1", idz:"dobroniega"}]},
+  dobroniega_koniec:{portret:"kobieta", kto:"Starościna Dobroniega",
     tekst:"Pierwszy raz odkłada sieć.<br><br><span class='mowa'>„Trzy łodzie wróciły pełne. Nie wiem, co zrobiłeś po tamtej stronie, i nie chcę wiedzieć.<br><br>Ale gdyby ktoś pytał w Brodzie, czy można ci ufać, powiem, że tak. To u nas znaczy więcej niż złoto.”</span>",
-    opcje:[{l:"Dziękuję.", rep:{pl:1, od:1}, exp:120, wynik:"Wieś przyjmuje cię jak swojego. Tego się nie kupuje.", idz:"nieszka"}]},
+    opcje:[{l:"Dziękuję.", rep:{pl:1, od:1}, exp:120, wynik:"Wieś przyjmuje cię jak swojego. Tego się nie kupuje.", idz:"dobroniega"}]},
 
   milena:{
     portret:"kobieta", npc:"milena", ktoNieznany:"Dziewczyna z łukiem", kto:"Milena",
@@ -4903,7 +4903,7 @@ function rozszerzSceny2(){
     },
     tekst:"<span class='mowa'>„No?”</span>",
     opcje:[
-      {l:"Nieszka mówi, że coś widziałaś.", oddajZ:"rzeka1", warunekZ:{id:"rzeka1", stan:"aktywne"},
+      {l:"Dobroniega mówi, że coś widziałaś.", oddajZ:"rzeka1", warunekZ:{id:"rzeka1", stan:"aktywne"},
        ef:function(){ gotoweZadanie("rzeka1"); }, idz:"milena_rzeka1"},
       {l:"Już go nie ma.", oddajZ:"rzeka2", warunekZ:{id:"rzeka2", stan:"gotowe"}, idz:"milena_rzeka2"},
       {l:"Naucz mnie strzelać.", idz:"milena_nauka"},
@@ -5094,7 +5094,7 @@ function rozszerzSceny3(){
     tekst:"<span class='mowa'>„Dobrogost. Byłem tu nowicjuszem w noc pożaru i wyszedłem oknem, bo byłem najmniejszy.<br><br>Dwudziestu siedmiu nie wyszło. Liczę ich co rano, żeby nie zapomnieć żadnego imienia.”</span>",
     opcje:[{l:"Zapamiętam.", idz:"dobrogost", poznaj:"dobrogost"}]},
   dobrogost_ludzie:{portret:"weteran", kto:"Brat Dobrogost",
-    tekst:"<span class='mowa'>„Zbysława przepisuje to, co ocalało, choć nikt jej za to nie płaci. Wit tu został, bo nie miał dokąd pójść. Nawoj przychodzi kopać za pieniądze i udaje, że tylko o to mu chodzi.<br><br>Czworo ludzi w budynku na dwustu. Wystarczy, żeby nie było cicho.”</span>",
+    tekst:"<span class='mowa'>„Zbysława przepisuje to, co ocalało, choć nikt jej za to nie płaci. Wit tu został, bo nie miał dokąd pójść. Śmił przychodzi kopać za pieniądze i udaje, że tylko o to mu chodzi.<br><br>Czworo ludzi w budynku na dwustu. Wystarczy, żeby nie było cicho.”</span>",
     opcje:[{l:"Rozumiem.", idz:"dobrogost"}]},
   dobrogost_p1:{portret:"weteran", kto:"Brat Dobrogost",
     tekst:function(){ return ZADANIA.popiol1.pelny; },
@@ -5171,41 +5171,41 @@ function rozszerzSceny3(){
     tekst:function(){ return ZADANIA.popiol3.pelny; },
     opcje:[{l:"Zdobędę ten medalion.", dajZ:"popiol3", idz:"wit"}]},
   wit_p3k:{portret:"kowal", kto:"Wit",
-    tekst:"Bierze medalion w dłonie, których nie zamyka, i przez chwilę tylko na niego patrzy.<br><br><span class='mowa'>„Brat Sulisław. Uczył mnie liter na piasku.<br><br>Idź do Nawoja. On kopie tu nie dla pieniędzy, tylko dlatego, że chce zobaczyć, kto zamknął drzwi.”</span>",
-    opcje:[{l:"Pogadam z Nawojem.", idz:"wit"}]},
+    tekst:"Bierze medalion w dłonie, których nie zamyka, i przez chwilę tylko na niego patrzy.<br><br><span class='mowa'>„Brat Sulisław. Uczył mnie liter na piasku.<br><br>Idź do Śmiła. On kopie tu nie dla pieniędzy, tylko dlatego, że chce zobaczyć, kto zamknął drzwi.”</span>",
+    opcje:[{l:"Pogadam z Śmiłem.", idz:"wit"}]},
 
-  nawoj:{
-    portret:"weteran", npc:"nawoj", ktoNieznany:"Człowiek z łomem", kto:"Nawoj",
+  smil:{
+    portret:"weteran", npc:"smil", ktoNieznany:"Człowiek z łomem", kto:"Śmił",
     intro:{
       tekst:"Siedzi na worku i ostrzy łom pilnikiem, co nie ma większego sensu, ale zajmuje ręce.<br><br><span class='mowa'>„Kopię za pieniądze. Jak masz pieniądze, to mamy o czym gadać.”</span>",
       opcje:[
-        {l:"Nie kopiesz za pieniądze.", idz:"nawoj_w1"},
-        {l:"Kim jesteś?", idz:"nawoj_w2"},
+        {l:"Nie kopiesz za pieniądze.", idz:"smil_w1"},
+        {l:"Kim jesteś?", idz:"smil_w2"},
         {l:"Odejdź", idz:"__lok_opactwo"}
       ]
     },
     tekst:"<span class='mowa'>„Mów. Tylko szybko, bo światła ubywa.”</span>",
     opcje:[
       {l:"Wit oddał medalion. Co dalej?", dajZ:"popiol4", warunekZ:{id:"popiol4", stan:"brak"},
-       warunek:function(){ return stanZadania("popiol3") === "oddane"; }, idz:"nawoj_p4"},
-      {l:"Opat już nie stoi w prezbiterium.", oddajZ:"popiol4", warunekZ:{id:"popiol4", stan:"gotowe"}, idz:"nawoj_p4k"},
-      {l:"Naucz mnie młyńca.", idz:"nawoj_nauka"},
+       warunek:function(){ return stanZadania("popiol3") === "oddane"; }, idz:"smil_p4"},
+      {l:"Opat już nie stoi w prezbiterium.", oddajZ:"popiol4", warunekZ:{id:"popiol4", stan:"gotowe"}, idz:"smil_p4k"},
+      {l:"Naucz mnie młyńca.", idz:"smil_nauka"},
       {l:"Odejdź", idz:"__lok_opactwo"}
     ]
   },
-  nawoj_w1:{portret:"weteran", npc:"nawoj", ktoNieznany:"Człowiek z łomem", kto:"Nawoj",
+  smil_w1:{portret:"weteran", npc:"smil", ktoNieznany:"Człowiek z łomem", kto:"Śmił",
     tekst:"Przestaje piłować.<br><br><span class='mowa'>„Nie. Kopię, bo mój ojciec był tu murarzem i to on stawiał te drzwi.<br><br>Jak się okaże, że zamknęły się same, to będę spał lepiej. Jak nie, to przynajmniej będę wiedział.”</span>",
-    opcje:[{l:"Kim jesteś?", idz:"nawoj_w2"}]},
-  nawoj_w2:{portret:"weteran", npc:"nawoj", ktoNieznany:"Człowiek z łomem", kto:"Nawoj",
-    tekst:"<span class='mowa'>„Nawoj. Kopałem groby, potem kopałem w cudzych grobach, teraz kopię tutaj.<br><br>Biłem się dwanaście lat po obu stronach. Nauczę cię jednej rzeczy, jak będziesz miał czym płacić.”</span>",
-    opcje:[{l:"Zapamiętam.", idz:"nawoj", poznaj:"nawoj"}]},
-  nawoj_p4:{portret:"weteran", kto:"Nawoj",
+    opcje:[{l:"Kim jesteś?", idz:"smil_w2"}]},
+  smil_w2:{portret:"weteran", npc:"smil", ktoNieznany:"Człowiek z łomem", kto:"Śmił",
+    tekst:"<span class='mowa'>„Śmił. Kopałem groby, potem kopałem w cudzych grobach, teraz kopię tutaj.<br><br>Biłem się dwanaście lat po obu stronach. Nauczę cię jednej rzeczy, jak będziesz miał czym płacić.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"smil", poznaj:"smil"}]},
+  smil_p4:{portret:"weteran", kto:"Śmił",
     tekst:function(){ return ZADANIA.popiol4.pelny; },
-    opcje:[{l:"Wejdę tam nocą.", dajZ:"popiol4", idz:"nawoj"}]},
-  nawoj_p4k:{portret:"weteran", kto:"Nawoj",
+    opcje:[{l:"Wejdę tam nocą.", dajZ:"popiol4", idz:"smil"}]},
+  smil_p4k:{portret:"weteran", kto:"Śmił",
     tekst:"Wysłuchuje wszystkiego i dopiero na końcu siada.<br><br><span class='mowa'>„Czyli ojciec zrobił dobre drzwi. Trzymały, aż przestały być potrzebne.<br><br>Idź z tym do Dobrogosta. On jedyny ma prawo zdecydować, co się z tego wpisze do nowej kroniki.”</span>",
-    opcje:[{l:"Pójdę.", dajZ:"popiol5", idz:"nawoj"}]},
-  nawoj_nauka:{portret:"weteran", kto:"Nawoj", trener:true, uczy:"nawoj", wraca:"nawoj", wracaOpis:"Dość",
+    opcje:[{l:"Pójdę.", dajZ:"popiol5", idz:"smil"}]},
+  smil_nauka:{portret:"weteran", kto:"Śmił", trener:true, uczy:"smil", wraca:"smil", wracaOpis:"Dość",
     tekst:"<span class='mowa'>„Młyniec. Cztery ruchy i żaden nie jest po to, żeby trafić - trafia dopiero czwarty.”</span>"},
 
   sedzimir:{
@@ -5336,7 +5336,7 @@ function rozszerzSceny3(){
     tekst:function(){ return ZADANIA.chor2.pelny; },
     opcje:[{l:"Przywiozę ci rudę.", dajZ:"chor2", ef:function(){ oddajZadanie("chor1"); }, idz:"halszka"}]},
   halszka_ch2:{portret:"kobieta", kto:"Halszka",
-    tekst:"Waży bryły na wszystkich trzech wagach po kolei i dopiero potem podnosi wzrok.<br><br><span class='mowa'>„To moje. Znaczone od spodu rysą, bo tak znaczę wszystko.<br><br>Idź do herolda Roszki. To on wypisuje zgody na przejazd wąwozem i to on wie, komu ją wypisał.”</span>",
+    tekst:"Waży bryły na wszystkich trzech wagach po kolei i dopiero potem podnosi wzrok.<br><br><span class='mowa'>„To moje. Znaczone od spodu rysą, bo tak znaczę wszystko.<br><br>Idź do herolda Racława. To on wypisuje zgody na przejazd wąwozem i to on wie, komu ją wypisał.”</span>",
     opcje:[{l:"Pogadam z heroldem.", idz:"halszka"}]},
   halszka_nw3:{portret:"kobieta", kto:"Halszka",
     tekst:"<span class='mowa'>„Bierz. Kontor i tak policzy po swojemu, ale przynajmniej będzie to liczył z moich cyfr, a nie z własnych domysłów.”</span>",
@@ -5345,35 +5345,35 @@ function rozszerzSceny3(){
     tekst:"<span class='mowa'>„Ceny mam jarmarczne, czyli wyższe niż w mieście i niższe niż w polu.”</span>",
     oferta:["kusza","belty","szabla_odeszlych","bryg","plaszcz_puszczy","amulet_sily","pierscien_zr","pierscien_many","ksiega_frakcji","chleb"]},
 
-  roszko:{
-    portret:"urzednik", npc:"roszko", ktoNieznany:"Zbrojny w czerwonym płaszczu", kto:"Herold Roszko",
+  raclaw:{
+    portret:"urzednik", npc:"raclaw", ktoNieznany:"Zbrojny w czerwonym płaszczu", kto:"Herold Racław",
     intro:{
       tekst:"Stoi w miejscu, w którym najlepiej go widać, i poprawia płaszcz częściej, niż wypada.<br><br><span class='mowa'>„Ismaal nie rozmawia na targu. Ismaal ogłasza.”</span>",
       opcje:[
-        {l:"To ogłoś coś.", idz:"roszko_w1"},
-        {l:"Kim jesteś?", idz:"roszko_w1"},
+        {l:"To ogłoś coś.", idz:"raclaw_w1"},
+        {l:"Kim jesteś?", idz:"raclaw_w1"},
         {l:"Odejdź", idz:"__lok_jarmark"}
       ]
     },
     tekst:"<span class='mowa'>„Krótko. Mam trzy obwieszczenia przed zmierzchem.”</span>",
     opcje:[
       {l:"Halszka straciła wozy w wąwozie.", dajZ:"chor3", warunekZ:{id:"chor3", stan:"brak"},
-       warunek:function(){ return stanZadania("chor2") === "oddane"; }, idz:"roszko_ch3"},
+       warunek:function(){ return stanZadania("chor2") === "oddane"; }, idz:"raclaw_ch3"},
       {l:"(sięgnij do jego rękawa po pieczęć)", warunekZ:{id:"chor4", stan:"aktywne"},
-       warunek:function(){ return !S.ukradzione.roszko; },
-       kradziez:{id:"roszko", npc:"roszko", trud:50, lup:{pieczec_roszki:1}, zloto:0, kara:70, rep:{sk:-1},
+       warunek:function(){ return !S.ukradzione.raclaw; },
+       kradziez:{id:"raclaw", npc:"raclaw", trud:50, lup:{pieczec_roszki:1}, zloto:0, kara:70, rep:{sk:-1},
          sukces:"Herold odwraca się do tłumu, żeby ogłosić trzecie obwieszczenie, i przez tę jedną chwilę jego rękaw należy do ciebie.",
          wpadka:"Chwyta cię za przegub i podnosi głos tak, żeby usłyszał cały rynek. Kończy się na grzywnie, ale patrzą na ciebie wszyscy.",
          wraca:"__lok_jarmark"}},
       {l:"Odejdź", idz:"__lok_jarmark"}
     ]
   },
-  roszko_w1:{portret:"urzednik", npc:"roszko", ktoNieznany:"Zbrojny w czerwonym płaszczu", kto:"Herold Roszko",
-    tekst:"<span class='mowa'>„Roszko, herold Królestwa Ismaala na jarmarku i okolicy.<br><br>Ogłaszam wolę kasztelanki, wypisuję zgody na przejazd i pilnuję, żeby czerwona chorągiew wisiała wyżej niż szara. To trzecie jest nieoficjalne.”</span>",
-    opcje:[{l:"Zapamiętam.", idz:"roszko", poznaj:"roszko"}]},
-  roszko_ch3:{portret:"urzednik", kto:"Herold Roszko",
+  raclaw_w1:{portret:"urzednik", npc:"raclaw", ktoNieznany:"Zbrojny w czerwonym płaszczu", kto:"Herold Racław",
+    tekst:"<span class='mowa'>„Racław, herold Królestwa Ismaala na jarmarku i okolicy.<br><br>Ogłaszam wolę kasztelanki, wypisuję zgody na przejazd i pilnuję, żeby czerwona chorągiew wisiała wyżej niż szara. To trzecie jest nieoficjalne.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"raclaw", poznaj:"raclaw"}]},
+  raclaw_ch3:{portret:"urzednik", kto:"Herold Racław",
     tekst:function(){ return ZADANIA.chor3.pelny; },
-    opcje:[{l:"Zaniosę.", dajZ:"chor3", ef:function(){ S.poznane.straznica = true; }, idz:"roszko"}]},
+    opcje:[{l:"Zaniosę.", dajZ:"chor3", ef:function(){ S.poznane.straznica = true; }, idz:"raclaw"}]},
 
   pchla:{
     portret:"kowal", npc:"pchla", ktoNieznany:"Ktoś, kto stoi za blisko", kto:"Pchła",
