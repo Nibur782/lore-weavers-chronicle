@@ -3225,6 +3225,39 @@ function przelacz(id){
   rysujPasek();
 }
 
+function trescKsiegi(k){
+  var t = KSIEGI[k];
+  if(!t) return '<p class="tekst">Karty są w większości puste albo zbutwiałe. Nic z tego nie zostało.</p>';
+  return typeof t === "function" ? t() : '<p class="tekst">'+t+'</p>';
+}
+
+var KSIEGI = {
+  ksiega_ziol: function(){
+    var h = '<p class="tekst">Ktoś spisał tu wszystko, co rośnie między jednym a drugim królestwem, i dopisał na marginesie, do czego to służy.</p>';
+    h += '<div class="rzeczy rama">' + Object.keys(PRZEDMIOTY).filter(function(k){
+      return PRZEDMIOTY[k].kat === "roslina";
+    }).map(function(k){
+      var p = PRZEDMIOTY[k];
+      return '<div class="rzecz"><span>'+p.n+'<div class="rzecz-o">'+p.o+'</div>'
+        + '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+(opisDzialania(p)||"Nic poza wartością na targu.")+'</div>'
+        + '</span><span class="rzecz-o">'+p.cena+' zł</span></div>';
+    }).join("") + '</div>';
+    h += '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Ostatnia karta jest wydarta. Podobno opisywała zioła, których nie zbiera się ręką.</p>';
+    return h;
+  },
+  ksiega_run: "Znak pierwszy - iskra. Kreśli się go od dołu do góry, jednym ruchem, bo przerwana kreska wraca w rękę.<br><br>Znak drugi - popiół. Gasi to, co pali się dłużej, niż powinno.<br><br>Znak trzeci - próg. Kładzie się go na wejściu i nikt niezaproszony nie przekroczy go w nocy.<br><br>Trzy karty są wydarte. Na czwartej ktoś dopisał ręcznie: <em>„nie kreśl czwartego znaku, dopóki nie umiesz zetrzeć trzeciego”</em>.",
+  ksiega_prastara: "Znaki są kanciaste i głębokie. Zapis nie jest opowieścią, tylko rachunkiem: ile dni, ile ciał, ile kroków od rzeki.<br><br>Ostatni wiersz odczytujesz bez trudu, choć nie wiesz dlaczego: <em>„brama nie została zamknięta. Została zasypana od środka”</em>.",
+  ksiega_kron: "Rok pierwszy po zamknięciu mostu: kupcy jeżdżą jeszcze grobla, sól kosztuje trzy grosze.<br><br>Rok trzeci: Ismaal stawia kopce graniczne. Nowożytni je przewracają i spisują protokół.<br><br>Rok siódmy: Popielnica płonie drugi raz. Nikt się nie przyznaje, obie strony przysyłają zboże.<br><br>Ostatni wpis urywa się w połowie zdania: <em>„jeśli ktoś to czyta, niech nie idzie na przeprawę po zmroku, bo”</em>."
+};
+
+function podepnijPanel(d){
+  Array.prototype.forEach.call(d.querySelectorAll("button[data-akcja]"), function(b){
+    b.onclick = function(){
+      if(b.getAttribute("data-akcja") === "zamknijKsiege"){ odswiezPanel(); rysujPasek(); }
+    };
+  });
+}
+
 function odswiezPanel(){
 var d = document.getElementById("panel");
 d.innerHTML = {zapisy:widokZapisow, mapa:widokMapy, ekwipunek:widokEkwipunku, postac:widokPostaci,
@@ -3243,11 +3276,22 @@ if(a === "zoom"){ zoomMapy(+k); return; }
 if(a === "czytaj"){
         var kw = PRZEDMIOTY[k];
         if(kw.runy && !S.umie[kw.runy]){
-          d.innerHTML = naglowek("Znaki") + '<p class="tekst">Karty są zapisane runami, nie literami. Rozpoznajesz kształty, ale nie układają się w nic, co miałoby sens.<br><br><em>Wymaga: '+nazwaUmiejetnosci(kw.runy)+'</em></p>';
+          d.innerHTML = naglowek("Znaki") + '<p class="tekst">Karty są zapisane runami, nie literami. Rozpoznajesz kształty, ale nie układają się w nic, co miałoby sens.<br><br><em>Wymaga: '+nazwaUmiejetnosci(kw.runy)+'</em></p>'
+            + '<button data-akcja="zamknijKsiege" data-klucz="0">Odłóż księgę</button>';
+          podepnijPanel(d);
           return;
         }
-        S.intelekt += kw.intelekt; usun(k);
+        S.przeczytane = S.przeczytane || {};
+        var nowa = !S.przeczytane[k];
+        if(nowa){ S.przeczytane[k] = true; S.intelekt += (kw.intelekt||0); }
+        d.innerHTML = naglowek(kw.n, kw.o)
+          + (nowa && kw.intelekt ? '<div class="zamkniete" style="border-color:var(--zloto);color:var(--zloto)">Czytasz to pierwszy raz. Intelekt +'+kw.intelekt+'.</div>' : '')
+          + trescKsiegi(k)
+          + '<button data-akcja="zamknijKsiege" data-klucz="0">Odłóż księgę</button>';
+        podepnijPanel(d);
+        return;
       }
+      if(a === "zamknijKsiege"){ odswiezPanel(); rysujPasek(); return; }
       if(a === "pasek") doPaska(k);
 if(a === "zpaska") zPaska(+k);
 if(a === "zapisz"){ zapiszDoSlotu(+k); odswiezPanel(); return; }
