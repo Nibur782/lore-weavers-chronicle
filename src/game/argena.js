@@ -6052,7 +6052,9 @@ dopracujGre();
 
 
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
-  PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji};
+  PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,
+  RECEPTURY:RECEPTURY, ZAKLECIA:ZAKLECIA, PROFESJE:PROFESJE, ekranWytwarzania:ekranWytwarzania,
+  odpocznij:odpocznij, walka:walka, odswiezPanel:odswiezPanel, dodaj:dodaj};
 
 rysujPasek();
 pokaz("start");
