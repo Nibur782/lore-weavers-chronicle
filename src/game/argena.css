@@ -186,3 +186,7 @@ border-bottom:1px solid var(--linia)}
 .zakladka{flex:1 1 auto;min-width:calc(50% - 6px);min-height:38px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
 font-family:Cinzel,serif;color:var(--tekst-cichy);background:var(--tlo-2);border:1px solid var(--linia);padding:8px 6px}
 .zakladka.on{color:var(--zloto);border-color:var(--braz)}
+.zakladka{min-width:calc(33.333% - 6px)}
+button.mini-akcja{display:inline-block;width:auto;min-height:34px;padding:6px 12px;margin:8px 8px 0 0;
+font-size:13px;color:var(--zloto);border-color:var(--braz);background:linear-gradient(180deg,#221b12,#171309)}
+.rzecz > span:first-child{flex:1}

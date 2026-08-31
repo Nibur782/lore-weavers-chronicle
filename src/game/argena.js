@@ -15,7 +15,9 @@ function nowyStan(){
     zasadzka:false,
     scena:"start", autozapis:false, widok:"lokacja", trybZapisu:false,
     poWalce:null, wrog:null, log:[], odwiedzone:{},
-    czas:6*60, dzien:1, frakcja:null, ukradzione:{}, zlapania:0, rozdzial:1
+    czas:6*60, dzien:1, frakcja:null, ukradzione:{}, zlapania:0, rozdzial:1,
+    prof:{}, przeczytane:{}, sklepy:{}, sklepyRozdzial:1,
+    zakleciaKolejnosc:[], zakleciaUkryte:{}, tarcza:0
   };
 }
 var S = nowyStan();
@@ -458,17 +460,27 @@ function ileAktywnych(){
 }
 
 function kosztPn(w){
-  if(w.id==="sila")  return S.sila  < 10 ? 1 : (S.sila  < 20 ? 2 : 3);
-  if(w.id==="zrecz") return S.zrecz < 10 ? 1 : (S.zrecz < 20 ? 2 : 3);
+  if(w.id==="sila"||w.id==="sila2")   return S.sila  < 15 ? 1 : (S.sila  < 25 ? 2 : 3);
+  if(w.id==="zrecz"||w.id==="zrecz2") return S.zrecz < 15 ? 1 : (S.zrecz < 25 ? 2 : 3);
+  if(w.id==="mana"||w.id==="mana2")   return S.manaMax < 30 ? 1 : (S.manaMax < 60 ? 2 : 3);
   return w.pn;
+}
+
+/* jednolity cennik treningów - te same atrybuty kosztują tyle samo u każdego */
+function kosztZl(w){
+  if(w.id==="sila"||w.id==="sila2")   return 4 + Math.max(0, S.sila - 10) * 2;
+  if(w.id==="zrecz"||w.id==="zrecz2") return 4 + Math.max(0, S.zrecz - 10) * 2;
+  if(w.id==="mana"||w.id==="mana2")   return 10 + Math.max(0, S.manaMax - 10);
+  return w.zl;
 }
 
 /* ---------- PLECAK ---------- */
 
 function dodaj(id, ile){ S.plecak[id] = (S.plecak[id] || 0) + (ile || 1); }
-function usun(id){
+function usun(id, ile){
+  ile = ile || 1;
   if(!S.plecak[id]) return;
-  S.plecak[id]--;
+  S.plecak[id] -= ile;
   if(S.plecak[id] <= 0) delete S.plecak[id];
 }
 function ileZListy(lista){
@@ -2617,7 +2629,17 @@ function akcjaTerenu(pk, id, brak){
     mijaCzas(30);
     if(pk.zloto) S.zloto += pk.zloto;
     if(pk.zbierz) for(var k in pk.zbierz) dodaj(k, pk.zbierz[k]);
-    g.innerHTML = '<p class="tekst">'+pk.wynik+'</p>' + przyciski([{l:"Dalej"}]);
+    var dodatek = "";
+    var profId = pk.typ === "ruda" ? "gornictwo" : (pk.typ === "ryba" ? "rybolostwo" : (pk.typ === "zasob" ? "alchemia" : null));
+    if(profId){
+      var poz = profP(profId);
+      if(pk.zbierz && poz > 1 && Math.random()*10 < poz){
+        for(var kk in pk.zbierz){ dodaj(kk, 1); dodatek = "<br><br><em>Wprawa robi swoje: dokładasz jeszcze jedną sztukę ("+PRZEDMIOTY[kk].n.toLowerCase()+").</em>"; break; }
+      }
+      var aw = dodajProfExp(profId, 14);
+      if(aw) dodatek += '<br><br><em>'+nazwaProfesji(profId)+' - poziom '+profP(profId)+'.</em>';
+    }
+    g.innerHTML = '<p class="tekst">'+pk.wynik+dodatek+'</p>' + przyciski([{l:"Dalej"}]);
     podepnij([function(){ ekranLokacji(S.lokacja); }]);
   };
 }
@@ -2659,21 +2681,21 @@ function ekranTrenera(sc){
     if(!wGrupie.length) return;
     html += '<div class="grupa">'+nazwyGrup[grupa]+'</div>';
     wGrupie.forEach(function(w){
-      var pn = kosztPn(w);
+      var pn = kosztPn(w), cenaN = kosztZl(w);
       var umie = w.raz && S.kupione[w.id];
-      var stac = (S.pn >= pn && S.zloto >= w.zl) && (!w.wymagaUm || S.umie[w.wymagaUm]);
+      var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm]);
       if(!umie && stac) cokolwiek = true;
       var etykieta = umie ? (w.l.replace(/ \+1$/,"") + " - już to umiesz")
         : (w.uczy === "nikt" ? w.l + " - nikt tu tego nie uczy"
         : ((w.wymagaUm && !S.umie[w.wymagaUm]) ? w.l + " - najpierw " + nazwaUmiejetnosci(w.wymagaUm) : w.l));
       html += '<button data-i="'+i+'"'+((umie||!stac)?" disabled":"")+'>'
-            + (umie ? "" : '<span class="koszt">'+pn+' pn &middot; '+w.zl+' zł</span>')
+            + (umie ? "" : '<span class="koszt">'+pn+' pn &middot; '+cenaN+' zł</span>')
             + etykieta + '</button>';
       akcje.push(function(){
-        var p = kosztPn(w);
-        if(S.pn < p || S.zloto < w.zl) return;
+        var p = kosztPn(w), c = kosztZl(w);
+        if(S.pn < p || S.zloto < c) return;
         if(w.raz && S.kupione[w.id]) return;
-        S.pn -= p; S.zloto -= w.zl;
+        S.pn -= p; S.zloto -= c;
         if(w.raz) S.kupione[w.id] = true;
         w.ef();
         pokaz(sc.__id || "weteran_nauka");
@@ -2704,17 +2726,28 @@ function ekranSklepu(sc){
   var akcje = [], i = 0;
 
   h += '<div class="kat">Na sprzedaż</div>';
+  var sklepId = sc.__id || S.scena;
+  sklep = sklep.concat(dodatkoweTowary(sklepId));
+  var puste = 0;
   sklep.forEach(function(k){
+    if(!PRZEDMIOTY[k]) return;
     var p = PRZEDMIOTY[k], cena = Math.round(p.cena * mnoznik);
-    h += '<button data-i="'+i+'"'+(S.zloto < cena ? " disabled" : "")+'>'
-       + '<span class="koszt">'+cena+' zł</span>'+p.n+'</button>';
+    var zostalo = zapasSklepu(sklepId, k);
+    if(zostalo <= 0){ puste++; return; }
+    var braknie = S.zloto < cena;
+    h += '<button data-i="'+i+'"'+(braknie ? " disabled" : "")+'>'
+       + '<span class="koszt">'+cena+' zł</span>'+p.n
+       + '<b>zostało: '+zostalo+'</b></button>';
     akcje.push(function(){
       if(S.zloto < cena) return;
+      if(zapasSklepu(sklepId, k) <= 0) return;
       S.zloto -= cena; dodaj(k);
+      kupionoWSklepie(sklepId, k);
       pokaz(S.scena);
     });
     i++;
   });
+  if(puste) h += '<p class="tekst" style="font-size:14px;color:var(--tekst-cichy)">Część towaru rozeszła się już z półek. Kupiec sprowadzi nowy, gdy świat ruszy dalej.</p>';
 
   var moje = Object.keys(S.plecak).filter(function(k){
     return PRZEDMIOTY[k].cena > 0 && PRZEDMIOTY[k].typ !== "ksiega";
@@ -2801,6 +2834,7 @@ function zacznijWalke(id, po){
   S.poWalce = po;
   S.sekwencja = [];
   S.stun = false;
+  S.tarcza = 0;
   S.log = [];
   if(id === "zbir" && S.zasadzka){
     var d = obrazenia();
@@ -2841,10 +2875,10 @@ function ekranWalki(){
   var opcje = [{l:"Blok"}];
   akcje.push(blokuj);
 
-  if(S.umie.iskra){
-    opcje.push({l:"Iskra", koszt:"5 many", wylacz:(S.mana < 5)});
-    akcje.push(iskra);
-  }
+  zakleciaWWalce().forEach(function(z){
+    opcje.push({l:"Zaklęcie: "+z.n, koszt:z.mana+" many"});
+    akcje.push(function(){ rzucZaklecie(z); });
+  });
 
   opcje.push({l:"Uciekaj"});
   akcje.push(uciekaj);
@@ -2863,10 +2897,10 @@ function ekranWalki(){
 }
 
 function odliczaj(){
-  var pozostalo = 5000, pasek = document.getElementById("czas-pasek");
+  var pozostalo = 10000, pasek = document.getElementById("czas-pasek");
   zegar = setInterval(function(){
     pozostalo -= 100;
-    if(pasek) pasek.style.width = Math.max(0, pozostalo/5000*100) + "%";
+    if(pasek) pasek.style.width = Math.max(0, pozostalo/10000*100) + "%";
     if(pozostalo <= 0){
       stopZegar();
       S.log.push("Zwlekasz - uderzasz w środek.");
@@ -2915,14 +2949,28 @@ function blokuj(){
   turaWroga(true);
 }
 
-function iskra(){
+function iskra(){ rzucZaklecie(ZAKLECIA[0]); }
+
+function rzucZaklecie(z){
   stopZegar();
-  if(S.mana < 5) return;
-  S.mana -= 5;
+  if(!S.wrog) return;
+  if(S.mana < z.mana){
+    S.log.push("Brakuje many na "+z.n+" (potrzeba "+z.mana+").");
+    ekranWalki();
+    return;
+  }
+  S.mana -= z.mana;
   S.sekwencja = [];
-  var d = 4 + Math.round(S.intelekt * 1.2);
-  S.wrog.hp -= d;
-  S.log.push("Iskra trafia w pierś: -"+d+". Sekwencja przepada.");
+  if(z.tarcza){
+    var ile = z.tarcza + S.intelekt;
+    S.tarcza = (S.tarcza||0) + ile;
+    S.log.push("Runy układają się w osłonę: pochłonie "+ile+" obrażeń.");
+  } else {
+    var d = Math.round(z.baza + S.intelekt * z.wsp);
+    S.wrog.hp -= d;
+    S.log.push(z.n+" trafia: -"+d+". Sekwencja przepada.");
+    if(z.stun){ S.stun = true; }
+  }
   if(S.wrog.hp <= 0){ ekranZwyciestwa(); return; }
   turaWroga(false);
 }
@@ -2984,6 +3032,11 @@ function turaWroga(zblok){
   var przed = e;
   e = poRedukcji(e, typObr);
   if(przed > e) S.log.push("Pancerz przyjmuje część ciosu (-"+redukcja(typObr)+"% obrażeń "+NAZWY_OBRAZEN[typObr]+").");
+  if(S.tarcza > 0 && e > 0){
+    var poch = Math.min(S.tarcza, e);
+    S.tarcza -= poch; e -= poch;
+    S.log.push("Tarcza runiczna pochłania "+poch+(S.tarcza?" (zostaje "+S.tarcza+")":" i gaśnie")+".");
+  }
   S.hp -= e;
 
   if(finalny){
@@ -3275,6 +3328,12 @@ if(a === "zdejmij") zdejmij(k);
 if(a === "znacznik"){ pokazZnacznik(+k); return; }
 if(a === "zpaska"){ zPaska(+k); odswiezPanel(); rysujPasek(); return; }
 if(a === "zakladka"){ S.zakladka = k; S.rozwiniete = null; odswiezPanel(); return; }
+if(a === "zakEkw"){ S.zakEkw = k; odswiezPanel(); return; }
+if(a === "lancuch"){ S.zakLancuch = k; S.rozwiniete = null; odswiezPanel(); return; }
+if(a === "zakPost"){ S.zakPost = k; odswiezPanel(); return; }
+if(a === "zaklWid"){ S.zakleciaUkryte[k] = !S.zakleciaUkryte[k]; odswiezPanel(); return; }
+if(a === "zaklGora"){ przesunZaklecie(k, -1); odswiezPanel(); return; }
+if(a === "zaklDol"){ przesunZaklecie(k, 1); odswiezPanel(); return; }
 if(a === "rozwin"){ S.rozwiniete = (S.rozwiniete === k) ? null : k; odswiezPanel(); return; }
 if(a === "idzDoMapy"){ panel = "mapa"; odswiezPanel(); rysujPasek(); setTimeout(function(){ pokazZnacznik(+k); }, 30); return; }
 if(a === "zoom"){ zoomMapy(+k); return; }
@@ -3288,9 +3347,10 @@ if(a === "czytaj"){
         }
         S.przeczytane = S.przeczytane || {};
         var nowa = !S.przeczytane[k];
-        if(nowa){ S.przeczytane[k] = true; S.intelekt += (kw.intelekt||0); }
+        var expKsiegi = 0;
+        if(nowa){ S.przeczytane[k] = true; S.intelekt += (kw.intelekt||0); expKsiegi = kw.exp || (30 + 25*(kw.intelekt||1)); S.awans = dodajExp(expKsiegi); }
         d.innerHTML = naglowek(kw.n, kw.o)
-          + (nowa && kw.intelekt ? '<div class="zamkniete" style="border-color:var(--zloto);color:var(--zloto)">Czytasz to pierwszy raz. Intelekt +'+kw.intelekt+'.</div>' : '')
+          + (nowa ? '<div class="zamkniete" style="border-color:var(--zloto);color:var(--zloto)">Czytasz to pierwszy raz. '+(kw.intelekt?'Intelekt +'+kw.intelekt+'. ':'')+'Doświadczenie +'+expKsiegi+'.'+(S.awans?' Awans na poziom '+S.poziom+'!':'')+'</div>' : '')
           + trescKsiegi(k)
           + '<button data-akcja="zamknijKsiege" data-klucz="0">Odłóż księgę</button>';
         podepnijPanel(d);
@@ -3354,50 +3414,96 @@ function naglowek(t, p){
        + (p ? '<p class="tekst" style="font-size:16px">'+p+'</p>' : "");
 }
 
+function katPrzedmiotu(p){
+  if(!p) return "surowiec";
+  if(p.typ === "ksiega" || p.typ === "pismo" || p.kat === "pismo") return "pismo";
+  if(p.typ === "amunicja") return "amunicja";
+  if(p.slot === "amulet" || p.slot === "pierscien" || p.kat === "artefakt") return "bizuteria";
+  if(p.kat === "napoj" || p.typ === "napoj_many") return "mikstura";
+  return p.kat || "surowiec";
+}
+
+var KATEGORIE_EKW = [
+  {id:"bron", n:"Bronie"},
+  {id:"pancerz", n:"Pancerze"},
+  {id:"bizuteria", n:"Biżuteria"},
+  {id:"amunicja", n:"Amunicja"},
+  {id:"mikstura", n:"Mikstury"},
+  {id:"roslina", n:"Rośliny"},
+  {id:"zywnosc", n:"Pożywienie"},
+  {id:"pismo", n:"Pisma i księgi"},
+  {id:"surowiec", n:"Surowce"}
+];
+
+function wierszPrzedmiotu(k){
+  var p = PRZEDMIOTY[k];
+  return '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]
+     + '<div class="rzecz-o">'+p.o+'</div>'
+     + (opisDzialania(p) ? '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisDzialania(p)+'</div>' : '')
+     + (p.typ==="wyposazenie" && !S.wrog ? (brakWymagan(p)
+         ? '<div class="rzecz-o" style="margin-top:8px;color:var(--krew)">Wymaga '+brakWymagan(p)+'</div>'
+         : '<button data-akcja="zaloz" data-klucz="'+k+'" class="mini-akcja">Załóż</button>') : "")
+     + (p.typ==="ksiega" && !S.wrog ? '<button data-akcja="czytaj" data-klucz="'+k+'" class="mini-akcja">Przeczytaj</button>' : "")
+     + (p.typ==="napoj_many" && !S.wrog ? '<button data-akcja="pij" data-klucz="'+k+'" class="mini-akcja">Wypij</button>' : "")
+     + (p.typ==="jadalne" && !S.wrog && mozeUzyc(k) ? '<button data-akcja="zjedz" data-klucz="'+k+'" class="mini-akcja">'+(p.jad ? "Natrzyj ostrze" : "Użyj")+'</button>' : "")
+     + ((p.typ==="jadalne"||p.typ==="napoj_many"||p.typ==="wyposazenie") && !S.wrog ? '<button data-akcja="pasek" data-klucz="'+k+'" class="mini-akcja">Do paska</button>' : "")
+     + '</span><span class="rzecz-o">'+(p.cena ? p.cena+" zł" : "")+'</span></div>';
+}
+
 function widokEkwipunku(){
-  var h = naglowek("Ekwipunek", S.wrog ? "W trakcie walki możesz tylko patrzeć. Jedzenie i zmiana wyposażenia - z ekranu walki." : "");
-  h += '<div class="sloty rama">' + SLOTY.map(function(sl){
-    var k = S.zalozone[sl.id];
-    return '<div class="slot"><div class="slot-e">'+sl.n+'</div>'
-         + '<div class="slot-w '+(k?"":"pusty")+'">'+(k ? PRZEDMIOTY[k].n : "puste")+'</div>'
-         + (k && !S.wrog ? '<button data-akcja="zdejmij" data-klucz="'+sl.id+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0">Zdejmij</button>' : "")
+  var zak = S.zakEkw || "rzeczy";
+  var h = naglowek("Ekwipunek", S.wrog ? "W trakcie walki możesz tylko patrzeć." : "");
+  h += '<div class="zakladki">'
+     + [{id:"rzeczy",n:"Rzeczy"},{id:"wyposazenie",n:"Na sobie"},{id:"zaklecia",n:"Zaklęcia"}].map(function(z){
+         return '<button data-akcja="zakEkw" data-klucz="'+z.id+'" class="zakladka'+(zak===z.id?" on":"")+'">'+z.n+'</button>';
+       }).join("") + '</div>';
+
+  if(zak === "wyposazenie"){
+    h += '<div class="sloty rama">' + SLOTY.map(function(sl){
+      var k = S.zalozone[sl.id];
+      return '<div class="slot"><div class="slot-e">'+sl.n+'</div>'
+           + '<div class="slot-w '+(k && k!=="__zajete"?"":"pusty")+'">'+(k && k!=="__zajete" ? PRZEDMIOTY[k].n : "puste")+'</div>'
+           + (k && k!=="__zajete" && !S.wrog ? '<button data-akcja="zdejmij" data-klucz="'+sl.id+'" class="mini-akcja">Zdejmij</button>' : "")
+           + '</div>';
+    }).join("") + '</div>';
+    h += '<div class="kat">Pasek szybkiego wyboru - dostępny w walce</div>';
+    h += '<div class="sloty rama" style="grid-template-columns:repeat(5,1fr)">';
+    S.pasek.forEach(function(k,i){
+      var jest = k && S.plecak[k];
+      h += '<div class="slot" style="text-align:center;min-height:58px;padding:8px 3px">'
+         + '<div class="slot-e">'+(i+1)+'</div>'
+         + '<div class="slot-w '+(jest?"":"pusty")+'" style="font-size:11px;line-height:1.25">'
+         + (jest ? PRZEDMIOTY[k].n : "puste")+'</div>'
+         + (jest && !S.wrog ? '<button data-akcja="zpaska" data-klucz="'+i+'" class="mini-akcja">Wyjmij</button>' : "")
          + '</div>';
-  }).join("") + '</div>';
-
-  h += '<div class="kat">Pasek szybkiego wyboru - dostępny w walce</div>';
-  h += '<div class="sloty rama" style="grid-template-columns:repeat(5,1fr)">';
-  S.pasek.forEach(function(k,i){
-    var jest = k && S.plecak[k];
-    h += '<div class="slot" style="text-align:center;min-height:58px;padding:8px 3px">'
-       + '<div class="slot-e">'+(i+1)+'</div>'
-       + '<div class="slot-w '+(jest?"":"pusty")+'" style="font-size:11px;line-height:1.25">'
-       + (jest ? PRZEDMIOTY[k].n : "puste")+'</div>'
-       + (jest && !S.wrog ? '<button data-akcja="zpaska" data-klucz="'+i+'" style="min-height:28px;font-size:11px;padding:3px;margin:6px 0 0">Wyjmij</button>' : "")
-       + '</div>';
-  });
-  h += '</div>';
-
-  var puste = true;
-  KATEGORIE.forEach(function(kat){
-    var rzeczy = Object.keys(S.plecak).filter(function(k){ return PRZEDMIOTY[k].kat === kat.id; });
-    if(!rzeczy.length) return;
-    puste = false;
-    h += '<div class="kat">'+kat.n+'</div><div class="rzeczy">';
-    rzeczy.forEach(function(k){
-      var p = PRZEDMIOTY[k];
-      h += '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]
-         + '<div class="rzecz-o">'+p.o+'</div>'
-         + (opisDzialania(p) ? '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisDzialania(p)+'</div>' : '')
-         + (p.typ==="wyposazenie" && !S.wrog ? (brakWymagan(p)
-             ? '<div class="rzecz-o" style="margin-top:8px;color:var(--krew)">Wymaga '+brakWymagan(p)+'</div>'
-             : '<button data-akcja="zaloz" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">Załóż</button>') : "")
-         + (p.typ==="ksiega" && !S.wrog ? '<button data-akcja="czytaj" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">'+"Przeczytaj"+'</button>' : "")
-         + (p.typ==="napoj_many" && !S.wrog ? '<button data-akcja="pij" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">Wypij</button>' : "")
-         + (p.typ==="jadalne" && !S.wrog && mozeUzyc(k) ? '<button data-akcja="zjedz" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">'+(p.jad ? "Natrzyj ostrze" : "Użyj")+'</button>' : "")
-+ ((p.typ==="jadalne"||p.typ==="napoj_many"||p.typ==="wyposazenie") && !S.wrog ? '<button data-akcja="pasek" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0 6px;width:auto">Do paska</button>' : "")
-         + '</span><span class="rzecz-o">'+(p.cena ? p.cena+" zł" : "")+'</span></div>';
     });
     h += '</div>';
+    return h;
+  }
+
+  if(zak === "zaklecia"){
+    var zn = znaneZaklecia();
+    if(!zn.length) return h + '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nie znasz jeszcze żadnego zaklęcia. Uczą ich Ożóg, Dobrogost i Zbysława.</span></div></div>';
+    h += '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Wybierz, które zaklęcia widzisz w walce i w jakiej kolejności.</p>';
+    h += '<div class="rzeczy rama">' + kolejnoscZaklec().map(function(z, idx){
+      var ukryte = !!S.zakleciaUkryte[z.id];
+      return '<div class="rzecz"><span>'+(idx+1)+'. '+z.n+' <span class="rzecz-o">('+z.mana+' many)</span>'
+        + '<div class="rzecz-o">'+z.o+'</div>'
+        + '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisZaklecia(z)+'</div>'
+        + '<button data-akcja="zaklWid" data-klucz="'+z.id+'" class="mini-akcja">'+(ukryte?"Pokaż w walce":"Ukryj w walce")+'</button>'
+        + '<button data-akcja="zaklGora" data-klucz="'+z.id+'" class="mini-akcja">W górę</button>'
+        + '<button data-akcja="zaklDol" data-klucz="'+z.id+'" class="mini-akcja">W dół</button>'
+        + '</span><span class="rzecz-o">'+(ukryte?"ukryte":"w walce")+'</span></div>';
+    }).join("") + '</div>';
+    return h;
+  }
+
+  var puste = true;
+  KATEGORIE_EKW.forEach(function(kat){
+    var rzeczy = Object.keys(S.plecak).filter(function(k){ return PRZEDMIOTY[k] && katPrzedmiotu(PRZEDMIOTY[k]) === kat.id; });
+    if(!rzeczy.length) return;
+    puste = false;
+    h += '<div class="kat">'+kat.n+'</div><div class="rzeczy">' + rzeczy.map(wierszPrzedmiotu).join("") + '</div>';
   });
   if(puste) h += '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Plecak jest pusty.</span></div></div>';
   return h;
@@ -3462,38 +3568,86 @@ pl.style.width = (k*100)+"%";
 }
 
 function widokPostaci(){
+  uzupelnijStan();
+  var zak = S.zakPost || "walka";
+  var karty = [{id:"walka",n:"Walka"},{id:"profesje",n:"Profesje"},{id:"umiejetnosci",n:"Umiejętności"},{id:"magia",n:"Magia"},{id:"swiat",n:"Pozycja"}];
   var h = naglowek("Postać", "Bez imienia. Nikt cię jeszcze nie zapisał po żadnej stronie.");
   h += '<div class="staty rama">'
      + stat("Poziom", S.poziom, "")
      + stat("Doświadcz.", S.exp+"/"+progExp(S.poziom), "")
      + stat("Nauka", S.pn, "")
-     + stat("Siła", S.sila + (bonusStatu("sila") ? " +"+bonusStatu("sila") : ""), "")
-     + stat("Zręcz.", S.zrecz + (bonusStatu("zrecz") ? " +"+bonusStatu("zrecz") : ""), "")
      + stat("Życie", S.hp+"/"+S.hpMax, "hp")
      + stat("Mana", S.manaMax ? S.mana+"/"+S.manaMax : "-", "")
-     + stat("Intelekt", S.intelekt, "")
      + stat("Złoto", S.zloto, "zl")
-     + stat("Plecak", sztukWPlecaku(), "")
      + '</div>';
+  h += '<div class="zakladki">' + karty.map(function(z){
+    return '<button data-akcja="zakPost" data-klucz="'+z.id+'" class="zakladka'+(zak===z.id?" on":"")+'">'+z.n+'</button>';
+  }).join("") + '</div>';
+
+  if(zak === "walka"){
+    h += '<div class="staty rama">'
+       + stat("Siła", S.sila + (bonusStatu("sila") ? " +"+bonusStatu("sila") : ""), "")
+       + stat("Zręcz.", S.zrecz + (bonusStatu("zrecz") ? " +"+bonusStatu("zrecz") : ""), "")
+       + stat("Intelekt", S.intelekt, "")
+       + '</div>';
+    var b = bronWRece();
+    h += '<div class="kat">Oręż</div><div class="rzeczy rama">'
+       + '<div class="rzecz"><span>Broń</span><span class="rzecz-o">'+(b ? b.n : "gołe pięści")+'</span></div>'
+       + '<div class="rzecz"><span>Obrażenia</span><span class="rzecz-o">'+opisObrazen()+'</span></div>'
+       + '<div class="rzecz"><span>Szansa na unik</span><span class="rzecz-o">'+unikSzansa().toFixed(1)+'%</span></div>'
+       + '<div class="rzecz"><span>Szansa na krytyka</span><span class="rzecz-o">'+(5 + (S.zrecz+bonusStatu("zrecz"))/5 + bonusStatu("kryt")).toFixed(1)+'%</span></div>'
+       + '</div>';
+    h += '<div class="kat">Odporności</div><div class="rzeczy rama">'
+       + '<div class="rzecz"><span class="rzecz-o">Odporność zmniejsza obrażenia danego rodzaju (najwyżej 70%).</span></div>'
+       + Object.keys(NAZWY_OBRAZEN).map(function(t){
+           return '<div class="rzecz"><span>'+NAZWY_OBRAZEN[t]+'</span><span class="rzecz-o">'+redukcja(t)+'%</span></div>';
+         }).join("") + '</div>';
+    h += '<div class="kat">Superciosy</div><div class="rzeczy rama">' + (moje().length
+      ? moje().map(function(c){ return '<div class="rzecz"><span>'+c.n+'<div class="rzecz-o">'+c.z.map(function(z){return STREFA[z];}).join(" - ")+'</div></span><span class="rzecz-o">'+c.o+'</span></div>'; }).join("")
+      : '<div class="rzecz"><span class="rzecz-o">Nie umiesz jeszcze żadnego.</span></div>') + '</div>';
+    return h;
+  }
+
+  if(zak === "profesje"){
+    h += '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Każda profesja rośnie od pracy. Wyższy poziom to lepszy urobek i trudniejsze receptury.</p>';
+    h += '<div class="rzeczy rama">' + PROFESJE.map(function(pr){
+      var st = profStan(pr.id);
+      var umie = !pr.um || S.umie[pr.um];
+      return '<div class="rzecz"><span>'+pr.n+' <span class="rzecz-o">'+(umie?"":" - nieuczony")+'</span>'
+        + '<div class="rzecz-o">'+pr.o+'</div>'
+        + '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">Doświadczenie '+st.e+'/'+progProf(st.p)+'</div>'
+        + '</span><span class="rzecz-o">poziom '+st.p+'/10</span></div>';
+    }).join("") + '</div>';
+    h += '<div class="kat">Receptury</div><div class="rzeczy rama">' + RECEPTURY.map(function(r){
+      var st = profStan(r.prof);
+      return '<div class="rzecz"><span>'+r.n+'<div class="rzecz-o">'+skladnikiOpis(r)+'</div></span>'
+        + '<span class="rzecz-o">'+nazwaProfesji(r.prof)+' '+r.lvl+(st.p >= r.lvl ? "" : " - za mało wprawy")+'</span></div>';
+    }).join("") + '</div>';
+    return h;
+  }
+
+  if(zak === "umiejetnosci"){
+    var u = NAUKA.filter(function(w){ return w.raz && S.kupione[w.id] && w.id !== "wytrz"; });
+    h += '<div class="rzeczy rama">' + (u.length
+      ? u.map(function(w){ return '<div class="rzecz"><span>'+w.l+'</span><span class="rzecz-o">'+({walka:"walka",puszcza:"puszcza",rzemioslo:"rzemiosło",magia:"magia"}[w.grupa]||"")+'</span></div>'; }).join("")
+      : '<div class="rzecz"><span class="rzecz-o">Nic jeszcze nie umiesz.</span></div>') + '</div>';
+    return h;
+  }
+
+  if(zak === "magia"){
+    h += '<div class="staty rama">' + stat("Mana", S.mana+"/"+S.manaMax, "") + stat("Intelekt", S.intelekt, "") + stat("Runy", (S.umie.runy3?"prastare":(S.umie.runy2?"wyższe":(S.umie.runy1?"proste":"żadne"))), "") + '</div>';
+    var zn = znaneZaklecia();
+    h += '<div class="kat">Znane zaklęcia</div><div class="rzeczy rama">' + (zn.length
+      ? zn.map(function(z){ return '<div class="rzecz"><span>'+z.n+'<div class="rzecz-o">'+z.o+'</div><div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisZaklecia(z)+'</div></span><span class="rzecz-o">'+z.mana+' many</span></div>'; }).join("")
+      : '<div class="rzecz"><span class="rzecz-o">Żadnego. Ożóg z Popielnicy uczy pierwszego.</span></div>') + '</div>';
+    return h;
+  }
+
   h += '<div class="kat">Reputacja</div>' + panelReputacji();
-  h += '<div class="kat">Umiejętności</div><div class="rzeczy">';
-  var u = NAUKA.filter(function(w){ return w.raz && S.kupione[w.id] && w.id !== "wytrz"; });
-  if(!u.length) h += '<div class="rzecz"><span class="rzecz-o">Nic jeszcze nie umiesz.</span></div>';
-  else u.forEach(function(w){ h += '<div class="rzecz"><span>'+w.l+'</span></div>'; });
-  h += '</div>';
-  h += '<div class="kat">Unik i krytyk</div><div class="rzeczy rama">'
-     + '<div class="rzecz"><span>Unik</span><span class="rzecz-o">'+unikSzansa().toFixed(1)+'%</span></div>'
-     + '<div class="rzecz"><span>Krytyk</span><span class="rzecz-o">'+(5 + (S.zrecz+bonusStatu("zrecz"))/5 + bonusStatu("kryt")).toFixed(1)+'%</span></div>'
-     + '</div><div class="kat">Odporności</div><div class="rzeczy rama">'
-     + '<div class="rzecz"><span class="rzecz-o">Odporność zmniejsza obrażenia danego rodzaju o tyle procent (najwyżej 70%).</span></div>'
-     + ODPORNOSCI.map(function(o){
-         var v = odpornosc(o.id);
-         return '<div class="rzecz"><span>'+o.n+'</span><span class="rzecz-o">'+(v?"-"+redukcja(o.id)+"% obrażeń":"brak")+'</span></div>';
-       }).join("")
-     + '</div><div class="kat">Walka</div><div class="rzeczy rama">'
-     + '<div class="rzecz"><span>Obrażenia</span><span class="rzecz-o">'+opisObrazen()+'</span></div>'
-     + '<div class="rzecz"><span>Szansa na unik</span><span class="rzecz-o">'+unikSzansa().toFixed(1)+'%</span></div>'
-     + '<div class="rzecz"><span>Szansa na krytyka</span><span class="rzecz-o">'+(5 + S.zrecz/5).toFixed(1)+'%</span></div></div>';
+  h += '<div class="kat">Czas</div>' + blokCzasu();
+  h += '<div class="kat">Frakcja</div><div class="rzeczy rama"><div class="rzecz"><span>'
+     + (S.frakcja ? "Nosisz barwy: "+S.frakcja : "Bez barw. Wszyscy patrzą, nikt nie ufa.")
+     + '</span><span class="rzecz-o">rozdział '+S.rozdzial+'</span></div></div>';
   return h;
 }
 
@@ -3517,22 +3671,55 @@ function widokDziennika(){
   return h;
 }
 
+function lancuchZadania(id){
+  var m = id.match(/^([a-z]+?)_?\d+$/);
+  return m ? m[1] : "inne";
+}
+var NAZWY_LANCUCHOW = {
+  sol:"Szlak solny", trakt:"Krew na trakcie", rzeka:"Rzeka oddaje",
+  zelazo:"Żelazo z Wietrznicy", popiol:"Kroniki popiołu", chor:"Trzy chorągwie",
+  sk:"Sprawy Ludu Ismaala", nw:"Sprawy Nowożytnych", od:"Sprawy Odeszłych", pl:"Sprawy Prastarego Ludu",
+  inne:"Sprawy pojedyncze"
+};
+
 function czescZadania(){
   var wpisy = Object.keys(ZADANIA).filter(function(id){ return stanZadania(id) !== "brak"; });
   if(!wpisy.length) return '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nikt cię jeszcze o nic nie poprosił.</span></div></div>';
-  var kolej = {gotowe:0, aktywne:1, oddane:2};
-  wpisy.sort(function(a,b){ return kolej[stanZadania(a)] - kolej[stanZadania(b)]; });
-  return '<div class="rzeczy rama">' + wpisy.map(function(id){
-    var z = ZADANIA[id], st = stanZadania(id), otw = S.rozwiniete === ("z_"+id);
+
+  var grupy = {}, kolejnosc = [];
+  wpisy.forEach(function(id){
+    var l = lancuchZadania(id);
+    if(!grupy[l]){ grupy[l] = []; kolejnosc.push(l); }
+    grupy[l].push(id);
+  });
+  kolejnosc.sort(function(a,b){
+    if(a === "inne") return 1;
+    if(b === "inne") return -1;
+    return grupy[b].length - grupy[a].length;
+  });
+
+  var wybrany = S.zakLancuch && grupy[S.zakLancuch] ? S.zakLancuch : kolejnosc[0];
+  var h = '<div class="zakladki">' + kolejnosc.map(function(l){
+    var trwa = grupy[l].some(function(id){ return stanZadania(id) !== "oddane"; });
+    return '<button data-akcja="lancuch" data-klucz="'+l+'" class="zakladka'+(wybrany===l?" on":"")+'">'
+      + (NAZWY_LANCUCHOW[l] || l) + (trwa ? " &bull;" : "") + '</button>';
+  }).join("") + '</div>';
+
+  var lista = grupy[wybrany].slice().sort();
+  var biezacy = lista.filter(function(id){ return stanZadania(id) !== "oddane"; })[0];
+  h += '<div class="rzeczy rama">' + lista.map(function(id, nr){
+    var z = ZADANIA[id], st = stanZadania(id), otw = S.rozwiniete === ("z_"+id) || id === biezacy;
     var op = {aktywne:"w toku", gotowe:"do oddania", oddane:"zakończone"}[st];
-    var t = '<div class="rzecz"><span style="width:100%">'
-      + '<button data-akcja="rozwin" data-klucz="z_'+id+'" class="wpis">'+z.t
+    var t = '<div class="rzecz"'+(id === biezacy ? ' style="border-left:2px solid var(--zloto);padding-left:10px"' : '')+'><span style="width:100%">'
+      + '<button data-akcja="rozwin" data-klucz="z_'+id+'" class="wpis">'
+      + (lista.length > 1 ? "Etap "+(nr+1)+": " : "") + z.t
       + '<span class="rzecz-o" style="float:right">'+op+'</span></button>';
     if(otw){
       t += '<div class="rozwiniete">'
+         + (id === biezacy ? '<p style="color:var(--zloto)"><b>Teraz do zrobienia:</b> '+z.cel+'</p>' : '')
          + '<p class="rzecz-o">Od: '+z.od+'</p>'
          + '<p>'+(z.pelny || z.opis)+'</p>'
-         + (st === "oddane" ? '' : '<p><b>Do zrobienia:</b> '+z.cel+'</p>')
+         + (st === "oddane" || id === biezacy ? '' : '<p><b>Do zrobienia:</b> '+z.cel+'</p>')
          + (z.krok ? '<p class="rzecz-o">Krok '+z.krok()+'</p>' : '')
          + (z.miejsce !== undefined
             ? '<button data-akcja="idzDoMapy" data-klucz="'+z.miejsce+'" class="odnosnik">Pokaż na mapie: '+MAPA.znaczniki[z.miejsce].n+'</button>'
@@ -3541,6 +3728,7 @@ function czescZadania(){
     }
     return t + '</span></div>';
   }).join("") + '</div>';
+  return h;
 }
 
 function czescBestie(){
@@ -3715,7 +3903,15 @@ function pokaz(id){
   S.scena = id;
   S.odwiedzone[id] = true;
   var sc = SCENY[id];
-  if(sc) sc.__id = id;
+  if(!sc){
+    if(typeof LOKACJE !== "undefined" && LOKACJE[id]){ S.widok = "lokacja"; ekranLokacji(id); return; }
+    var wroc = S.lokacja && LOKACJE[S.lokacja] ? S.lokacja : "popielnica";
+    g.innerHTML = '<p class="tekst">Rozmowa się urywa. Odchodzisz bez pożegnania.</p>'
+      + przyciski([{l:"Wróć"}]);
+    podepnij([function(){ S.widok="lokacja"; ekranLokacji(wroc); }]);
+    return;
+  }
+  sc.__id = id;
 
   if(id === "osada" && !S.autozapis){ S.autozapis = true; zapiszDoSlotu(1, "Początek drogi"); }
 
@@ -3796,6 +3992,7 @@ function pokaz(id){
 
       if(o.kradziez){ probaKradziezy(o.kradziez, id); return; }
       if(o.odpoczynek){ odpocznij(o.odpoczynek, id); return; }
+      if(o.warsztat){ ekranWytwarzania(o.warsztat, id); return; }
       if(o.czas) mijaCzas(o.czas);
       if(o.natret) S.cierpliwosc[o.natret] = (S.cierpliwosc[o.natret]||0) + 1;
       if(o.poznaj) poznaj(o.poznaj);
@@ -3848,6 +4045,14 @@ function uzupelnijStan(){
   if(S.zlapania === undefined) S.zlapania = 0;
   if(S.frakcja === undefined) S.frakcja = null;
   if(S.rozdzial === undefined) S.rozdzial = 1;
+  if(!S.prof) S.prof = {};
+  if(!S.przeczytane) S.przeczytane = {};
+  if(!S.sklepy) S.sklepy = {};
+  if(S.sklepyRozdzial === undefined) S.sklepyRozdzial = S.rozdzial;
+  if(!S.zakleciaKolejnosc) S.zakleciaKolejnosc = [];
+  if(!S.zakleciaUkryte) S.zakleciaUkryte = {};
+  if(S.tarcza === undefined) S.tarcza = 0;
+  if(S.sklepyRozdzial !== S.rozdzial){ S.sklepy = {}; S.sklepyRozdzial = S.rozdzial; }
 }
 
 function mijaCzas(min){
@@ -3886,20 +4091,51 @@ function blokCzasu(){
 /* ---------- ODPOCZYNEK ---------- */
 
 function odpocznij(o, wracaScena){
-  var godzin = o.godzin || 6;
-  mijaCzas(godzin*60);
-  var przed = S.hp;
-  S.hp = Math.min(S.hpMax, S.hp + Math.round(S.hpMax * (o.udzial || 0.5)));
-  S.mana = S.manaMax;
-  var tekst = (o.tekst || "Siadasz przy studni i pozwalasz, żeby czas zrobił swoje.")
-    + "<br><br><em>Mija " + godzin + " godzin. Jest " + godzinaGry() + ", " + poraDnia() + ".</em>"
-    + "<br>Odzyskujesz " + (S.hp - przed) + " życia i pełną manę.";
-  g.innerHTML = '<p class="tekst">'+tekst+'</p>' + przyciski([{l:"Wstań"}]);
-  podepnij([function(){
+  uzupelnijStan();
+  var lozko = o.lozko === true;
+  var wroc = function(){
     if(o.lok){ S.widok="lokacja"; ekranLokacji(o.lok); return; }
     pokaz(o.wraca || wracaScena);
-  }]);
+  };
+  var opcje = [1,2,4,8];
+  var h = '<p class="tekst">'+(o.tekst || "Siadasz i pozwalasz, żeby czas zrobił swoje.")
+    + '<br><br><em>' + godzinaGry() + ", " + poraDnia() + '.</em></p>';
+  h += lozko
+    ? '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Sen w łóżku pod dachem przywraca pełnię sił - za to się płaci.</p>'
+    : '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Przy ogniu i studni odpoczywa się tylko z nazwy: mija czas, sił nie przybywa. Tu za to można zapisać drogę.</p>';
+  h += przyciski(opcje.map(function(gg){
+    return {l:"Czekaj "+gg+(gg===1?" godzinę":(gg<5?" godziny":" godzin")),
+            koszt: lozko ? (kosztNoclegu(gg)+" zł") : "",
+            wylacz: lozko && S.zloto < kosztNoclegu(gg)};
+  }).concat(lozko ? [{l:"Wstań"}] : [{l:"Zapisz drogę"},{l:"Wstań"}]));
+  var akcje = opcje.map(function(gg){
+    return function(){
+      var cena = lozko ? kosztNoclegu(gg) : 0;
+      if(lozko && S.zloto < cena) return;
+      S.zloto -= cena;
+      mijaCzas(gg*60);
+      var przedHp = S.hp, przedM = S.mana;
+      if(lozko){ S.hp = S.hpMax; S.mana = S.manaMax; }
+      var t = (lozko
+          ? "Śpisz twardo i nikt cię nie budzi."
+          : "Siedzisz, patrzysz w ogień, prostujesz plecy. Nic więcej się z tego nie bierze.")
+        + "<br><br><em>Mija " + gg + " godz. Jest " + godzinaGry() + ", " + poraDnia() + ".</em>"
+        + (lozko ? "<br>Odzyskujesz " + (S.hp-przedHp) + " życia i " + (S.mana-przedM) + " many." : "");
+      g.innerHTML = '<p class="tekst">'+t+'</p>' + przyciski([{l:"Wstań"}]);
+      podepnij([wroc]);
+    };
+  });
+  if(!lozko) akcje.push(function(){
+    S.trybZapisu = true; panel = "zapisy";
+    var dz = document.getElementById("panel");
+    dz.hidden = false; odswiezPanel(); rysujPasek();
+  });
+  akcje.push(wroc);
+  g.innerHTML = h;
+  podepnij(akcje);
 }
+
+function kosztNoclegu(godzin){ return Math.max(4, godzin * 2); }
 
 /* ---------- KRADZIEŻ ---------- */
 
@@ -4670,7 +4906,7 @@ function rozszerzSceny(){
        ef:function(){ gotoweZadanie("nw_1"); dodaj("spis_wietrznicy"); }, idz:"ludmila_spis"},
       {l:"Pokaż, co masz do jedzenia.", idz:"ludmila_sklep"},
       {l:"Wynajmij łóżko na noc (10 zł)", warunek:function(){ return S.zloto >= 10; },
-       odpoczynek:{godzin:10, udzial:1, lok:"wietrznica", tekst:"Płacisz dziesięć sztuk i dostajesz siennik przy kominie. Nikt cię nie budzi."},
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"wietrznica", tekst:"Płacisz dziesięć sztuk i dostajesz siennik przy kominie. Nikt cię nie budzi."},
        ef:function(){ S.zloto -= 10; }},
       {l:"Co się mówi w Wietrznicy?", idz:"ludmila_plotki", raz:true},
       {l:"(sięgnij po sakwę pod ladą)", warunek:function(){ return !!S.umie.kradziez && !S.ukradzione.ludmila; },
@@ -5251,7 +5487,7 @@ function rozszerzSceny3(){
     tekst:"Namiot noclegowy to płótno rozpięte na żerdziach i dwadzieścia sienników na klepisku. Płaci się z góry i śpi z sakwą pod głową.",
     opcje:[
       {l:"Prześpij noc (10 godzin, 8 zł)", warunek:function(){ return S.zloto >= 8; },
-       odpoczynek:{godzin:10, udzial:1, lok:"jarmark", tekst:"Śpisz między dwoma obcymi i rano wszyscy trzej sprawdzacie sakwy."},
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"jarmark", tekst:"Śpisz między dwoma obcymi i rano wszyscy trzej sprawdzacie sakwy."},
        ef:function(){ S.zloto -= 8; }},
       {l:"Przeczekaj do zmroku (6 godzin)", odpoczynek:{godzin:6, udzial:0.4, lok:"jarmark",
         tekst:"Leżysz z rękami pod głową i słuchasz, jak jarmark zwija kramy."}},
@@ -5586,8 +5822,239 @@ function rozszerzGre(){
 /* ---------- ROZDZIAŁ PIERWSZY: ROZSZERZENIE ---------- */
 rozszerzGre();
 
+/* ================= PROFESJE, RECEPTURY, MAGIA, HANDEL ================= */
+
+var PROFESJE = [
+  {id:"gornictwo",  n:"Górnictwo",   um:"gornictwo",  o:"Kucie rudy w żyle. Wprawa daje więcej urobku z jednego wyrobiska."},
+  {id:"kowalstwo",  n:"Kowalstwo",   um:"kowalstwo",  o:"Wytop i kucie. Od sztaby do porządnego ostrza."},
+  {id:"alchemia",   n:"Alchemia",    um:"zielarstwo", o:"Warzenie wywarów z tego, co rośnie po miedzach."},
+  {id:"rybolostwo", n:"Rybołówstwo", um:"rybolostwo", o:"Sieć, ość i cierpliwość. Lepsza wprawa - grubsza ryba."},
+  {id:"gotowanie",  n:"Gotowanie",   um:null,         o:"Kocioł nad ogniem. Sycące jadło leczy więcej niż surowe."}
+];
+
+function nazwaProfesji(id){
+  for(var i=0;i<PROFESJE.length;i++) if(PROFESJE[i].id === id) return PROFESJE[i].n;
+  return id;
+}
+function profStan(id){
+  if(!S.prof) S.prof = {};
+  if(!S.prof[id]) S.prof[id] = {p:1, e:0};
+  return S.prof[id];
+}
+function profP(id){ return profStan(id).p; }
+function progProf(poz){ return 60 + (poz - 1) * 55; }
+function dodajProfExp(id, ile){
+  var st = profStan(id), awans = false;
+  st.e += ile;
+  while(st.p < 10 && st.e >= progProf(st.p)){ st.e -= progProf(st.p); st.p++; awans = true; }
+  return awans;
+}
+
+/* ---------- ZAKLĘCIA ---------- */
+var ZAKLECIA = [
+  {id:"iskra",  um:"iskra",  n:"Iskra",           mana:5,  baza:4,  wsp:1.2, typ:"ogien",
+   o:"Pierwsza runa, jakiej uczy Ożóg. Krótkie, gorące uderzenie w pierś."},
+  {id:"sopel",  um:"sopel",  n:"Sopel",           mana:8,  baza:7,  wsp:1.5, typ:"lod", stun:true,
+   o:"Powietrze tężeje i pęka. Trafiony traci rytm i nie odpowiada od razu."},
+  {id:"popiol", um:"popiol", n:"Popiół",          mana:12, baza:12, wsp:1.9, typ:"ogien",
+   o:"Runa z opactwa. Zostawia po sobie zapach spalenizny na cały dzień."},
+  {id:"tarcza", um:"tarcza", n:"Tarcza runiczna", mana:10, baza:0,  wsp:0,   tarcza:8,
+   o:"Osłona z powietrza i znaków. Pochłania obrażenia, zanim dosięgną skóry."}
+];
+function opisZaklecia(z){
+  if(z.tarcza) return "Pochłania " + (z.tarcza + S.intelekt) + " obrażeń (rośnie z intelektem).";
+  return "Obrażenia " + Math.round(z.baza + S.intelekt * z.wsp) + (z.stun ? ", przeciwnik traci turę." : ".");
+}
+function znaneZaklecia(){
+  return ZAKLECIA.filter(function(z){ return !!S.umie[z.um]; });
+}
+function kolejnoscZaklec(){
+  var zn = znaneZaklecia();
+  if(!S.zakleciaKolejnosc) S.zakleciaKolejnosc = [];
+  zn.forEach(function(z){ if(S.zakleciaKolejnosc.indexOf(z.id) < 0) S.zakleciaKolejnosc.push(z.id); });
+  return S.zakleciaKolejnosc.map(function(id){
+    for(var i=0;i<zn.length;i++) if(zn[i].id === id) return zn[i];
+    return null;
+  }).filter(Boolean);
+}
+function zakleciaWWalce(){
+  return kolejnoscZaklec().filter(function(z){ return !S.zakleciaUkryte[z.id]; });
+}
+function przesunZaklecie(id, kier){
+  var l = kolejnoscZaklec().map(function(z){ return z.id; });
+  var i = l.indexOf(id), j = i + kier;
+  if(i < 0 || j < 0 || j >= l.length) return;
+  l[i] = l[j]; l[j] = id;
+  S.zakleciaKolejnosc = l;
+}
+
+/* ---------- RECEPTURY ---------- */
+var RECEPTURY = [
+  {id:"sztaba",        prof:"kowalstwo",  lvl:1, n:"Sztaba żelaza",        daje:"sztaba",        ile:1, sklad:{ruda_darniowa:2}, exp:18},
+  {id:"grot",          prof:"kowalstwo",  lvl:2, n:"Tuzin grotów",         daje:"strzaly",       ile:12, sklad:{sztaba:1}, exp:20},
+  {id:"noz_kuty",      prof:"kowalstwo",  lvl:3, n:"Nóż kuty",             daje:"noz_kuty",      ile:1, sklad:{sztaba:2}, exp:34},
+  {id:"stal",          prof:"kowalstwo",  lvl:5, n:"Stal wietrzna",        daje:"stal_wietrzna", ile:1, sklad:{sztaba:2, ruda_wietrzna:1}, exp:48},
+  {id:"kord_kuty",     prof:"kowalstwo",  lvl:7, n:"Kord z wietrznej stali", daje:"kord_kuty",   ile:1, sklad:{stal_wietrzna:2, skora:2}, exp:80},
+  {id:"wywar_maly",    prof:"alchemia",   lvl:1, n:"Wywar z dziewanny",    daje:"wywar_maly",    ile:1, sklad:{dziewanna:2}, exp:16},
+  {id:"wywar_many",    prof:"alchemia",   lvl:3, n:"Napar runiczny",       daje:"wywar_many",    ile:1, sklad:{arcydziegiel:2, bagno:1}, exp:30},
+  {id:"jad_tojad",     prof:"alchemia",   lvl:4, n:"Jad z tojadu",         daje:"jad_tojad",     ile:1, sklad:{tojad:2}, exp:36},
+  {id:"wywar_duzy",    prof:"alchemia",   lvl:6, n:"Wywar mocny",          daje:"wywar_duzy",    ile:1, sklad:{dziewanna:3, arcydziegiel:2}, exp:60},
+  {id:"ryba_pieczona", prof:"gotowanie",  lvl:1, n:"Ryba pieczona",        daje:"ryba_pieczona", ile:1, sklad:{ryba:1}, exp:14},
+  {id:"polewka",       prof:"gotowanie",  lvl:2, n:"Polewka z kotła",      daje:"polewka",       ile:1, sklad:{ryba:1, chleb:1}, exp:22},
+  {id:"pieczen",       prof:"gotowanie",  lvl:4, n:"Pieczeń myśliwska",    daje:"pieczen",       ile:1, sklad:{mieso:2, dziewanna:1}, exp:40},
+  {id:"uczta",         prof:"gotowanie",  lvl:6, n:"Uczta w kotle",        daje:"uczta",         ile:1, sklad:{mieso:2, ryba:2, chleb:1}, exp:64}
+];
+function skladnikiOpis(r){
+  var t = [];
+  for(var k in r.sklad) t.push((PRZEDMIOTY[k] ? PRZEDMIOTY[k].n : k) + " ×" + r.sklad[k]);
+  return t.join(", ") + " → " + (PRZEDMIOTY[r.daje] ? PRZEDMIOTY[r.daje].n : r.daje) + (r.ile > 1 ? " ×"+r.ile : "");
+}
+function maSkladniki(r){
+  for(var k in r.sklad) if((S.plecak[k] || 0) < r.sklad[k]) return false;
+  return true;
+}
+
+function ekranWytwarzania(profId, wraca){
+  uzupelnijStan();
+  var st = profStan(profId);
+  var lista = RECEPTURY.filter(function(r){ return r.prof === profId; });
+  var h = '<p class="tekst"><em>'+nazwaProfesji(profId)+' - poziom '+st.p+'/10 ('+st.e+'/'+progProf(st.p)+' wprawy).</em><br>'
+    + 'Robota idzie tak, jak umiesz. Czego nie umiesz jeszcze, tego nie tkniesz.</p>';
+  var opcje = [], akcje = [];
+  lista.forEach(function(r){
+    var mozna = st.p >= r.lvl && maSkladniki(r);
+    opcje.push({l:r.n + " — " + skladnikiOpis(r),
+                koszt:(st.p >= r.lvl ? "" : "poziom "+r.lvl),
+                wylacz:!mozna});
+    akcje.push(function(){
+      if(!mozna) return;
+      for(var k in r.sklad) usun(k, r.sklad[k]);
+      dodaj(r.daje, r.ile);
+      mijaCzas(45);
+      var aw = dodajProfExp(profId, r.exp);
+      var expG = Math.round(r.exp / 2);
+      var awG = dodajExp(expG);
+      g.innerHTML = '<p class="tekst">Robota skończona: <em>'+(PRZEDMIOTY[r.daje] ? PRZEDMIOTY[r.daje].n : r.daje)+'</em>'
+        + (r.ile > 1 ? " ×"+r.ile : "") + '.<br><br>Wprawa +'+r.exp+', doświadczenie +'+expG+'.'
+        + (aw ? '<br><em>'+nazwaProfesji(profId)+' - poziom '+profP(profId)+'.</em>' : '')
+        + (awG ? '<br><em>Awans na poziom '+S.poziom+'.</em>' : '') + '</p>'
+        + przyciski([{l:"Rób dalej"},{l:"Odejdź od warsztatu"}]);
+      podepnij([function(){ ekranWytwarzania(profId, wraca); }, function(){ pokaz(wraca); }]);
+    });
+  });
+  opcje.push({l:"Odejdź od warsztatu"});
+  akcje.push(function(){ pokaz(wraca); });
+  g.innerHTML = h + przyciski(opcje);
+  podepnij(akcje);
+}
+
+/* ---------- ZAPASY W SKLEPACH ---------- */
+function limitTowaru(k){
+  var p = PRZEDMIOTY[k];
+  if(!p) return 0;
+  var kat = katPrzedmiotu(p);
+  if(kat === "bron" || kat === "pancerz" || kat === "bizuteria") return 1;
+  if(kat === "amunicja") return 24 + 12 * (S.rozdzial - 1);
+  if(kat === "pismo") return 1;
+  if(kat === "mikstura" || kat === "roslina") return 3;
+  if(kat === "zywnosc") return 5;
+  return 4;
+}
+function zapasSklepu(sklepId, k){
+  if(!S.sklepy) S.sklepy = {};
+  if(!S.sklepy[sklepId]) S.sklepy[sklepId] = {};
+  var m = S.sklepy[sklepId];
+  if(m[k] === undefined) m[k] = limitTowaru(k);
+  return m[k];
+}
+function kupionoWSklepie(sklepId, k){
+  var ile = zapasSklepu(sklepId, k);
+  S.sklepy[sklepId][k] = Math.max(0, ile - 1);
+}
+/* oferta rośnie z rozdziałem - lepszy towar pojawia się później */
+var TOWARY_ROZDZIALU = {
+  2:{kowal:["kord_kuty","stal_wietrzna"], zbrojmistrz:["kolczuga"], zielarka:["wywar_duzy"]},
+  3:{kowal:["dwurecz"], zbrojmistrz:["bryg"], zielarka:["wywar_many"]}
+};
+function dodatkoweTowary(sklepId){
+  var out = [];
+  for(var r = 2; r <= S.rozdzial; r++){
+    var tab = TOWARY_ROZDZIALU[r];
+    if(!tab) continue;
+    for(var grupa in tab){
+      if(sklepId && sklepId.indexOf(grupa) >= 0) out = out.concat(tab[grupa]);
+    }
+  }
+  return out.filter(function(k){ return !!PRZEDMIOTY[k]; });
+}
+
+/* ---------- DOPRACOWANIE: przedmioty rzemieślnicze i warsztaty ---------- */
+function dopracujGre(){
+  var nowe = {
+    sztaba:{n:"Sztaba żelaza", kat:"surowiec", typ:"towar", cena:45,
+      o:"Wytopiona z rudy darniowej, jeszcze ciepła od kuźni.",
+      dz:"Materiał na broń i groty. Kowale kupują ją zawsze."},
+    stal_wietrzna:{n:"Stal wietrzna", kat:"surowiec", typ:"towar", cena:140,
+      o:"Ciemna, z jasnym rysunkiem na przełomie. Wietrznica z tego żyje.",
+      dz:"Najlepszy materiał, jaki umie dać ten kraj."},
+    noz_kuty:{n:"Nóż kuty własnoręcznie", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[7,11], cena:70, wym:{sila:12},
+      o:"Rękojeść owinięta rzemieniem, bo na okładziny zabrakło.",
+      dz:"Obrażenia cięte 7-11."},
+    kord_kuty:{n:"Kord z wietrznej stali", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[15,21], cena:340, wym:{sila:24},
+      o:"Klinga trzyma ostrze przez cały dzień rąbania.",
+      dz:"Obrażenia cięte 15-21."},
+    jad_tojad:{n:"Jad z tojadu", kat:"napoj", typ:"jadalne", jad:true, cena:60,
+      o:"Gęsty, o barwie starego miodu. Trzymaj z dala od ust.",
+      dz:"Natarte ostrze zatruwa wroga na kilka tur."},
+    wywar_duzy:{n:"Wywar mocny", kat:"napoj", typ:"jadalne", hp:45, cena:90,
+      o:"Warzony długo, gorzki tak, że łzy idą.", dz:"Przywraca 45 życia."},
+    ryba_pieczona:{n:"Ryba pieczona", kat:"zywnosc", typ:"jadalne", hp:14, cena:12,
+      o:"Skóra chrupie, ość wychodzi jednym ruchem.", dz:"Przywraca 14 życia."},
+    polewka:{n:"Polewka z kotła", kat:"zywnosc", typ:"jadalne", hp:24, cena:20,
+      o:"Gorąca, tłusta, z pływającym okiem tłuszczu.", dz:"Przywraca 24 życia."},
+    pieczen:{n:"Pieczeń myśliwska", kat:"zywnosc", typ:"jadalne", hp:38, cena:38,
+      o:"Przypiekana na rożnie, z ziołami wetkniętymi pod skórę.", dz:"Przywraca 38 życia."},
+    uczta:{n:"Uczta w kotle", kat:"zywnosc", typ:"jadalne", hp:60, cena:70,
+      o:"Tyle jedzenia, że wstyd zjeść samemu.", dz:"Przywraca 60 życia."}
+  };
+  for(var k in nowe) if(!PRZEDMIOTY[k]) PRZEDMIOTY[k] = nowe[k];
+
+  /* każdy przedmiot ma opis - żadnych pustych */
+  for(var kk in PRZEDMIOTY){
+    var p = PRZEDMIOTY[kk];
+    if(!p.o) p.o = "Zwyczajna rzecz, jakich pełno na Ziemiach Niczyich.";
+  }
+
+  /* warsztaty u rzemieślników */
+  var warsztaty = [
+    {sceny:["przybyslaw","bolko","hutnik","kowal","zelislaw"], prof:"kowalstwo", l:"Stań przy kowadle (kucie)"},
+    {sceny:["bogna","zbyslawa","znachorka","milocha"], prof:"alchemia", l:"Rozpal palenisko (warzenie)"},
+    {sceny:["bodzieta","ludmila","karczma"], prof:"gotowanie", l:"Weź się za kocioł (gotowanie)"}
+  ];
+  warsztaty.forEach(function(w){
+    w.sceny.forEach(function(id){
+      var sc = SCENY[id];
+      if(!sc || !sc.opcje || sc.__warsztat) return;
+      sc.__warsztat = true;
+      sc.opcje.unshift({l:w.l, warsztat:w.prof});
+    });
+  });
+
+  /* nocleg w karczmie w Popielnicy */
+  if(SCENY.karczma && SCENY.karczma.opcje && !SCENY.karczma.__lozko){
+    SCENY.karczma.__lozko = true;
+    SCENY.karczma.opcje.unshift({l:"Wynajmij izbę na noc", warunek:function(){ return S.zloto >= 4; },
+      odpoczynek:{lozko:true, wraca:"karczma", tekst:"Izba na piętrze pachnie dymem i cudzym snem. Drzwi zamykasz na kołek."}});
+  }
+}
+dopracujGre();
+
+
+
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
-  PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji};
+  PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,
+  RECEPTURY:RECEPTURY, ZAKLECIA:ZAKLECIA, PROFESJE:PROFESJE, ekranWytwarzania:ekranWytwarzania,
+  odpocznij:odpocznij, zacznijWalke:zacznijWalke, odswiezPanel:odswiezPanel, dodaj:dodaj};
 
 rysujPasek();
 pokaz("start");
