@@ -6280,7 +6280,7 @@ function rozdzialDrugi(){
     n:"Obrzeża obozowiska", wraca:"obozowisko",
     opis:"Za linią namiotów zaczyna się śmietnisko czterech armii: połamane drzewce, zdarte podkowy i to, czego nikt nie chciał nieść dalej.",
     punkty:[
-      {id:"ob_ruda", typ:"ruda", n:"Porzucone sztaby w błocie", wymaga:"gornictwo", zbierz:{ruda:2},
+      {id:"ob_ruda", typ:"ruda", n:"Porzucone sztaby w błocie", wymaga:"gornictwo", zbierz:{sztaba:2},
        wynik:"Sztaby wypadły z wozu i nikt ich nie podniósł, bo nie były niczyje."},
       {id:"ob_zwiad", typ:"mob", n:"Zwiadowca, który nie chce rozmawiać", walka:"zwiadowca_pl",
        warunek:function(){ return stanZadania("posel5") === "aktywne"; }},
@@ -6304,8 +6304,7 @@ function rozdzialDrugi(){
   SCENY.studnia_rozjemcza = {portret:null, kto:"Studnia rozjemcza",
     tekst:"Woda zimna i czysta, wyciągana wspólnym wiadrem. Zwyczaj mówi, że przy tej studni nikt nie dobywa broni.",
     opcje:[
-      {l:"Usiądź na godzinę", odpoczynek:{godziny:1, wraca:"studnia_rozjemcza"}},
-      {l:"Usiądź na cztery godziny", odpoczynek:{godziny:4, wraca:"studnia_rozjemcza"}},
+      {l:"Usiądź przy studni", odpoczynek:{wraca:"studnia_rozjemcza"}},
       {l:"Zapisz grę", zapis:true},
       {l:"Wróć do stołu", idz:"__lok_stol_rozjemczy"}
     ]};
@@ -6314,7 +6313,7 @@ function rozdzialDrugi(){
     tekst:"Pod zadaszeniem stoi osiem prycz dla posłańców. Za nocleg płaci się rozjemcom, bo rozjemcy nie mają z czego żyć.",
     opcje:[
       {l:"Prześpij noc (6 zł)", warunek:function(){ return S.zloto >= 6; },
-       odpoczynek:{lozko:true, koszt:6, wraca:"prycza_rozjemcza",
+       odpoczynek:{lozko:true, wraca:"prycza_rozjemcza",
                    tekst:"Płótno nad tobą łopocze przez całą noc, ale nikt cię nie budzi."}},
       {l:"Wróć do stołu", idz:"__lok_stol_rozjemczy"}
     ]};
