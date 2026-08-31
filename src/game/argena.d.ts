@@ -1,1 +1,1 @@
-export function startArgena(): (() => void) | void;
+export function startArgena(): void;
