@@ -14,7 +14,8 @@ function nowyStan(){
     kupione:{}, umie:{}, plecak:{}, zebrane:{}, zadania:{}, bestiariusz:{}, zalozone:{}, cierpliwosc:{}, poznane:{}, poznani:{}, pasek:[null,null,null,null,null],
     zasadzka:false,
     scena:"start", autozapis:false, widok:"lokacja", trybZapisu:false,
-    poWalce:null, wrog:null, log:[], odwiedzone:{}
+    poWalce:null, wrog:null, log:[], odwiedzone:{},
+    czas:6*60, dzien:1, frakcja:null, ukradzione:{}, zlapania:0, rozdzial:1
   };
 }
 var S = nowyStan();
@@ -417,7 +418,9 @@ function dodajExp(ile){
   if(!ile) return null;
   S.exp += ile;
   var awanse = 0;
-  while(S.exp >= progExp(S.poziom)){
+  var MAKS = 21;
+  if(S.poziom >= MAKS){ S.exp = Math.min(S.exp, progExp(MAKS)-1); return 0; }
+  while(S.exp >= progExp(S.poziom) && S.poziom < MAKS){
     S.exp -= progExp(S.poziom);
     S.poziom++;
     S.pn += 10;
@@ -2524,7 +2527,7 @@ function ekranLokacji(id){
 
   if(S.widok === "teren" && terenId) return widokTerenu(terenId, h);
 
-  h += '<p class="tekst">'+L.opis+'</p>';
+  h += '<p class="tekst">'+(typeof L.opis === "function" ? L.opis() : L.opis)+'</p>';
   var akcje = [], i = 0;
 
   function sekcja(tytul, lista, buduj){
@@ -2578,6 +2581,7 @@ function widokTerenu(id, h){
 
   h += '<div class="mapka rama"><div class="mapka-tlo"></div>';
   var punkty = T.punkty.filter(function(pk){
+    if(pk.warunek && !pk.warunek()) return false;
     if(pk.typ !== "mob" && S.zebrane[pk.id]) return false;
     if(pk.typ === "mob" && S.pokonane && S.pokonane[pk.id]) return false;
     return true;
@@ -2594,7 +2598,7 @@ function widokTerenu(id, h){
   h += '</div>';
 
   if(!punkty.length) h += '<p class="tekst" style="font-size:16px;color:var(--tekst-cichy)">Nic tu już nie zostało.</p>';
-  else h += '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">'+T.opis+'</p>';
+  else h += '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">'+(typeof T.opis === "function" ? T.opis() : T.opis)+'</p>';
 
   g.innerHTML = h;
   podepnijLok(akcje, id);
@@ -2610,6 +2614,7 @@ function akcjaTerenu(pk, id, brak){
     }
     if(pk.typ === "mob"){ S.terenPowrot = S.lokacja; S.mobId = pk.id; zacznijWalke(pk.walka, "__teren"); return; }
     S.zebrane[pk.id] = true;
+    mijaCzas(30);
     if(pk.zloto) S.zloto += pk.zloto;
     if(pk.zbierz) for(var k in pk.zbierz) dodaj(k, pk.zbierz[k]);
     g.innerHTML = '<p class="tekst">'+pk.wynik+'</p>' + przyciski([{l:"Dalej"}]);
@@ -2629,7 +2634,7 @@ function akcjaLok(o){
       rysujPasek();
       return;
     }
-    if(o.lok){ S.widok = "lokacja"; ekranLokacji(o.lok); return; }
+    if(o.lok){ mijaCzas(o.min || 45); S.widok = "lokacja"; ekranLokacji(o.lok); return; }
     if(o.scena){ pokaz(o.scena); return; }
   };
 }
@@ -3504,6 +3509,7 @@ function widokDziennika(){
   h += '<div class="zakladki">' + karty.map(function(z){
     return '<button data-akcja="zakladka" data-klucz="'+z.id+'" class="zakladka'+(zak===z.id?" on":"")+'">'+z.n+'</button>';
   }).join("") + '</div>';
+  h += blokCzasu();
   if(zak === "zadania") h += czescZadania();
   if(zak === "bestie") h += czescBestie();
   if(zak === "swiat") h += czescSwiat();
@@ -3773,7 +3779,8 @@ function pokaz(id){
                     __lok_przyczolek:"przyczolek", __lok_most_zach:"most_zachodni",
                     __lok_rogatka:"rogatka", __lok_kopalnia:"kopalnia",
                     __lok_przeprawa_wsch:"przeprawa_wsch"};
-        S.widok = "lokacja"; ekranLokacji(mapa[o.idz]); return;
+        var celLok = mapa[o.idz] || o.idz.slice(6);
+        S.widok = "lokacja"; ekranLokacji(celLok); return;
       }
       if(o.idz === "__kruczy"){ S.widok="lokacja"; ekranLokacji("kruczy_dol"); return; }
       if(o.wczytaj){ S.trybZapisu=false; panel="zapisy"; var dw=document.getElementById("panel"); dw.hidden=false; odswiezPanel(); rysujPasek(); return; }
@@ -3787,6 +3794,9 @@ function pokaz(id){
         return;
       }
 
+      if(o.kradziez){ probaKradziezy(o.kradziez, id); return; }
+      if(o.odpoczynek){ odpocznij(o.odpoczynek, id); return; }
+      if(o.czas) mijaCzas(o.czas);
       if(o.natret) S.cierpliwosc[o.natret] = (S.cierpliwosc[o.natret]||0) + 1;
       if(o.poznaj) poznaj(o.poznaj);
       if(o.dajZ) dajZadanie(o.dajZ);
@@ -3826,6 +3836,1012 @@ function wynikWyboru(tekst, potem){
     + przyciski([{l:"Dalej"}]);
   podepnij([function(){ pokaz(potem); }]);
 }
+
+/* ================= ROZDZIAŁ PIERWSZY - SYSTEMY ================= */
+
+var MIESIACE = ["Wilczy","Sokoli","Zielny","Żniwny","Popielny","Głodny"];
+
+function uzupelnijStan(){
+  if(S.czas === undefined) S.czas = 6*60;
+  if(S.dzien === undefined) S.dzien = 1;
+  if(S.ukradzione === undefined) S.ukradzione = {};
+  if(S.zlapania === undefined) S.zlapania = 0;
+  if(S.frakcja === undefined) S.frakcja = null;
+  if(S.rozdzial === undefined) S.rozdzial = 1;
+}
+
+function mijaCzas(min){
+  uzupelnijStan();
+  S.czas += min;
+  while(S.czas >= 1440){ S.czas -= 1440; S.dzien += 1; }
+}
+function godzinaGry(){
+  uzupelnijStan();
+  var g = Math.floor(S.czas/60), m = S.czas%60;
+  return (g<10?"0":"")+g+":"+(m<10?"0":"")+m;
+}
+function jestNoc(){ uzupelnijStan(); var g = Math.floor(S.czas/60); return g < 5 || g >= 21; }
+function poraDnia(){
+  var g = Math.floor(S.czas/60);
+  if(g < 5) return "głucha noc";
+  if(g < 9) return "świt";
+  if(g < 13) return "przedpołudnie";
+  if(g < 17) return "popołudnie";
+  if(g < 21) return "zmierzch";
+  return "noc";
+}
+function dataGry(){
+  uzupelnijStan();
+  var d = S.dzien - 1;
+  var mies = MIESIACE[Math.floor(d/30) % 6];
+  var rok = 1043 + Math.floor(d/180);
+  return (d%30 + 1) + " dnia miesiąca " + mies + ", rok " + rok + " od Zamknięcia Bram";
+}
+function blokCzasu(){
+  return '<div class="rzeczy rama"><div class="rzecz"><span>'+dataGry()
+    + '<div class="rzecz-o">Dzień '+S.dzien+' twojej drogi &middot; '+poraDnia()+'</div></span>'
+    + '<span class="rzecz-o">'+godzinaGry()+'</span></div></div>';
+}
+
+/* ---------- ODPOCZYNEK ---------- */
+
+function odpocznij(o, wracaScena){
+  var godzin = o.godzin || 6;
+  mijaCzas(godzin*60);
+  var przed = S.hp;
+  S.hp = Math.min(S.hpMax, S.hp + Math.round(S.hpMax * (o.udzial || 0.5)));
+  S.mana = S.manaMax;
+  var tekst = (o.tekst || "Siadasz przy studni i pozwalasz, żeby czas zrobił swoje.")
+    + "<br><br><em>Mija " + godzin + " godzin. Jest " + godzinaGry() + ", " + poraDnia() + ".</em>"
+    + "<br>Odzyskujesz " + (S.hp - przed) + " życia i pełną manę.";
+  g.innerHTML = '<p class="tekst">'+tekst+'</p>' + przyciski([{l:"Wstań"}]);
+  podepnij([function(){
+    if(o.lok){ S.widok="lokacja"; ekranLokacji(o.lok); return; }
+    pokaz(o.wraca || wracaScena);
+  }]);
+}
+
+/* ---------- KRADZIEŻ ---------- */
+
+function szansaKradziezy(trud){
+  var s = 20 + (S.zrecz + bonusStatu("zrecz")) * 1.5;
+  if(S.umie.kradziez) s += 25;
+  if(S.umie.palce) s += 15;
+  if(jestNoc()) s += 10;
+  s -= (trud || 0);
+  return Math.max(5, Math.min(92, Math.round(s)));
+}
+
+function probaKradziezy(k, wracaScena){
+  uzupelnijStan();
+  var wraca = k.wraca || wracaScena;
+  if(S.ukradzione[k.id]){
+    g.innerHTML = '<p class="tekst">Ta sakwa jest już pusta. Drugi raz tego samego człowieka nie okrada się bezkarnie.</p>'
+      + przyciski([{l:"Odsuń się"}]);
+    podepnij([function(){ pokaz(wraca); }]);
+    return;
+  }
+  var sz = szansaKradziezy(k.trud);
+  var udalo = Math.random()*100 < sz;
+  S.ukradzione[k.id] = true;
+  var tekst;
+  if(udalo){
+    if(k.zloto) S.zloto += k.zloto;
+    if(k.lup) for(var q in k.lup) dodaj(q, k.lup[q]);
+    var co = [];
+    if(k.zloto) co.push(k.zloto + " zł");
+    if(k.lup) for(var w in k.lup) co.push(PRZEDMIOTY[w].n.toLowerCase());
+    S.awans = dodajExp(k.exp || 25);
+    tekst = (k.sukces || "Dwa palce w cudzej sakwie, pół oddechu, i już cię tam nie ma.")
+      + "<br><br><em>Zdobyto: " + co.join(", ") + ".</em>";
+  } else {
+    S.zlapania += 1;
+    var kara = k.kara || 30;
+    var stracone = Math.min(S.zloto, kara);
+    S.zloto -= stracone;
+    if(k.rep) for(var r in k.rep) S.rep[r] += k.rep[r];
+    S.cierpliwosc[k.npc || k.id] = (S.cierpliwosc[k.npc || k.id] || 0) + 2;
+    tekst = (k.wpadka || "Cudza dłoń zaciska się na twoim nadgarstku, zanim zdążysz cokolwiek wyjąć.")
+      + "<br><br><em>Płacisz " + stracone + " zł, żeby nie było gorzej. Ludzie zapamiętają.</em>";
+    if(k.walka){
+      g.innerHTML = '<p class="tekst">'+tekst+'</p>' + przyciski([{l:"Broń się"}]);
+      podepnij([function(){ zacznijWalke(k.walka, wraca); }]);
+      return;
+    }
+  }
+  mijaCzas(10);
+  g.innerHTML = '<p class="tekst">'+tekst+'</p>' + przyciski([{l:"Dalej"}]);
+  podepnij([function(){ pokaz(wraca); }]);
+}
+
+/* ---------- NOWE PRZEDMIOTY ---------- */
+
+function rozszerzPrzedmioty(){
+  var nowe = {
+    korzen_wietrzny:{n:"Korzeń wietrzny", kat:"roslina", typ:"jadalne", leczy:10, mana:6, cena:28,
+      o:"Rośnie tylko na hałdzie, tam gdzie ziemia jest ciepła od spodu. Gorzki jak popiół."},
+    czarci_kwiat:{n:"Czarci kwiat", kat:"roslina", typ:"jadalne", leczy:0, mana:26, cena:48,
+      o:"Kwitnie nocą i tylko nad wodą stojącą. Warzą z niego to, czego się nie zapisuje."},
+    sol_kamienna:{n:"Sól kamienna", kat:"surowiec", typ:"towar", cena:34,
+      o:"Czysta, przezroczysta bryła z komór pod Wietrznicą. Warta więcej niż srebro tej samej wagi."},
+    ruda_wietrzna:{n:"Ruda wietrzna", kat:"surowiec", typ:"towar", cena:52,
+      o:"Ciemna, ciężka, z niebieskim połyskiem na przełamie. Kowale kłócą się o nią jak o ziemię."},
+    lusk_suma:{n:"Skóra starego suma", kat:"surowiec", typ:"towar", cena:70,
+      o:"Gruba jak podeszwa i śliska nawet wysuszona. Szkutnik zrobi z niej okucie na dziób."},
+    medalion_opactwa:{n:"Medalion opactwa", kat:"artefakt", typ:"wyposazenie", slot:"amulet", odp:{ogien:10, energia:10}, cena:0,
+      o:"Cyna zlana z czymś jeszcze, na awersie wieża, na rewersie data pożaru. Ciepły, gdy nikt nie patrzy."},
+    list_zelazny:{n:"List żelazny", kat:"pismo", typ:"towar", cena:0,
+      o:"Pergamin z trzema pieczęciami: Ismaala, Nowożytnych i marszałka jarmarku. Przepustka wszędzie tam, gdzie nie chcą cię wpuścić."},
+    kord_ismaala:{n:"Kord strażniczy", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[12,17], cena:260, wym:{sila:22},
+      o:"Ciężki kord z jednosiecznym ostrzem i mosiężnym jelcem. Nosi się go tam, gdzie mur jest bliżej niż las."},
+    szabla_odeszlych:{n:"Szabla Odeszłych", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[13,19], cena:380, wym:{zrecz:22},
+      o:"Krzywa, lekka, bez zdobień. Zrobiona po to, żeby ciąć w biegu i nie zaczepiać o gałęzie."},
+    obuch_gorniczy:{n:"Obuch górniczy", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[13,20], cena:300, wym:{sila:24},
+      o:"Kilof przekuty na broń: jeden koniec ostry, drugi płaski. Pamięta więcej skały niż ludzi."},
+    oszczep_puszczy:{n:"Oszczep puszczański", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[11,16], cena:210, wym:{zrecz:18},
+      o:"Drzewce z leszczyny, grot z krzemienia wiązany żywicą. Prastary Lud nie kuje żelaza dla obcych."},
+    luk_rogowy:{n:"Łuk rogowy", kat:"bron", typ:"wyposazenie", slot:"bron", dwureczna:true, obr:[12,18], dystans:true, cena:420, wym:{zrecz:24},
+      o:"Klejony z rogu, drewna i ścięgna, krótszy od jesionowego i dwa razy mocniejszy. Nie znosi wilgoci."},
+    kusza_kontoru:{n:"Kusza kontorowa", kat:"bron", typ:"wyposazenie", slot:"bron", dwureczna:true, obr:[18,25], dystans:true, cena:600, wym:{zrecz:26},
+      o:"Numerowana, z tabliczką rejestrową przy łożu. Nowożytni liczą nawet to, czym zabijają."},
+    zbroja_straznicza:{n:"Zbroja strażnicza", kat:"pancerz", typ:"wyposazenie", slot:"pancerz", odp:{klute:16, ciete:20, obuch:10}, cena:760, wym:{sila:28},
+      o:"Płyty na piersi, kolczy rękaw pod spodem. Ciężka jak wyrok i tak samo skuteczna."},
+    kaftan_kontoru:{n:"Kaftan kontorowy", kat:"pancerz", typ:"wyposazenie", slot:"pancerz", odp:{klute:12, ciete:12, energia:12}, cena:640, wym:{sila:20},
+      o:"Warstwy płótna przekładane drutem i lakierem. Wymyślony przez kogoś, kto liczył trafienia, a nie odwagę."},
+    plaszcz_puszczy:{n:"Płaszcz z kory i mchu", kat:"pancerz", typ:"wyposazenie", slot:"pancerz", odp:{ciete:10, lod:16, energia:8}, daje:{unik:3}, cena:520,
+      o:"Nie widać w nim człowieka z dziesięciu kroków. Pachnie żywicą i czymś jeszcze."},
+    pierscien_many:{n:"Pierścień z mlecznym oczkiem", kat:"artefakt", typ:"wyposazenie", slot:"pierscien", daje:{}, mana:15, cena:380,
+      o:"Oczko mętnieje, gdy nosiciel wyczerpie moc, i jaśnieje, gdy ją odzyska."},
+    pierscien_wilczy:{n:"Pierścień wilczy", kat:"artefakt", typ:"wyposazenie", slot:"pierscien", daje:{sila:2, kryt:3}, cena:420,
+      o:"Odlew wilczego kła w brązie. Prastary Lud daje takie tylko tym, którzy przeszli przez kratę i wrócili."},
+    naszyjnik_soli:{n:"Naszyjnik z bryłek soli", kat:"artefakt", typ:"wyposazenie", slot:"amulet", daje:{zrecz:2}, odp:{lod:10}, cena:340,
+      o:"Nawleczone na rzemień kryształy. Górnicy wierzą, że sól nie wpuszcza tego, co przychodzi z głębi."},
+    ksiega_frakcji:{n:"Trzy chorągwie, jedna droga", kat:"pismo", typ:"ksiega", intelekt:2, cena:120,
+      o:"Traktat spisany przez kogoś, kto służył kolejno wszystkim trzem stronom i przeżył."},
+    ksiega_zlodziei:{n:"Rachunek Pchły", kat:"pismo", typ:"ksiega", intelekt:1, cena:80,
+      o:"Zeszyt z rysunkami zamków, kieszeni i tego, jak stoi człowiek, którego można okraść."},
+    mikstura_mocy:{n:"Wywar z korzenia", kat:"napoj", typ:"jadalne", leczy:0, mana:30, cena:60,
+      o:"Gęsty, ciemny i ciepły nawet wystudzony. Warzony w Wietrznicy pod ziemią."}
+  };
+  for(var k in nowe) if(!PRZEDMIOTY[k]) PRZEDMIOTY[k] = nowe[k];
+}
+
+/* ---------- NOWI WROGOWIE ---------- */
+
+function rozszerzWrogow(){
+  var nowi = {
+    duch_szychty:{n:"Duch szychty", hp:90, dmg:[10,16], exp:220, zloto:0, lup:{ruda_wietrzna:1},
+      sekw:["s","g"], finisz:{dmg:[20,28], o:"chwyt lampą w twarz"}, blokSzansa:10,
+      wyglad:"Człowiek w górniczym kapturze, przezroczysty od pasa w dół. Lampa, którą trzyma, świeci, choć w niej nic nie ma.",
+      styl:"Uderza przez środek, potem wysoko, zawsze w tym samym rytmie - tak jak kiedyś rąbał skałę."},
+    spalony_brat:{n:"Spalony brat", hp:105, dmg:[11,18], exp:250, zloto:20, lup:{medalion_opactwa:1}, lupWymaga:null,
+      sekw:["g","g","d"], finisz:{dmg:[22,30], o:"objęcie płonącymi rękami"}, blokSzansa:20,
+      wyglad:"Habit spieczony w skorupę, twarzy nie ma pod kapturem - jest światło.",
+      styl:"Dwa razy z góry, jakby błogosławił, potem nisko po nogach. Kończy uściskiem, którego nie da się zablokować."},
+    stary_sum:{n:"Stary sum", hp:120, dmg:[9,15], exp:230, zloto:0, lup:{lusk_suma:1}, lupWymaga:"oprawianie",
+      sekw:["d","s","d"], finisz:{dmg:[18,26], o:"uderzenie ogonem"}, blokSzansa:0,
+      wyglad:"Dłuższy od łodzi Chwaliboga. Wąsy grube jak palce, oczy małe i całkiem obojętne.",
+      styl:"Bije nisko, przez środek i znowu nisko, aż stracisz oparcie na dnie."},
+    rozbojnik:{n:"Rozbójnik z wąwozu", hp:95, dmg:[10,15], exp:200, zloto:70, lup:{noz_zbira:1},
+      sekw:["s","g","s"], finisz:{dmg:[19,26], o:"pchnięcie spod płaszcza"}, blokSzansa:25,
+      wyglad:"Nowe buty i stary płaszcz. Tak wygląda ktoś, kto zabija dla butów.",
+      styl:"Środek, góra, środek - i wtedy sięga po drugi nóż, którego wcześniej nie widziałeś."},
+    strazak_kraty:{n:"Strażnik kraty", hp:130, dmg:[12,18], exp:280, zloto:0, lup:{oszczep_puszczy:1},
+      sekw:["g","d","s"], finisz:{dmg:[24,32], o:"cios drzewcem w skroń"}, blokSzansa:30,
+      wyglad:"Wysoki, w płaszczu z kory, twarz pomalowana popiołem w trzy pasy.",
+      styl:"Góra, dół, środek. Bije oszczepem jak kijem, dopóki nie zdecyduje, że warto go rzucić."},
+    kuna_zbir:{n:"Ludzie Kuny", hp:110, dmg:[11,17], exp:240, zloto:120,
+      sekw:["d","s","g"], finisz:{dmg:[20,27], o:"we dwóch, z dwóch stron"}, blokSzansa:20,
+      wyglad:"Trzech, ale biją się jak jeden, bo robili to już wiele razy.",
+      styl:"Nisko, środkiem, wysoko - i w tym momencie drugi wchodzi ci za plecy."},
+    upior_opactwa:{n:"Opat, który nie odszedł", hp:160, dmg:[14,21], exp:400, zloto:0, lup:{ksiega_prastara:1},
+      sekw:["s","g","s","d"], finisz:{dmg:[28,38], o:"słowo, którego nie powinieneś usłyszeć"}, blokSzansa:15,
+      wyglad:"Postać w pełnym stroju opata, całkiem czysta, tam gdzie wszystko inne jest czarne od sadzy.",
+      styl:"Cztery ruchy, zawsze te same, jak modlitwa. Kończy tym, że mówi - i to boli najbardziej."}
+  };
+  for(var k in nowi) if(!WROGOWIE[k]) WROGOWIE[k] = nowi[k];
+  TYPY_WROGOW.duch_szychty = "energia";
+  TYPY_WROGOW.spalony_brat = "ogien";
+  TYPY_WROGOW.stary_sum = "obuch";
+  TYPY_WROGOW.rozbojnik = "klute";
+  TYPY_WROGOW.strazak_kraty = "obuch";
+  TYPY_WROGOW.kuna_zbir = "ciete";
+  TYPY_WROGOW.upior_opactwa = "energia";
+}
+
+/* ---------- NOWA NAUKA: MAGIA, KRADZIEŻ, WALKA ---------- */
+
+function rozszerzNauke(){
+  var nowa = [
+    {id:"kradziez", uczy:"pchla", grupa:"rzemioslo", l:"Kradzież kieszonkowa", pn:2, zl:35, raz:true, ef:function(){S.umie.kradziez=true;}},
+    {id:"palce", uczy:"pchla", grupa:"rzemioslo", l:"Zręczne palce", pn:3, zl:80, raz:true, wymagaUm:"kradziez", ef:function(){S.umie.palce=true;}},
+    {id:"zamki", uczy:"pchla", grupa:"rzemioslo", l:"Otwieranie zamków", pn:2, zl:60, raz:true, wymagaUm:"kradziez", ef:function(){S.umie.zamki=true;}},
+    {id:"hutnictwo", uczy:"bolko", grupa:"rzemioslo", l:"Hutnictwo", pn:3, zl:70, raz:true, wymagaUm:"gornictwo", ef:function(){S.umie.hutnictwo=true;}},
+    {id:"lucznictwo", uczy:"milena", grupa:"walka", l:"Łucznictwo", pn:2, zl:40, raz:true, ef:function(){S.umie.lucznictwo=true;}},
+    {id:"kusznictwo", uczy:"racibor", grupa:"walka", l:"Kusznictwo", pn:3, zl:90, raz:true, ef:function(){S.umie.kusznictwo=true;}},
+    {id:"pchniecie", uczy:"racibor", grupa:"walka", l:"Supercios: Pchnięcie strażnicze", pn:4, zl:120, raz:true, ef:function(){S.umie.pchniecie=true;}},
+    {id:"mlyniec", uczy:"nawoj", grupa:"walka", l:"Supercios: Młyniec", pn:5, zl:180, raz:true, ef:function(){S.umie.mlyniec=true;}},
+    {id:"sila2", uczy:"bolko", grupa:"walka", l:"Siła +1", pn:1, zl:6, ef:function(){S.sila+=1;}},
+    {id:"zrecz2", uczy:"milena", grupa:"walka", l:"Zręczność +1", pn:1, zl:6, ef:function(){S.zrecz+=1;}},
+    {id:"mana2", uczy:"dobrogost", grupa:"magia", l:"Zasób many +8", pn:2, zl:30, ef:function(){S.manaMax+=8;S.mana+=8;}},
+    {id:"lod_strzala", uczy:"dobrogost", grupa:"magia", l:"Zaklęcie: Sopel", pn:3, zl:90, raz:true, wymagaUm:"iskra", ef:function(){S.umie.sopel=true;}},
+    {id:"tarcza_run", uczy:"dobrogost", grupa:"magia", l:"Zaklęcie: Tarcza runiczna", pn:4, zl:140, raz:true, wymagaUm:"runy1", ef:function(){S.umie.tarcza=true;}},
+    {id:"popiol", uczy:"zbyslawa", grupa:"magia", l:"Zaklęcie: Popiół", pn:4, zl:160, raz:true, wymagaUm:"runy2", ef:function(){S.umie.popiol=true;}},
+    {id:"zielarstwo2", uczy:"bogna", grupa:"puszcza", l:"Zielarstwo wyższe", pn:3, zl:70, raz:true, wymagaUm:"zielarstwo", ef:function(){S.umie.zielarstwo2=true;}},
+    {id:"tropienie2", uczy:"leszy", grupa:"puszcza", l:"Tropienie puszczańskie", pn:3, zl:60, raz:true, wymagaUm:"tropienie", ef:function(){S.umie.tropienie2=true;}}
+  ];
+  nowa.forEach(function(w){
+    if(!NAUKA.some(function(x){ return x.id === w.id; })) NAUKA.push(w);
+  });
+  SUPERCIOSY.push({id:"pchniecie", n:"Pchnięcie strażnicze", z:["g","s"], o:"×1.9 obrażeń", v:1.9});
+  SUPERCIOSY.push({id:"mlyniec", n:"Młyniec", z:["s","d","s","g"], o:"×2.4 obrażeń", v:2.4});
+}
+
+/* ================= ROZDZIAŁ PIERWSZY - ŚWIAT ================= */
+
+function rozszerzLokacje(){
+  var nowe = {
+
+  serpentyna:{
+    n:"Serpentyna", region:"Ziemie Niczyje, podejście górnicze",
+    opis:"Droga wije się po zboczu ośmioma zakrętami, a przy każdym leży kupka kamieni ułożona przez tych, którzy tędy przeszli i chcieli, żeby ktoś o tym wiedział.<br><br>Z góry słychać stukot kołowrotu. Z dołu nic nie słychać.",
+    tereny:[{n:"Zejdź z drogi między głazy", teren:"serpentyna_teren"}],
+    drogi:[
+      {n:"W górę, do Wietrznicy", lok:"wietrznica"},
+      {n:"W dół, do kamieniołomu", lok:"kamieniolom"}
+    ]
+  },
+
+  wietrznica:{
+    n:"Wietrznica", region:"osada górnicza",
+    opis:function(){
+      return "Osada wisi na zboczu jak jaskółcze gniazdo: trzy rzędy domów, sztolnia, huta i kołowrót, który nie milknie nawet w nocy. Wiatr wieje tu zawsze z tej samej strony i dlatego nazwa się przyjęła.<br><br>"
+        + (jestNoc()
+          ? "Teraz szyb jest ciemny, a przy hucie pali się jeden ogień. Ludzie mówią ciszej, niż mówili za dnia."
+          : "Wozy z rudą schodzą w dół, puste wracają w górę. Nikt się nie zatrzymuje, żeby na ciebie popatrzeć.");
+    },
+    postacie:[
+      {n:"Sztygar Bolko", id:"bolko", nieznany:"Człowiek z lampą przy szybie", rola:"sztygar", scena:"bolko", portret:"kowal"},
+      {n:"Ludmiła", id:"ludmila", nieznany:"Karczmarka w wełnianej chuście", rola:"karczmarka", scena:"ludmila", portret:"kobieta"},
+      {n:"Bogna", id:"bogna", nieznany:"Kobieta susząca korzenie", rola:"zielarka", scena:"bogna", portret:"kobieta"},
+      {n:"Kuna", id:"kuna", nieznany:"Człowiek w za dobrym płaszczu", rola:"przemytnik", scena:"kuna", portret:"weteran",
+       warunek:function(){ return jestNoc() || !!S.poznani.kuna; }}
+    ],
+    miejsca:[
+      {n:"Studnia górnicza - odpocznij", scena:"studnia_wietrznica"},
+      {n:"Huta - kuźnia i skup rudy", scena:"huta"}
+    ],
+    tereny:[{n:"Obejdź hałdę i wejście do szybu", teren:"wietrznica_teren"}],
+    drogi:[
+      {n:"Do kontoru Nowożytnych", lok:"kontor", warunek:function(){ return !!S.poznane.kontor; }},
+      {n:"W dół serpentyną", lok:"serpentyna"}
+    ]
+  },
+
+  kontor:{
+    n:"Kontor Nowożytnych", region:"placówka frakcyjna",
+    opis:"Dom z cegły, jedyny w promieniu dnia drogi. W środku pachnie atramentem i lakiem. Na ścianie wisi mapa Ziem Niczyich, na której narysowano granice, których nikt tu nie uznaje.",
+    postacie:[
+      {n:"Rachmistrz Sędziwoj", id:"sedziwoj", nieznany:"Człowiek z trzema piórami za uchem", rola:"rachmistrz", scena:"sedziwoj", portret:"urzednik"}
+    ],
+    drogi:[{n:"Wróć do Wietrznicy", lok:"wietrznica"}]
+  },
+
+  trzcinowy:{
+    n:"Trzcinowy Trakt", region:"Ziemie Niczyje, nad rzeką",
+    opis:"Grobla przez trzcinowisko, szeroka na jeden wóz. Po obu stronach woda, w wodzie stoją tyczki z sieciami, a na tyczkach siedzą ptaki, które nie odlatują, gdy przechodzisz.",
+    tereny:[{n:"Zejdź w trzciny", teren:"trzcinowy_teren"}],
+    drogi:[
+      {n:"Dalej, do Sokolego Brodu", lok:"sokoli_brod"},
+      {n:"Z powrotem na mokradła", lok:"mokradla"}
+    ]
+  },
+
+  sokoli_brod:{
+    n:"Sokoli Bród", region:"wieś rybacka",
+    opis:function(){
+      return "Czterdzieści chałup wzdłuż jednej ulicy, która jest brzegiem. Łodzie leżą do góry dnem, sieci schną na żerdziach, a na końcu wsi stoi prom na linie - jedyny sposób, żeby przejść na drugą stronę.<br><br>"
+        + (jestNoc()
+          ? "Nocą woda mówi głośniej niż ludzie. Na promie pali się jedna latarnia i nikt jej nie pilnuje."
+          : "Pachnie rybą, smołą i dymem z wędzarni.");
+    },
+    postacie:[
+      {n:"Starościna Nieszka", id:"nieszka", nieznany:"Kobieta licząca sieci", rola:"starościna", scena:"nieszka", portret:"kobieta"},
+      {n:"Chwalibóg", id:"chwalibog", nieznany:"Przewoźnik przy linie", rola:"przewoźnik", scena:"chwalibog", portret:"kowal"},
+      {n:"Milena", id:"milena", nieznany:"Dziewczyna z łukiem", rola:"łuczniczka", scena:"milena", portret:"kobieta"},
+      {n:"Dratwa", id:"dratwa", nieznany:"Szkutnik przy kadłubie", rola:"szkutnik", scena:"dratwa", portret:"kowal"}
+    ],
+    miejsca:[
+      {n:"Wędzarnia - odpocznij przy ogniu", scena:"wedzarnia"}
+    ],
+    tereny:[{n:"Zejdź na bród", teren:"brod_teren"}],
+    drogi:[
+      {n:"Promem na drugi brzeg, do Uroczyska", lok:"uroczysko", warunek:function(){ return !!S.poznane.prom; }},
+      {n:"Trzcinowym Traktem z powrotem", lok:"trzcinowy"}
+    ]
+  },
+
+  uroczysko:{
+    n:"Uroczysko za Kratą", region:"placówka Prastarego Ludu",
+    opis:"Za kratą las jest inny: starszy, cichszy, bez ścieżek. Na polanie stoi krąg słupów z wyrzeźbionymi twarzami, a między nimi ognisko, które pali się bez dymu.",
+    postacie:[
+      {n:"Wieszczka Jarogniewa", id:"jarogniewa", nieznany:"Kobieta z popiołem na twarzy", rola:"wieszczka", scena:"jarogniewa", portret:"kobieta"}
+    ],
+    drogi:[{n:"Wróć promem do Sokolego Brodu", lok:"sokoli_brod"}]
+  },
+
+  aleja:{
+    n:"Aleja Kamienna", region:"Ziemie Niczyje, wschód",
+    opis:"Dwa rzędy kamiennych słupów prowadzą przez pole do czegoś, co kiedyś było bramą. Co drugi słup jest przewrócony, a na tych stojących widać ślady po ogniu na wysokości człowieka.",
+    tereny:[{n:"Idź wzdłuż słupów", teren:"aleja_teren"}],
+    drogi:[
+      {n:"Do Spopielonego Opactwa", lok:"opactwo"},
+      {n:"Z powrotem na Stary Cmentarz", lok:"cmentarz"}
+    ]
+  },
+
+  opactwo:{
+    n:"Spopielone Opactwo", region:"ruina zakonna",
+    opis:function(){
+      return "Mury stoją, dachu nie ma. Sadza wsiąkła w kamień tak głęboko, że deszcz jej nie zmywa od dwudziestu lat. W nawie wyrosły brzozy.<br><br>"
+        + (jestNoc()
+          ? "W nocy w prezbiterium widać światło, choć nikt tam nie chodzi z lampą."
+          : "W dawnym refektarzu mieszka kilkoro ludzi, którzy nie mieli dokąd pójść.");
+    },
+    postacie:[
+      {n:"Brat Dobrogost", id:"dobrogost", nieznany:"Mnich bez habitu", rola:"zakonnik", scena:"dobrogost", portret:"weteran"},
+      {n:"Zbysława", id:"zbyslawa", nieznany:"Kobieta przepisująca karty", rola:"kopistka", scena:"zbyslawa", portret:"kobieta"},
+      {n:"Wit", id:"wit", nieznany:"Chłopak o spalonych dłoniach", rola:"posługacz", scena:"wit", portret:"kowal"},
+      {n:"Nawoj", id:"nawoj", nieznany:"Człowiek z workiem i łomem", rola:"poszukiwacz", scena:"nawoj", portret:"weteran"}
+    ],
+    miejsca:[
+      {n:"Refektarz - prześpij się na sianie", scena:"refektarz"}
+    ],
+    tereny:[{n:"Wejdź w zgliszcza", teren:"opactwo_teren"}],
+    drogi:[
+      {n:"Zejdź do kryjówki Odeszłych", lok:"kryjowka", warunek:function(){ return !!S.poznane.kryjowka; }},
+      {n:"Aleją Kamienną z powrotem", lok:"aleja"}
+    ]
+  },
+
+  kryjowka:{
+    n:"Kryjówka Odeszłych", region:"placówka frakcyjna",
+    opis:"Krypta pod opactwem, wyczyszczona z kości i zastawiona skrzyniami. Pali się tu dwanaście lamp i żadna nie stoi przy wejściu, żeby nikt nie zobaczył światła z góry.",
+    postacie:[
+      {n:"Sędzimir Cichy", id:"sedzimir", nieznany:"Człowiek siedzący tyłem do wejścia", rola:"kwatermistrz", scena:"sedzimir", portret:"weteran"}
+    ],
+    drogi:[{n:"Wróć na górę", lok:"opactwo"}]
+  },
+
+  wawoz:{
+    n:"Wąwóz Kupiecki", region:"Ziemie Niczyje, wschód",
+    opis:"Droga zapada się między dwa zbocza tak wysokie, że słońce zagląda tu tylko w południe. Idealne miejsce, żeby na kogoś zaczekać - i wszyscy o tym wiedzą, więc jadą tędy w grupach.",
+    tereny:[{n:"Idź dnem wąwozu", teren:"wawoz_teren"}],
+    drogi:[
+      {n:"Do Jarmarku Trzech Chorągwi", lok:"jarmark"},
+      {n:"Z powrotem na Rozstaje Wschodnie", lok:"rozstaje_wschodnie"}
+    ]
+  },
+
+  jarmark:{
+    n:"Jarmark Trzech Chorągwi", region:"wolne targowisko",
+    opis:function(){
+      return "Miasto z płótna i żerdzi, stawiane co roku w tym samym miejscu, bo tu kończą się roszczenia obu królestw. Trzy chorągwie na trzech masztach: czerwona, szara i żadna.<br><br>"
+        + (jestNoc()
+          ? "Po zmroku kramy są zamknięte, a jarmark żyje dopiero naprawdę. W zaułkach między namiotami sprzedaje się to, czego rano nie widać."
+          : "Krzyk, targowanie i zapach smażonego tłuszczu. Straż jarmarczna chodzi parami i nikogo nie zaczepia.");
+    },
+    postacie:[
+      {n:"Marszałek Racibor", id:"racibor", nieznany:"Człowiek z laską i pieczęcią", rola:"marszałek jarmarku", scena:"racibor", portret:"weteran"},
+      {n:"Halszka", id:"halszka", nieznany:"Kupcowa z trzema wagami", rola:"kupcowa", scena:"halszka", portret:"kobieta"},
+      {n:"Herold Roszko", id:"roszko", nieznany:"Zbrojny w czerwonym płaszczu", rola:"herold Ismaala", scena:"roszko", portret:"urzednik"},
+      {n:"Pchła", id:"pchla", nieznany:"Ktoś, kto stoi za blisko", rola:"złodziej", scena:"pchla", portret:"kowal",
+       warunek:function(){ return jestNoc() || !!S.poznani.pchla; }}
+    ],
+    miejsca:[
+      {n:"Namiot noclegowy - prześpij noc", scena:"namiot"}
+    ],
+    tereny:[{n:"Przejdź się między kramami", teren:"jarmark_teren"}],
+    drogi:[
+      {n:"Do Strażnicy Ismaala", lok:"straznica", warunek:function(){ return !!S.poznane.straznica; }},
+      {n:"Wąwozem z powrotem", lok:"wawoz"}
+    ]
+  },
+
+  straznica:{
+    n:"Strażnica Ismaala", region:"placówka frakcyjna",
+    opis:"Kwadratowa wieża z czerwonego kamienia, postawiona przed dwustu laty i od tego czasu nietknięta. Na dziedzińcu ćwiczą trzej młodzi ludzie, którzy jeszcze nie wiedzą, po co.",
+    postacie:[
+      {n:"Kasztelanka Dobrosława", id:"dobroslawa", nieznany:"Kobieta w kolczudze bez płaszcza", rola:"kasztelanka", scena:"dobroslawa", portret:"kobieta"}
+    ],
+    drogi:[{n:"Zejdź na jarmark", lok:"jarmark"}]
+  }
+
+  };
+  for(var k in nowe) if(!LOKACJE[k]) LOKACJE[k] = nowe[k];
+
+  function droga(skad, wpis){
+    var L = LOKACJE[skad];
+    if(!L) return;
+    L.drogi = L.drogi || [];
+    if(!L.drogi.some(function(d){ return d.lok === wpis.lok; })) L.drogi.unshift(wpis);
+  }
+  droga("kamieniolom", {n:"Serpentyną w górę, do Wietrznicy", lok:"serpentyna"});
+  droga("mokradla",    {n:"Trzcinowym Traktem na południe", lok:"trzcinowy"});
+  droga("cmentarz",    {n:"Aleją Kamienną, ku spalonemu opactwu", lok:"aleja"});
+  droga("rozstaje_wschodnie", {n:"Wąwozem Kupieckim, na jarmark", lok:"wawoz"});
+}
+
+function rozszerzTereny(){
+  var nowe = {
+
+  serpentyna_teren:{
+    n:"Zbocze przy serpentynie", wraca:"serpentyna",
+    opis:"Głazy wielkości chałup i osypisko, po którym idzie się bokiem.",
+    punkty:[
+      {id:"s_ruda", typ:"ruda", n:"Żyła w osypisku", wymaga:"gornictwo", zbierz:{ruda_wietrzna:2},
+       wynik:"Ciemna, ciężka bryła z niebieskim połyskiem. Odbijasz dwie i chowasz głęboko."},
+      {id:"s_korzen", typ:"zasob", n:"Korzenie na ciepłej ziemi", wymaga:"zielarstwo", zbierz:{korzen_wietrzny:2},
+       wynik:"Ziemia jest tu ciepła od spodu. Korzeń wychodzi z niej z trzaskiem."},
+      {id:"s_wilk", typ:"mob", n:"Coś schodzi po osypisku", walka:"wilk"},
+      {id:"s_kupka", typ:"skrzynia", n:"Kupka kamieni przy ósmym zakręcie", zloto:45,
+       wynik:"Pod kamieniami leży zawiniątko: cztery monety i kartka z jednym słowem, którego nie umiesz odczytać."}
+    ]
+  },
+
+  wietrznica_teren:{
+    n:"Hałda i wejście do szybu", wraca:"wietrznica",
+    opis:"Hałda dymi lekko nawet w deszczu. Przy wejściu do szybu wisi dzwonek na sznurze.",
+    punkty:[
+      {id:"w_sol", typ:"ruda", n:"Bryły soli w odkładzie", wymaga:"gornictwo", zbierz:{sol_kamienna:2},
+       wynik:"Przezroczyste kryształy, ostre w dotyku. Dwie bryły wchodzą do sakwy."},
+      {id:"w_duch", typ:"mob", n:"Światło w starym chodniku", walka:"duch_szychty",
+       warunek:function(){ return jestNoc(); }},
+      {id:"w_skrzynia", typ:"skrzynia", n:"Skrzynia pod pomostem", zloto:80, zbierz:{mikstura_mocy:1},
+       wynik:"Ktoś schował ją tak, żeby dosięgnąć jej ręką z pomostu. W środku pieniądze i flaszka ciemnego wywaru."},
+      {id:"w_kwiat", typ:"zasob", n:"Czarci kwiat nad ściekiem", wymaga:"zielarstwo", zbierz:{czarci_kwiat:1},
+       wynik:"Kwitnie tam, gdzie woda z huty spływa do rowu. Ścinasz go nożem, nie ręką."}
+    ]
+  },
+
+  trzcinowy_teren:{
+    n:"Trzcinowisko", wraca:"trzcinowy",
+    opis:"Trzcina wyższa od człowieka. Widać tylko niebo nad głową i wodę pod stopami.",
+    punkty:[
+      {id:"t_ryba", typ:"ryba", n:"Węgorze w sitowiu", wymaga:"wedkarstwo", zbierz:{wegorz:2},
+       wynik:"Trzeba je trzymać przez szmatę. Dwa trafiają do worka, trzeci wraca do wody."},
+      {id:"t_kwiat", typ:"zasob", n:"Czarci kwiat nad stojącą wodą", wymaga:"zielarstwo", zbierz:{czarci_kwiat:2},
+       wynik:"Kwitnie tylko nad wodą, która nie płynie. Zbierasz dwa i odchodzisz szybko."},
+      {id:"t_siec", typ:"skrzynia", n:"Sieć zaczepiona o tyczkę", zbierz:{wegorz:1}, zloto:20,
+       wynik:"Sieć jest pocięta nożem, nie zerwana. W oczkach został jeden węgorz i cudza sakiewka."},
+      {id:"t_zbir", typ:"mob", n:"Ktoś stoi w trzcinie i nie odchodzi", walka:"rozbojnik",
+       warunek:function(){ return jestNoc(); }}
+    ]
+  },
+
+  brod_teren:{
+    n:"Bród i przystań", wraca:"sokoli_brod",
+    opis:"Woda sięga do kolan i jest przezroczysta. Na dnie widać kamienie ułożone w rząd - ktoś zrobił tu przejście dawno temu.",
+    punkty:[
+      {id:"b_ryba", typ:"ryba", n:"Szczupaki przy kamieniach", wymaga:"wedkarstwo", zbierz:{szczupak:3},
+       wynik:"Stoją nieruchomo w cieniu kamieni. Wyciągasz trzy, zanim reszta się rozpierzchnie."},
+      {id:"b_sum", typ:"mob", n:"Cień pod przewróconą łodzią", walka:"stary_sum"},
+      {id:"b_bursztyn", typ:"zasob", n:"Coś błyszczy w żwirze", wymaga:"tropienie", zbierz:{bursztyn:1}, zloto:30,
+       wynik:"Bursztyn wielkości paznokcia i moneta z dziurą, przewiercona na sznurek."},
+      {id:"b_ziola", typ:"zasob", n:"Krwawnik na skarpie", wymaga:"zielarstwo", zbierz:{krwawnik:3, dziurawiec:1},
+       wynik:"Skarpa jest sucha i nasłoneczniona. Zbierasz pełną garść."}
+    ]
+  },
+
+  aleja_teren:{
+    n:"Pole między słupami", wraca:"aleja",
+    opis:"Zboże nie rośnie tu równo - w niektórych miejscach jest niższe i rzadsze, jakby pod spodem coś było.",
+    punkty:[
+      {id:"a_kopiec", typ:"skrzynia", n:"Rzadsze zboże przy trzecim słupie", zloto:60, zbierz:{krzemien:1},
+       wynik:"Pod cienką warstwą ziemi leży kamienna płyta, a pod płytą schowek. Pusty w trzech czwartych."},
+      {id:"a_upior", typ:"mob", n:"Ktoś idzie aleją naprzeciw", walka:"spalony_brat", warunek:function(){ return jestNoc(); }},
+      {id:"a_ziola", typ:"zasob", n:"Dziewanna przy słupach", wymaga:"zielarstwo", zbierz:{dziewanna:3},
+       wynik:"Rośnie wysoko i prosto, jak gdyby ktoś ją tu posiał w rzędach."}
+    ]
+  },
+
+  opactwo_teren:{
+    n:"Zgliszcza opactwa", wraca:"opactwo",
+    opis:"Sadza, brzozy w nawie i resztki sklepienia, które trzyma się na słowo honoru.",
+    punkty:[
+      {id:"o_krypta", typ:"skrzynia", n:"Zapadnięta płyta w prezbiterium", zloto:110, zbierz:{ksiega_kron:1},
+       wynik:"Pod płytą jest schodek, a na schodku skrzynka: pieniądze i przepalona po brzegach kronika."},
+      {id:"o_brat", typ:"mob", n:"Postać w spieczonym habicie", walka:"spalony_brat"},
+      {id:"o_opat", typ:"mob", n:"Światło w prezbiterium", walka:"upior_opactwa",
+       warunek:function(){ return jestNoc() && stanZadania("popiol4") === "aktywne"; }},
+      {id:"o_ziola", typ:"zasob", n:"Zielsko w dawnym wirydarzu", wymaga:"zielarstwo", zbierz:{arcydziegiel:2, dziurawiec:2},
+       wynik:"Ogród zakonny zdziczał, ale to, co posadzili mnisi, wciąż rośnie w rzędach."}
+    ]
+  },
+
+  wawoz_teren:{
+    n:"Dno wąwozu", wraca:"wawoz",
+    opis:"Wąsko, mokro i wszędzie kamienie wielkości głowy. Nad tobą, na krawędzi, ktoś przestał iść.",
+    punkty:[
+      {id:"wa_rozboj", typ:"mob", n:"Zejście z krawędzi", walka:"rozbojnik"},
+      {id:"wa_woz", typ:"skrzynia", n:"Rozbity wóz przy ścianie", zloto:70, zbierz:{gruda:2},
+       wynik:"Wóz leży na boku od tygodni. Sól wysypała się na kamienie, a w skrzynce pod kozłem został pas z monetami."},
+      {id:"wa_ruda", typ:"ruda", n:"Odsłonięta żyła w ścianie", wymaga:"gornictwo", zbierz:{galena:2, miedziak:1},
+       wynik:"Woda odsłoniła żyłę. Odbijasz tyle, ile udźwigniesz bez zwalniania kroku."}
+    ]
+  },
+
+  jarmark_teren:{
+    n:"Zaułki między namiotami", wraca:"jarmark",
+    opis:function(){ return jestNoc()
+      ? "Po zmroku między namiotami chodzi się bokiem i nie patrzy nikomu w twarz."
+      : "Za kramami leżą skrzynie, śpi pies i suszy się cudza koszula."; },
+    punkty:[
+      {id:"j_sakwa", typ:"skrzynia", n:"Sakwa pod ladą trzeciego kramu", zloto:90, wymaga:"kradziez",
+       wynik:"Wisi na gwoździu od wewnątrz. Zdejmujesz ją, nie ruszając lady, i odchodzisz w tłum."},
+      {id:"j_skrzynia", typ:"skrzynia", n:"Skrzynia na kłódkę za namiotem", zloto:140, wymaga:"zamki", zbierz:{ksiega_frakcji:1},
+       wynik:"Kłódka jest dobra, ale zawias gorszy. W środku pieniądze i traktat, którego nikt tu nie czyta."},
+      {id:"j_ziola", typ:"zasob", n:"Kram zielarski po zamknięciu", wymaga:"zielarstwo", zbierz:{tojad:1, bagno:1},
+       wynik:"Zioła zostały na stole pod płótnem. Bierzesz dwa pęczki i zostawiasz monetę - tak jest bezpieczniej."},
+      {id:"j_zbir", typ:"mob", n:"Trzech, którzy szli za tobą od bramy", walka:"kuna_zbir", warunek:function(){ return jestNoc(); }}
+    ]
+  }
+
+  };
+  for(var k in nowe) if(!TERENY[k]) TERENY[k] = nowe[k];
+}
+
+/* ================= ROZDZIAŁ PIERWSZY - ZADANIA I ROZMOWY ================= */
+
+function rozszerzZadania(){
+  var Z = {
+  /* --- łańcuch: Szlak solny --- */
+  sol1:{t:"Szlak solny: brakująca szychta", od:"Sztygar Bolko", miejsce:0,
+    pelny:"<span class='mowa'>„Z komory solnej schodzi co tydzień dwanaście brył. Od miesiąca schodzi dziewięć, a rejestr mówi, że dwanaście.<br><br>Nie oskarżam nikogo. Chcę wiedzieć, kto pił z Kuną w zeszłym tygodniu, a Ludmiła wie wszystko, czego ja nie mogę wiedzieć.”</span>",
+    opis:"W Wietrznicy znika sól. Sztygar nie chce hałasu, chce nazwiska.",
+    cel:"Wypytaj Ludmiłę w karczmie w Wietrznicy.", nagroda:{exp:120, zloto:40}},
+  sol2:{t:"Szlak solny: rozbity wóz", od:"Ludmiła",
+    pelny:"<span class='mowa'>„Pili tu trzej i jeden płacił za wszystkich. Wóz, który im się rozbił w Wąwozie Kupieckim, stoi tam do dziś.<br><br>Przynieś mi stamtąd dwie grudy soli. Jak będą z naszej komory, poznam po kolorze.”</span>",
+    opis:"Ludmiła pozna sól z Wietrznicy po kolorze.",
+    cel:"Przynieś Ludmile dwie grudy soli z Wąwozu Kupieckiego.", nagroda:{exp:150, zloto:60}},
+  sol3:{t:"Szlak solny: człowiek w za dobrym płaszczu", od:"Ludmiła",
+    pelny:"Sól z rozbitego wozu jest z Wietrznicy. Ludmiła odkłada bryłę i mówi jedno słowo: Kuna.<br><br>Kunę zastaniesz w osadzie tylko po zmroku.",
+    opis:"Kuna wozi sól, której nie ma w żadnym rejestrze.",
+    cel:"Znajdź Kunę w Wietrznicy po zmroku i wypytaj go.", nagroda:{exp:150, rep:{od:1}}},
+  sol4:{t:"Szlak solny: rejestr kontoru", od:"Kuna",
+    pelny:"<span class='mowa'>„Nie kradnę. Wożę to, co kontor spisał jako stracone, zanim jeszcze wyjechało z komory.<br><br>Idź do rachmistrza Sędziwoja i poproś o rejestr. Jak ci go pokaże, zrozumiesz, kto tu jest złodziejem.”</span>",
+    opis:"Kuna twierdzi, że kradzież zaczyna się w rejestrze, nie w sztolni.",
+    cel:"Przynieś Sędziwojowi trzy bryły soli kamiennej i zażądaj rejestru.", nagroda:{exp:180, zloto:80}},
+  sol5:{t:"Szlak solny: rozliczenie", od:"Rachmistrz Sędziwoj",
+    pelny:"Rejestr się zgadza z tym, co mówi Kuna: brakujące bryły spisano na straty, zanim ktokolwiek je stracił.<br><br>Teraz zdecydujesz, komu podasz tę wiedzę: sztygarowi czy kontorowi.",
+    opis:"Wiesz już, kto okrada Wietrznicę. Zostało powiedzieć to komuś.",
+    cel:"Wróć do sztygara Bolka i rozlicz sprawę.", nagroda:{exp:260, zloto:150, przedmiot:"obuch_gorniczy"}},
+
+  /* --- łańcuch: Rzeka oddaje --- */
+  rzeka1:{t:"Rzeka oddaje: pocięte sieci", od:"Starościna Nieszka",
+    pelny:"<span class='mowa'>„Sieci nie rwą się od ryb. Rwą się od noża, i to od noża trzymanego równo, przez kogoś, komu się nie spieszy.<br><br>Milena stoi na warcie przy brodzie od trzech nocy i coś widziała. Mnie nie powie, bo jestem jej ciotką.”</span>",
+    opis:"Ktoś nocami tnie sieci w Sokolim Brodzie.",
+    cel:"Porozmawiaj z Mileną w Sokolim Brodzie.", nagroda:{exp:120, zloto:30}},
+  rzeka2:{t:"Rzeka oddaje: nocna warta", od:"Milena",
+    pelny:"<span class='mowa'>„Widziałam go dwa razy. Stoi w trzcinie po zmierzchu i czeka, aż łodzie odbiją.<br><br>Nie trafię do niego z łuku przez trzcinę. Ty możesz do niego podejść.”</span>",
+    opis:"W trzcinowisku po zmroku czeka ktoś, kto nie łowi ryb.",
+    cel:"Znajdź go nocą na Trzcinowym Trakcie i skończ z tym.", nagroda:{exp:200, zloto:90}},
+  rzeka3:{t:"Rzeka oddaje: prom", od:"Milena",
+    pelny:"Rozbójnik miał przy sobie sznur od promu i cudzy nóż. Ktoś płacił mu za to, żeby wieś bała się rzeki.<br><br>Chwalibóg wie, kto - ale przewoźnik nie mówi na sucho.",
+    opis:"Przewoźnik wie więcej, niż powiedział starościnie.",
+    cel:"Przynieś Chwalibogowi cztery ryby i wypytaj go.", nagroda:{exp:180, zloto:60}},
+  rzeka4:{t:"Rzeka oddaje: druga strona", od:"Chwalibóg",
+    pelny:"<span class='mowa'>„Puszcza zamknęła kratę, bo ktoś stąd wywiózł ich zmarłych razem z torfem. Odkąd zamknęli, ryba schodzi w dół i nie wraca.<br><br>Przewiozę cię. Wieszczka cię wysłucha, jeśli przyniesiesz jej to, co rośnie tylko nad stojącą wodą.”</span>",
+    opis:"Wieszczka Jarogniewa za kratą wysłucha tego, kto przyjdzie z darem.",
+    cel:"Przewieź się promem i przynieś Jarogniewie dwa czarcie kwiaty.", nagroda:{exp:220, rep:{pl:3}}},
+  rzeka5:{t:"Rzeka oddaje: stary sum", od:"Wieszczka Jarogniewa",
+    pelny:"<span class='mowa'>„Ryba nie schodzi przez kratę. Schodzi przez to, co siedzi pod przewróconą łodzią i zjada wszystko, co przejdzie brodem.<br><br>Jest starszy ode mnie. Nie żałuj go.”</span>",
+    opis:"Pod przewróconą łodzią przy brodzie siedzi coś, co zjadło pół rzeki.",
+    cel:"Zabij starego suma i przynieś jego skórę Dratwie.", nagroda:{exp:320, zloto:180, przedmiot:"luk_rogowy"}},
+
+  /* --- łańcuch: Kroniki popiołu --- */
+  popiol1:{t:"Kroniki popiołu: co się tu spaliło", od:"Brat Dobrogost",
+    pelny:"<span class='mowa'>„Mówią, że opactwo spłonęło od pioruna. Piorun nie zamyka drzwi od zewnątrz.<br><br>Zbysława przepisuje to, co zostało z ksiąg. Jeśli komuś pokaże resztę, to komuś obcemu.”</span>",
+    opis:"Dobrogost nie wierzy w piorun.",
+    cel:"Porozmawiaj ze Zbysławą w opactwie.", nagroda:{exp:140, zloto:40}},
+  popiol2:{t:"Kroniki popiołu: przepalona kronika", od:"Zbysława",
+    pelny:"<span class='mowa'>„Brakuje mi tomu z ostatniego roku. Leży pod płytą w prezbiterium, tam gdzie się zapadło.<br><br>Nie schodź tam po zmroku. Za dnia to tylko kamienie.”</span>",
+    opis:"Ostatni tom kroniki leży pod zapadniętą płytą.",
+    cel:"Znajdź kronikę w zgliszczach i przynieś ją Zbysławie.", nagroda:{exp:200, zloto:70}},
+  popiol3:{t:"Kroniki popiołu: medalion", od:"Wit",
+    pelny:"<span class='mowa'>„Miałem siedem lat i pamiętam, że bracia biegli do drzwi, a drzwi nie chciały puścić.<br><br>Jeden z nich chodzi tu jeszcze. Ma na szyi medalion z datą. Jak mi go przyniesiesz, przestanę go widzieć.”</span>",
+    opis:"Wit widuje w zgliszczach brata, który się nie wypalił do końca.",
+    cel:"Zdobądź medalion opactwa i oddaj go Witowi.", nagroda:{exp:240, zloto:60}},
+  popiol4:{t:"Kroniki popiołu: opat, który nie odszedł", od:"Nawoj",
+    pelny:"<span class='mowa'>„Kronika mówi, że opat kazał zamknąć drzwi, bo w środku było coś, co nie mogło wyjść. Wyszło i tak.<br><br>Stoi w prezbiterium każdej nocy. Ja tam nie wejdę, ale wejdę zaraz po tobie.”</span>",
+    opis:"To, co zostało z opata, stoi nocą w prezbiterium.",
+    cel:"Zejdź nocą w zgliszcza i zmierz się z opatem.", nagroda:{exp:450, zloto:220}},
+  popiol5:{t:"Kroniki popiołu: co powiedzieć ludziom", od:"Nawoj",
+    pelny:"Opat nie odszedł, bo nikt go nie rozgrzeszył, a rozgrzeszyć go mógł tylko ktoś, kto przeżył pożar.<br><br>Wit przeżył. Dobrogost zdecyduje, co wpisać do nowej kroniki.",
+    opis:"Zostało zamknąć tę historię - prawdą albo litością.",
+    cel:"Wróć do brata Dobrogosta.", nagroda:{exp:300, przedmiot:"medalion_opactwa", rep:{od:2}}},
+
+  /* --- łańcuch: Trzy chorągwie --- */
+  chor1:{t:"Trzy chorągwie: skarga", od:"Marszałek Racibor",
+    pelny:"<span class='mowa'>„Jarmark stoi na tym, że nikt tu nikogo nie sądzi. Ale Halszka krzyczy od trzech dni, a jak ona krzyczy, to jutro nie przyjadą wozy.<br><br>Wysłuchaj jej. Ja nie mogę, bo wtedy to będzie sprawa urzędowa.”</span>",
+    opis:"Marszałek nie chce sprawy urzędowej, chce ciszy.",
+    cel:"Wysłuchaj skargi Halszki na jarmarku.", nagroda:{exp:130, zloto:40}},
+  chor2:{t:"Trzy chorągwie: towar z wąwozu", od:"Halszka",
+    pelny:"<span class='mowa'>„Zabrali mi dwa wozy rudy w Wąwozie Kupieckim i nikt nie widział. Straż jarmarczna kończy się przy ostatnim maszcie.<br><br>Przynieś mi trzy bryły wietrznej rudy z powrotem, żebym miała co pokazać.”</span>",
+    opis:"Halszka straciła ładunek w wąwozie.",
+    cel:"Przynieś Halszce trzy bryły rudy wietrznej.", nagroda:{exp:200, zloto:120}},
+  chor3:{t:"Trzy chorągwie: odpowiedź Ismaala", od:"Herold Roszko",
+    pelny:"<span class='mowa'>„Ismaal nie odpowiada kupcowej. Ismaal odpowiada kasztelance.<br><br>Zanieś to do strażnicy i stań prosto, kiedy będzie czytać.”</span>",
+    opis:"Herold nie pójdzie sam - to byłoby przyznanie, że sprawa jest poważna.",
+    cel:"Zanieś odpowiedź kasztelance Dobrosławie w strażnicy.", nagroda:{exp:200, rep:{sk:2}}},
+  chor4:{t:"Trzy chorągwie: pieczęć", od:"Pchła",
+    pelny:"<span class='mowa'>„Wiem, kto podpisał zgodę na przejazd tych wozów. Wiem, bo mam nos.<br><br>Pieczęć herolda leży w jego rękawie. Jak ją zdejmiesz i pokażesz marszałkowi, sprawa się skończy jednego wieczoru.”</span>",
+    opis:"Pieczęć herolda rozstrzygnie, kto wypuścił wozy w wąwóz.",
+    cel:"Wykradnij pieczęć heroldowi Roszce i wróć do Pchły.", nagroda:{exp:280, zloto:100}},
+  chor5:{t:"Trzy chorągwie: sąd jarmarczny", od:"Pchła",
+    pelny:"Pieczęć jest ta sama, którą opieczętowano zgodę na przejazd. Herold sprzedał trasę i wziął udział w ładunku.<br><br>Marszałek sądzi na jarmarku tylko raz w roku i właśnie mu dałeś powód.",
+    opis:"Pozostało położyć pieczęć na stole marszałka.",
+    cel:"Wróć do marszałka Racibora.", nagroda:{exp:400, zloto:200, przedmiot:"list_zelazny", rep:{sk:1, nw:1, od:1}}},
+
+  /* --- łańcuch: Krew na trakcie --- */
+  trakt1:{t:"Krew na trakcie: cudze buty", od:"Sierżant Wielisław",
+    pelny:"<span class='mowa'>„Trzeci trup w miesiącu i za każdym razem to samo: zdjęte buty, zostawiona sakwa. Zabójca bierze buty, a nie pieniądze.<br><br>Pisarz Kalina wpisuje każdego trupa do księgi. Zapytaj go, skąd szli.”</span>",
+    opis:"Ktoś zabija na trakcie i zabiera buty, nie złoto.",
+    cel:"Wypytaj pisarza Kalinę przy Bramach Ismaala.", nagroda:{exp:140, zloto:40}},
+  trakt2:{t:"Krew na trakcie: księga wjazdów", od:"Pisarz Kalina",
+    pelny:"<span class='mowa'>„Wszyscy trzej szli z Wietrznicy i wszyscy trzej mieli wpis kontorowy. Tyle mogę powiedzieć bez pieczęci.<br><br>Rejestr kontoru prowadzi Sędziwoj. Powiedz mu, że pytam ja.”</span>",
+    opis:"Wszyscy zabici mieli wpis kontorowy.",
+    cel:"Zapytaj rachmistrza Sędziwoja o wpisy zabitych.", nagroda:{exp:170, zloto:50}},
+  trakt3:{t:"Krew na trakcie: wpisani i wykreśleni", od:"Rachmistrz Sędziwoj",
+    pelny:"Wszyscy trzej byli wykreśleni z rejestru w tym samym dniu, w którym zginęli - i wykreślono ich, zanim ktokolwiek zgłosił śmierć.<br><br>Kto wykreśla ludzi przed czasem, wie, kiedy przestaną chodzić.",
+    opis:"Ktoś wykreślał zabitych z rejestru, zanim zginęli.",
+    cel:"Przyciśnij Kunę w Wietrznicy po zmroku.", nagroda:{exp:220, zloto:60}},
+  trakt4:{t:"Krew na trakcie: ludzie Kuny", od:"Kuna",
+    pelny:"<span class='mowa'>„Nie zabijam ludzi. Kupuję ich milczenie, a to jest tańsze.<br><br>Ale mam trzech, którzy pracowali dla mnie i przestali pytać o zapłatę. Chcesz ich - są twoi. Tylko potem nie mów, że ci nie mówiłem.”</span>",
+    opis:"Ludzie Kuny działają już na własną rękę.",
+    cel:"Rozpraw się z ludźmi Kuny.", nagroda:{exp:380, zloto:200}},
+  trakt5:{t:"Krew na trakcie: buty", od:"Kuna",
+    pelny:"Przy jednym z nich znalazłeś trzy pary butów, wyczyszczonych i ustawionych równo. Nie sprzedał żadnej.<br><br>To trzeba komuś oddać - i tylko strażnica prowadzi listę zaginionych.",
+    opis:"Buty zabitych ktoś czyścił i ustawiał w rzędzie.",
+    cel:"Zanieś sprawę kasztelance Dobrosławie.", nagroda:{exp:420, zloto:220, przedmiot:"kord_ismaala", rep:{sk:3}}},
+
+  /* --- zadania frakcyjne --- */
+  sk_1:{t:"Ismaal: patrol wąwozu", od:"Kasztelanka Dobrosława",
+    pelny:"<span class='mowa'>„Wąwóz Kupiecki należy do nikogo, więc będzie należał do nas. Zacznij od tego, żeby przestał należeć do rozbójników.”</span>",
+    opis:"Strażnica chce, żeby wąwóz przestał być niebezpieczny.",
+    cel:"Zabij rozbójnika w Wąwozie Kupieckim.", nagroda:{exp:250, zloto:120, rep:{sk:2}}},
+  sk_2:{t:"Ismaal: żelazo na zbroje", od:"Kasztelanka Dobrosława",
+    pelny:"<span class='mowa'>„Kuźnia strażnicy stoi, bo nie ma z czego kuć. Wietrzna ruda jest lepsza od naszej i nikt jej nam nie sprzeda oficjalnie.”</span>",
+    opis:"Strażnica potrzebuje rudy, której nikt jej nie sprzeda.",
+    cel:"Przynieś Dobrosławie trzy bryły rudy wietrznej.", nagroda:{exp:280, zloto:160, rep:{sk:3}}},
+  sk_3:{t:"Ismaal: przysięga na kamień", od:"Kasztelanka Dobrosława",
+    pelny:"<span class='mowa'>„U nas nie przysięga się ludziom, tylko murowi. Mur nie zdradzi i nie umrze.<br><br>Stań na dziedzińcu i pokaż, że umiesz stać.”</span>",
+    opis:"Ostatnia próba przed przyjęciem do służby Ismaala.",
+    cel:"Wróć do kasztelanki i złóż przysięgę.", nagroda:{exp:320, zloto:100, rep:{sk:4}}},
+
+  nw_1:{t:"Nowożytni: spis dusz", od:"Rachmistrz Sędziwoj",
+    pelny:"<span class='mowa'>„Wietrznica nie ma spisu mieszkańców. To znaczy, że dla kontoru Wietrznica nie istnieje, a jednak wysyła nam rudę.<br><br>Ludmiła wie, ilu ich jest. Niech powie tobie, skoro mnie nie chce.”</span>",
+    opis:"Kontor chce spisać Wietrznicę.",
+    cel:"Uzyskaj spis od Ludmiły.", nagroda:{exp:230, zloto:110, rep:{nw:2}}},
+  nw_2:{t:"Nowożytni: dostawa soli", od:"Rachmistrz Sędziwoj",
+    pelny:"<span class='mowa'>„Cztery bryły soli kamiennej, przyniesione ręką, nie wozem. Chcę wiedzieć, czy da się to zrobić bez kwitu.”</span>",
+    opis:"Rachmistrz sprawdza, ile da się przenieść poza rejestrem.",
+    cel:"Przynieś Sędziwojowi cztery bryły soli kamiennej.", nagroda:{exp:260, zloto:180, rep:{nw:3}}},
+  nw_3:{t:"Nowożytni: audyt jarmarku", od:"Rachmistrz Sędziwoj",
+    pelny:"<span class='mowa'>„Jarmark twierdzi, że nie podlega nikomu. Jarmark korzysta z naszych dróg.<br><br>Niech Halszka poda ci swoje trzy wagi. Reszta to już moja robota.”</span>",
+    opis:"Kontor chce mieć rękę na jarmarku.",
+    cel:"Zdobądź od Halszki jej rachunki.", nagroda:{exp:300, zloto:150, rep:{nw:4}}},
+
+  od_1:{t:"Odeszli: nocny kurs", od:"Sędzimir Cichy",
+    pelny:"<span class='mowa'>„Nie pytamy, skąd ktoś jest. Pytamy, czy dojdzie na czas.<br><br>Trzy grudy soli, dziś, bez świadków.”</span>",
+    opis:"Odeszli sprawdzają, czy dojdziesz na czas.",
+    cel:"Przynieś Sędzimirowi trzy grudy soli.", nagroda:{exp:240, zloto:140, rep:{od:2}}},
+  od_2:{t:"Odeszli: cudza skrzynia", od:"Sędzimir Cichy",
+    pelny:"<span class='mowa'>„Za trzecim namiotem na jarmarku stoi skrzynia na kłódkę. Kłódka jest lepsza niż zawias.<br><br>To, co w niej jest, i tak nie należy do tego, kto ją zamknął.”</span>",
+    opis:"Kwatermistrz chce wiedzieć, czy umiesz wejść tam, gdzie zamknięto.",
+    cel:"Otwórz skrzynię na jarmarku i przynieś traktat.", nagroda:{exp:300, zloto:120, rep:{od:3}}},
+  od_3:{t:"Odeszli: milczenie", od:"Sędzimir Cichy",
+    pelny:"<span class='mowa'>„Ostatnia rzecz jest najtrudniejsza: masz iść do Kuny i nie powiedzieć mu, po co przyszedłeś.<br><br>On zrozumie. My zrozumiemy po nim.”</span>",
+    opis:"Próba, w której nie wolno nic powiedzieć.",
+    cel:"Odwiedź Kunę i milcz.", nagroda:{exp:340, zloto:100, rep:{od:4}}},
+
+  pl_1:{t:"Prastary Lud: dary znad wody", od:"Wieszczka Jarogniewa",
+    pelny:"<span class='mowa'>„Kwiat, który kwitnie nocą, pamięta, co widział. Przynieś trzy, a nauczę cię je czytać.”</span>",
+    opis:"Wieszczka chce trzech czarcich kwiatów.",
+    cel:"Przynieś Jarogniewie trzy czarcie kwiaty.", nagroda:{exp:230, rep:{pl:3}}},
+  pl_2:{t:"Prastary Lud: skóra z rzeki", od:"Wieszczka Jarogniewa",
+    pelny:"<span class='mowa'>„Rzeka oddała ci to, co zabrała innym. Skóra suma należy do puszczy, nie do szkutnika.”</span>",
+    opis:"Puszcza upomina się o skórę starego suma.",
+    cel:"Przynieś Jarogniewie skórę starego suma.", nagroda:{exp:280, zloto:80, rep:{pl:3}}},
+  pl_3:{t:"Prastary Lud: próba kraty", od:"Wieszczka Jarogniewa",
+    pelny:"<span class='mowa'>„Strażnik kraty nie wpuści cię drugi raz z uprzejmości. Stań przeciw niemu i nie zabij go od tyłu.<br><br>Jak przeżyjesz, będziesz nasz albo nie będziesz niczyj.”</span>",
+    opis:"Ostatnia próba Prastarego Ludu.",
+    cel:"Zmierz się ze strażnikiem kraty na Uroczysku.", nagroda:{exp:400, rep:{pl:5}, przedmiot:"pierscien_wilczy"}}
+  };
+  for(var k in Z) if(!ZADANIA[k]) ZADANIA[k] = Z[k];
+
+  WROGOWIE.rozbojnik.konczy = "rzeka2";
+  WROGOWIE.stary_sum.konczy = "rzeka5";
+  WROGOWIE.upior_opactwa.konczy = "popiol4";
+  WROGOWIE.kuna_zbir.konczy = "trakt4";
+  WROGOWIE.strazak_kraty.konczy = "pl_3";
+  WROGOWIE.spalony_brat.konczy = "popiol3";
+  ZADANIOWY_LUP.spalony_brat = {medalion_opactwa:1};
+  ZADANIOWY_LUP.stary_sum = {lusk_suma:1};
+}
+
+/* ================= ROZDZIAŁ PIERWSZY - ROZMOWY ================= */
+
+function rozszerzSceny(){
+
+  PRZEDMIOTY.pieczec_roszki = {n:"Pieczęć herolda", kat:"artefakt", typ:"towar", cena:0,
+    o:"Mosiężny tłok z godłem Ismaala i wyszczerbionym brzegiem. Odcisk poznaje każdy, kto choć raz widział zgodę na przejazd."};
+  PRZEDMIOTY.spis_wietrznicy = {n:"Spis Wietrznicy", kat:"pismo", typ:"towar", cena:0,
+    o:"Sto siedemdziesiąt osiem imion na dwóch kartach, spisanych ręką kogoś, kto zna każde z nich osobiście."};
+  PRZEDMIOTY.rachunki_halszki = {n:"Rachunki Halszki", kat:"pismo", typ:"towar", cena:0,
+    o:"Trzy wagi, trzy kolumny i jedna kolumna czwarta, dopisana ołówkiem."};
+
+  ZADANIA.pl_2.cel = "Przynieś Jarogniewie dwa węgorze i dwa szczupaki z rzeki.";
+  ZADANIA.pl_2.pelny = "<span class='mowa'>„Rzeka oddaje temu, kto pyta. Przynieś to, co dała tobie: dwa węgorze i dwa szczupaki. Nie kupione - złowione.”</span>";
+  ZADANIA.pl_2.opis = "Puszcza przyjmuje tylko to, co złowiono własną ręką.";
+
+  function wroc(lok, l){ return {l: l || "Odejdź", idz:"__lok_"+lok}; }
+
+  var N = {
+
+  /* ---------- WIETRZNICA ---------- */
+  studnia_wietrznica:{
+    tekst:"Studnia górnicza jest głęboka na trzydzieści sążni i woda w niej smakuje solą. Obok stoi ława i wiadro, którego nikt nie kradnie, bo wszyscy z niego piją.",
+    opcje:[
+      {l:"Usiądź i odpocznij (6 godzin)", odpoczynek:{godzin:6, udzial:0.6, lok:"wietrznica",
+        tekst:"Siadasz plecami do cembrowiny. Kołowrót stuka równo i po pewnym czasie przestajesz go słyszeć."}},
+      {l:"Prześpij się do rana (12 godzin)", odpoczynek:{godzin:12, udzial:1, lok:"wietrznica",
+        tekst:"Ktoś nakrywa cię derką i nie budzi. Rano derka leży złożona obok."}},
+      {l:"Zapisz grę", zapis:true},
+      wroc("wietrznica", "Wróć między domy")
+    ]
+  },
+
+  huta:{
+    portret:"kowal", kto:"Hutnik Racław", sklep:true, wraca:"__lok_wietrznica", wracaOpis:"Odejdź od pieca",
+    tekst:"W hucie jest gorąco tak, że powietrze drga nad klepiskiem. Hutnik nie pyta, kim jesteś - pyta, co masz i czego chcesz.",
+    oferta:["obuch_gorniczy","kord_ismaala","kaftan","kolczuga","plaszcz_m","strzaly","belty","chleb","mikstura_mocy"]
+  },
+
+  bolko:{
+    portret:"kowal", npc:"bolko", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Bolko",
+    intro:{
+      tekst:"Trzyma lampę na wysokości pasa i patrzy w otwór szybu, jakby czekał, aż ktoś stamtąd wyjdzie.<br><br><span class='mowa'>„Nie stój przy krawędzi. Jak spadniesz, będę musiał po ciebie schodzić.”</span>",
+      opcje:[
+        {l:"Czekasz na kogoś?", idz:"bolko_w1"},
+        {l:"Kim jesteś?", idz:"bolko_w2"},
+        {l:"Odejdź", idz:"__lok_wietrznica"}
+      ]
+    },
+    tekst:function(){
+      if(stanZadania("sol5")==="gotowe") return "<span class='mowa'>„Widzę po tobie, że wiesz. Mów.”</span>";
+      return "<span class='mowa'>„Wietrznica ma trzysta lat i ani razu nie stanęła. Nie zamierzam być tym, za którego stanie.”</span>";
+    },
+    opcje:[
+      {l:"Masz robotę?", dajZ:"sol1", warunekZ:{id:"sol1", stan:"brak"}, idz:"bolko_sol1"},
+      {l:"Wiem już, kto okrada komorę.", oddajZ:"sol5", warunekZ:{id:"sol5", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("sol5"); }, idz:"bolko_sol5"},
+      {l:"Naucz mnie czegoś o kamieniu i żelazie.", idz:"bolko_nauka"},
+      {l:"Co wydobywacie?", idz:"bolko_ruda", raz:true},
+      {l:"Odejdź", idz:"__lok_wietrznica"}
+    ]
+  },
+  bolko_w1:{portret:"kowal", npc:"bolko", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Bolko",
+    tekst:"<span class='mowa'>„Na dziewiątą szychtę. Zeszło ich dwunastu, wyszło dwunastu, a rudy wyjechało jak po dziewięciu.<br><br>Albo ktoś kradnie, albo góra oddaje mniej. Wolałbym złodzieja.”</span>",
+    opcje:[{l:"Kim jesteś?", idz:"bolko_w2"}]},
+  bolko_w2:{portret:"kowal", npc:"bolko", ktoNieznany:"Człowiek z lampą", kto:"Sztygar Bolko",
+    tekst:"<span class='mowa'>„Bolko. Sztygar, czyli ten, którego biją, kiedy szyb daje mało, i którego nie chwalą, kiedy daje dużo.<br><br>Trzydzieści lat pod ziemią. Wychodzę tylko po to, żeby liczyć.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"bolko", poznaj:"bolko"}]},
+  bolko_ruda:{portret:"kowal", kto:"Sztygar Bolko",
+    tekst:"<span class='mowa'>„Rudę wietrzną i sól kamienną. Ruda idzie do Nowożytnych, bo płacą kwitem, a sól idzie wszędzie, bo płacą złotem.<br><br>Z naszej rudy kują to, czym się potem zabijają na dole, w dolinie. Nie moja sprawa.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"bolko"}]},
+  bolko_sol1:{portret:"kowal", kto:"Sztygar Bolko",
+    tekst:function(){ return ZADANIA.sol1.pelny; },
+    opcje:[{l:"Pogadam z Ludmiłą.", idz:"bolko"}]},
+  bolko_sol5:{portret:"kowal", kto:"Sztygar Bolko",
+    tekst:"Słucha do końca i nie przerywa ani razu. Potem odstawia lampę na kamień.<br><br><span class='mowa'>„Więc nie kradną mi ludzie. Kradnie mi papier.<br><br>Weź to. Kilof mojego ojca, przekuty tak, żeby nadawał się do czegoś innego niż skała. Będziesz go potrzebował bardziej niż ja.”</span>",
+    opcje:[{l:"Weź obuch", oddajZ:"sol5", idz:"bolko"}]},
+  bolko_nauka:{portret:"kowal", kto:"Sztygar Bolko", trener:true, uczy:"bolko",
+    wraca:"bolko", wracaOpis:"Dość na dziś",
+    tekst:"<span class='mowa'>„Uczę tego, co umiem: dźwigać i wytapiać. Jedno i drugie robi z człowieka coś twardszego, niż był.”</span>"},
+
+  ludmila:{
+    portret:"kobieta", npc:"ludmila", ktoNieznany:"Karczmarka", kto:"Ludmiła",
+    intro:{
+      tekst:"Wyciera ten sam kufel, odkąd wszedłeś, i patrzy na ciebie w lustrze z blachy powieszonym nad beczką.<br><br><span class='mowa'>„Jedzenie po lewej, pytania po prawej. Za pytania też się płaci, tylko inaczej.”</span>",
+      opcje:[
+        {l:"Czym się płaci za pytania?", idz:"ludmila_w1"},
+        {l:"Kim jesteś?", idz:"ludmila_w2"},
+        {l:"Wyjdź", idz:"__lok_wietrznica"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Siadaj albo mów. Stojących nie obsługuję.”</span>",
+    opcje:[
+      {l:"Bolko pyta, kto pił z Kuną.", oddajZ:"sol1", warunekZ:{id:"sol1", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("sol1"); }, idz:"ludmila_sol1"},
+      {l:"Sól z rozbitego wozu.", oddajZ:"sol2", warunekZ:{id:"sol2", stan:"aktywne"},
+       wymagaPrzedmiotu:"gruda", ile:2, idz:"ludmila_sol2"},
+      {l:"Kontor chce spisu mieszkańców.", oddajZ:"nw_1", warunekZ:{id:"nw_1", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("nw_1"); dodaj("spis_wietrznicy"); }, idz:"ludmila_spis"},
+      {l:"Pokaż, co masz do jedzenia.", idz:"ludmila_sklep"},
+      {l:"Wynajmij łóżko na noc (10 zł)", warunek:function(){ return S.zloto >= 10; },
+       odpoczynek:{godzin:10, udzial:1, lok:"wietrznica", tekst:"Płacisz dziesięć sztuk i dostajesz siennik przy kominie. Nikt cię nie budzi."},
+       ef:function(){ S.zloto -= 10; }},
+      {l:"Co się mówi w Wietrznicy?", idz:"ludmila_plotki", raz:true},
+      {l:"(sięgnij po sakwę pod ladą)", warunek:function(){ return !!S.umie.kradziez && !S.ukradzione.ludmila; },
+       kradziez:{id:"ludmila", npc:"ludmila", trud:35, zloto:70, kara:40, rep:{nw:-1},
+         sukces:"Sakwa wisi na gwoździu od wewnątrz lady. Zdejmujesz ją w chwili, gdy Ludmiła odwraca się do beczki.",
+         wpadka:"<span class='mowa'>„Rękę.”</span> Mówi to spokojnie, nie podnosząc głowy. Kładziesz sakwę z powrotem i płacisz za spokój.",
+         wraca:"__lok_wietrznica"}},
+      {l:"Wyjdź", idz:"__lok_wietrznica"}
+    ]
+  },
+  ludmila_w1:{portret:"kobieta", npc:"ludmila", ktoNieznany:"Karczmarka", kto:"Ludmiła",
+    tekst:"<span class='mowa'>„Tym, że potem ja pytam ciebie i dostaję prawdę. Nie musisz mi jej mówić od razu. Ale jak skłamiesz, to więcej nie pogadamy.”</span>",
+    opcje:[{l:"Kim jesteś?", idz:"ludmila_w2"}]},
+  ludmila_w2:{portret:"kobieta", npc:"ludmila", ktoNieznany:"Karczmarka", kto:"Ludmiła",
+    tekst:"<span class='mowa'>„Ludmiła. Karczma jest moja, ojciec ją postawił, jak jeszcze szyb był płytki.<br><br>Znam tu wszystkich po głosie zza ściany. To nie jest przechwałka, to jest zawód.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"ludmila", poznaj:"ludmila"}]},
+  ludmila_plotki:{portret:"kobieta", kto:"Ludmiła",
+    tekst:"<span class='mowa'>„Że w starym chodniku znowu widzieli światło. Że rachmistrz z kontoru wpisał trzech ludzi jako zmarłych, a oni wtedy jeszcze żyli.<br><br>I że ktoś na jarmarku sprzedaje naszą sól taniej, niż my ją wydobywamy. Wybierz sobie, w co wierzysz.”</span>",
+    opcje:[{l:"Dziękuję.", idz:"ludmila", ef:function(){ S.poznane.kontor = true; }}]},
+  ludmila_sol1:{portret:"kobieta", kto:"Ludmiła",
+    tekst:"<span class='mowa'>„Pili tu trzej i płacił jeden. Ten w za dobrym płaszczu. Nazywają go Kuna i pokazuje się po zmroku.<br><br>Ale zanim pójdziesz mu w oczy, przynieś mi dowód. W Wąwozie Kupieckim stoi rozbity wóz. Dwie grudy soli stamtąd i powiem ci, czy to nasza.”</span>",
+    opcje:[{l:"Przyniosę.", dajZ:"sol2", idz:"ludmila"}]},
+  ludmila_sol2:{portret:"kobieta", kto:"Ludmiła",
+    tekst:"Rozłupuje bryłę o kant lady i patrzy na przełam pod światło.<br><br><span class='mowa'>„Nasza. Z komory pod trzecim poziomem, bo tylko tam jest ten różowy pasek.<br><br>Kuna. Po zmroku, przy hałdzie. Nie pokazuj mu, że się boisz, bo on z tego żyje.”</span>",
+    opcje:[{l:"Poczekam do zmroku.", dajZ:"sol3", idz:"ludmila"}]},
+  ludmila_spis:{portret:"kobieta", kto:"Ludmiła",
+    tekst:"Pisze przez pół godziny, nie zaglądając do niczego. Sto siedemdziesiąt osiem imion.<br><br><span class='mowa'>„Daj im to. Niech wiedzą, ilu nas jest, kiedy będą liczyć, ile mogą zabrać.”</span>",
+    opcje:[{l:"Weź spis", idz:"ludmila"}]},
+  ludmila_sklep:{portret:"kobieta", kto:"Ludmiła", sklep:true, wraca:"ludmila", wracaOpis:"Dość",
+    tekst:"<span class='mowa'>„Kasza była wczoraj, chleb jest dziś, ryba będzie, jak przywiozą z Brodu.”</span>",
+    oferta:["chleb","jablko","szczupak","mikstura_mocy","dziurawiec"]},
+
+  bogna:{
+    portret:"kobieta", npc:"bogna", ktoNieznany:"Kobieta susząca korzenie", kto:"Bogna",
+    intro:{
+      tekst:"Rozkłada korzenie na płótnie w równych rzędach, korzeń przy korzeniu, tak jak układa się coś, co się liczy.<br><br><span class='mowa'>„Nie stawaj w słońcu. Rzucasz cień na susz.”</span>",
+      opcje:[
+        {l:"Skąd tu zioła, na gołej skale?", idz:"bogna_w1"},
+        {l:"Kim jesteś?", idz:"bogna_w2"},
+        {l:"Odejdź", idz:"__lok_wietrznica"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Mów szybko, bo susz nie czeka.”</span>",
+    opcje:[
+      {l:"Naucz mnie zielarstwa wyższego.", idz:"bogna_nauka"},
+      {l:"Pokaż zioła i wywary.", idz:"bogna_sklep"},
+      {l:"Co rośnie tylko tutaj?", idz:"bogna_ziola", raz:true},
+      {l:"Odejdź", idz:"__lok_wietrznica"}
+    ]
+  },
+  bogna_w1:{portret:"kobieta", npc:"bogna", ktoNieznany:"Kobieta susząca korzenie", kto:"Bogna",
+    tekst:"<span class='mowa'>„Bo hałda jest ciepła. Pod nią pali się od trzydziestu lat i nikt tego nie ugasi.<br><br>Na ciepłej ziemi rośnie to, co nigdzie indziej. Za to nie oddycha się tu dobrze po czterdziestce.”</span>",
+    opcje:[{l:"Kim jesteś?", idz:"bogna_w2"}]},
+  bogna_w2:{portret:"kobieta", npc:"bogna", ktoNieznany:"Kobieta susząca korzenie", kto:"Bogna",
+    tekst:"<span class='mowa'>„Bogna. Leczę tych, którzy wychodzą z szybu, i zamykam oczy tym, którzy nie wyszli.<br><br>Uczyła mnie kobieta z puszczy, jeszcze zanim zamknęli kratę. Nie mów tego głośno przy kontorze.”</span>",
+    opcje:[{l:"Nie powiem.", idz:"bogna", poznaj:"bogna"}]},
+  bogna_ziola:{portret:"kobieta", kto:"Bogna",
+    tekst:"<span class='mowa'>„Korzeń wietrzny - na ciepłej ziemi przy hałdzie. Rozgrzewa i rozjaśnia w głowie.<br><br>Czarci kwiat - tylko nad wodą, która nie płynie, i tylko nocą. Kto go zna, ten nie potrzebuje ognia, żeby palić.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"bogna"}]},
+  bogna_nauka:{portret:"kobieta", kto:"Bogna", trener:true, uczy:"bogna", wraca:"bogna", wracaOpis:"Dość",
+    tekst:"<span class='mowa'>„Zielarstwo to nie zbieranie. Zbierać umie każdy. Chodzi o to, żeby wiedzieć, czego nie zerwać.”</span>"},
+  bogna_sklep:{portret:"kobieta", kto:"Bogna", sklep:true, wraca:"bogna", wracaOpis:"Dość",
+    tekst:"<span class='mowa'>„Ceny mam takie same dla wszystkich. Także dla tych, którzy mnie potem oczerniają.”</span>",
+    oferta:["korzen_wietrzny","arcydziegiel","dziurawiec","krwawnik","tojad","mikstura_mocy","naszyjnik_soli"]},
+
+  kuna:{
+    portret:"weteran", npc:"kuna", ktoNieznany:"Człowiek w za dobrym płaszczu", kto:"Kuna",
+    intro:{
+      tekst:"Stoi przy hałdzie tam, gdzie światło z huty nie sięga, i widzi cię wcześniej, niż ty jego.<br><br><span class='mowa'>„Idziesz do mnie, więc ktoś ci mnie wskazał. Powiedz kto, to będziemy wiedzieli, ile mamy czasu.”</span>",
+      opcje:[
+        {l:"Ludmiła.", idz:"kuna_w1"},
+        {l:"Nikt. Sam cię znalazłem.", idz:"kuna_w1"},
+        {l:"Odejdź", idz:"__lok_wietrznica"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Mów cicho. Tu każdy kamień słucha za pół sztuki srebra.”</span>",
+    opcje:[
+      {l:"Wozisz sól z komory Bolka.", oddajZ:"sol3", warunekZ:{id:"sol3", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("sol3"); }, idz:"kuna_sol3"},
+      {l:"Trzej zabici z wpisem kontorowym. Twoi ludzie?", oddajZ:"trakt3", warunekZ:{id:"trakt3", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("trakt3"); }, idz:"kuna_trakt3"},
+      {l:"Więc pokaż mi ich.", warunekZ:{id:"trakt4", stan:"aktywne"}, idz:"kuna_walka"},
+      {l:"(stój i nic nie mów)", oddajZ:"od_3", warunekZ:{id:"od_3", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("od_3"); }, idz:"kuna_milczenie"},
+      {l:"(sięgnij pod jego płaszcz)", warunek:function(){ return !!S.umie.kradziez && !S.ukradzione.kuna; },
+       kradziez:{id:"kuna", npc:"kuna", trud:55, zloto:160, lup:{gruda:2}, kara:80, walka:"kuna_zbir",
+         sukces:"Płaszcz jest ciężki nie od wełny. Wyjmujesz sakiewkę i dwie grudy, i odchodzisz w ciemność bokiem, nie tyłem.",
+         wpadka:"<span class='mowa'>„Nie ty pierwszy.”</span> Kuna nie krzyczy. Gwiżdże - i to jest gorsze.",
+         wraca:"__lok_wietrznica"}},
+      {l:"Odejdź", idz:"__lok_wietrznica"}
+    ]
+  },
+  kuna_w1:{portret:"weteran", npc:"kuna", ktoNieznany:"Człowiek w za dobrym płaszczu", kto:"Kuna",
+    tekst:"<span class='mowa'>„Kuna. Nie pytaj o imię, bo dostaniesz nieprawdziwe i obaj będziemy się wstydzić.<br><br>Wożę rzeczy z miejsca, gdzie są tanie, do miejsca, gdzie są drogie. Nazywają to przemytem ci, którzy chcieliby brać z tego procent.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"kuna", poznaj:"kuna"}]},
+  kuna_sol3:{portret:"weteran", kto:"Kuna",
+    tekst:function(){ return ZADANIA.sol4.pelny; },
+    opcje:[{l:"Sprawdzę ten rejestr.", dajZ:"sol4", ef:function(){ S.poznane.kontor = true; }, idz:"kuna"}]},
+  kuna_trakt3:{portret:"weteran", kto:"Kuna",
+    tekst:function(){ return ZADANIA.trakt4.pelny; },
+    opcje:[{l:"Gdzie ich znajdę?", dajZ:"trakt4", idz:"kuna"}]},
+  kuna_walka:{portret:"weteran", kto:"Kuna",
+    tekst:"Gwiżdże raz, krótko. Zza hałdy wychodzi trzech i żaden z nich nie wygląda na zaskoczonego.<br><br><span class='mowa'>„Załatwcie to sami. Ja idę spać.”</span>",
+    opcje:[{l:"Stań", walka:"kuna_zbir", po:"kuna_po_walce"}]},
+  kuna_po_walce:{portret:"weteran", kto:"Kuna",
+    tekst:"Przy jednym z nich, w worku, stoją trzy pary butów. Wyczyszczone, ustawione równo, z wypchanymi cholewkami.<br><br>Nikt tak nie robi z łupem, który zamierza sprzedać.",
+    opcje:[{l:"Weź buty", dajZ:"trakt5", ef:function(){ oddajZadanie("trakt4"); S.poznane.straznica = true; }, idz:"__lok_wietrznica"}]},
+  kuna_milczenie:{portret:"weteran", kto:"Kuna",
+    tekst:"Stoisz i nic nie mówisz. On patrzy na ciebie dłużej, niż to znośne, a potem parska śmiechem.<br><br><span class='mowa'>„Sędzimir cię przysłał. Tylko on każe ludziom milczeć, zamiast im kazać kłamać.<br><br>Powiedz mu, że umiesz. I że to rzadkie.”</span>",
+    opcje:[{l:"Odejdź bez słowa", idz:"__lok_wietrznica"}]},
+
+  sedziwoj:{
+    portret:"urzednik", npc:"sedziwoj", ktoNieznany:"Człowiek z piórami za uchem", kto:"Rachmistrz Sędziwoj",
+    intro:{
+      tekst:"Pisze dwiema rękami naprzemiennie i przez chwilę wydaje ci się, że to sztuczka. Nie jest.<br><br><span class='mowa'>„Chwileczkę. Kolumna musi się zejść, bo inaczej ktoś jutro nie dostanie zapłaty.”</span>",
+      opcje:[
+        {l:"Poczekaj, aż skończy", idz:"sedziwoj_w1"},
+        {l:"Kim jesteś?", idz:"sedziwoj_w1"},
+        {l:"Wyjdź", idz:"__lok_kontor"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Kontor jest otwarty dla każdego, kto ma sprawę zapisywalną. Reszta niech idzie do karczmy.”</span>",
+    opcje:[
+      {l:"Sól kamienna. Chcę zobaczyć rejestr.", oddajZ:"sol4", warunekZ:{id:"sol4", stan:"aktywne"},
+       wymagaPrzedmiotu:"sol_kamienna", ile:3, idz:"sedziwoj_sol4"},
+      {l:"Kalina pyta o wpisy zabitych.", oddajZ:"trakt2", warunekZ:{id:"trakt2", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("trakt2"); }, idz:"sedziwoj_trakt2"},
+      {l:"Masz dla mnie robotę kontorową?", dajZ:"nw_1", warunekZ:{id:"nw_1", stan:"brak"},
+       warunek:function(){ return poznany("sedziwoj"); }, idz:"sedziwoj_nw1"},
+      {l:"Spis Wietrznicy.", oddajZ:"nw_1", warunekZ:{id:"nw_1", stan:"gotowe"},
+       ef:function(){ usun("spis_wietrznicy"); }, idz:"sedziwoj_nw1_koniec"},
+      {l:"Cztery bryły soli.", oddajZ:"nw_2", warunekZ:{id:"nw_2", stan:"aktywne"},
+       wymagaPrzedmiotu:"sol_kamienna", ile:4, idz:"sedziwoj_nw2"},
+      {l:"Rachunki Halszki.", oddajZ:"nw_3", warunekZ:{id:"nw_3", stan:"gotowe"},
+       ef:function(){ usun("rachunki_halszki"); }, idz:"sedziwoj_nw3"},
+      {l:"Chcę wstąpić do Nowożytnych.", idz:"wstap_nw", warunek:function(){ return gotowyDoFrakcji("nw"); }},
+      {l:"Po co komu rejestr?", idz:"sedziwoj_rejestr", raz:true},
+      {l:"Wyjdź", idz:"__lok_kontor"}
+    ]
+  },
+  sedziwoj_w1:{portret:"urzednik", npc:"sedziwoj", ktoNieznany:"Człowiek z piórami za uchem", kto:"Rachmistrz Sędziwoj",
+    tekst:"<span class='mowa'>„Sędziwoj, rachmistrz kontoru wietrznickiego. Trzeci rok tutaj, drugi bez urlopu.<br><br>Nie jestem urzędnikiem dlatego, że lubię władzę. Jestem nim dlatego, że lubię, kiedy się zgadza.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"sedziwoj", poznaj:"sedziwoj"}]},
+  sedziwoj_rejestr:{portret:"urzednik", kto:"Rachmistrz Sędziwoj",
+    tekst:"<span class='mowa'>„Bo czego nie ma w rejestrze, tego nie ma w ogóle. Wieś niewpisana nie dostanie pomocy, ale też nie zapłaci podatku.<br><br>Ludzie myślą, że rejestr jest po to, żeby brać. Rejestr jest po to, żeby wiedzieć, komu oddać, gdy przyjdzie co do czego.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"sedziwoj"}]},
+  sedziwoj_sol4:{portret:"urzednik", kto:"Rachmistrz Sędziwoj",
+    tekst:"Waży bryły, zapisuje, potem otwiera drugą księgę i milknie na dłużej, niż powinien.<br><br><span class='mowa'>„Te bryły zostały spisane na straty siedemnastego. Wydobyto je dwudziestego drugiego.<br><br>Ktoś księguje stratę, zanim ona nastąpi. To nie jest błąd rachunkowy. To jest podpis.”</span>",
+    opcje:[{l:"Czyj podpis?", dajZ:"sol5", idz:"sedziwoj"}]},
+  sedziwoj_trakt2:{portret:"urzednik", kto:"Rachmistrz Sędziwoj",
+    tekst:function(){ return ZADANIA.trakt3.pelny; },
+    opcje:[{l:"Pójdę do Kuny.", dajZ:"trakt3", idz:"sedziwoj"}]},
+  sedziwoj_nw1:{portret:"urzednik", kto:"Rachmistrz Sędziwoj",
+    tekst:function(){ return ZADANIA.nw_1.pelny; },
+    opcje:[{l:"Zdobędę ten spis.", idz:"sedziwoj"}]},
+  sedziwoj_nw1_koniec:{portret:"urzednik", kto:"Rachmistrz Sędziwoj",
+    tekst:"Przewraca kartę, liczy do siebie i uśmiecha się pierwszy raz.<br><br><span class='mowa'>„Sto siedemdziesiąt osiem. Od dziś istnieją.<br><br>Mam drugą rzecz, jeśli ci to nie przeszkadza, że będzie bez kwitu.”</span>",
+    opcje:[{l:"Nie przeszkadza.", dajZ:"nw_2", idz:"sedziwoj"}]},
+  sedziwoj_nw2:{portret:"urzednik", kto:"Rachmistrz Sędziwoj",
+    tekst:"<span class='mowa'>„Cztery bryły, przeniesione ręką, bez kwitu i bez straty. Czyli da się.<br><br>To znaczy, że każdy inny też może. Muszę to zapisać, choć wolałbym nie.”</span>",
+    opcje:[{l:"Co dalej?", dajZ:"nw_3", idz:"sedziwoj"}]},
+  sedziwoj_nw3:{portret:"urzednik", kto:"Rachmistrz Sędziwoj",
+    tekst:"<span class='mowa'>„Cztery kolumny zamiast trzech. Jarmark też umie liczyć - tylko liczy dla siebie.<br><br>Zrobiłeś dla kontoru więcej niż połowa naszych ludzi. Wiesz, co to znaczy.”</span>",
+    opcje:[{l:"Wiem.", idz:"sedziwoj"}]}
+
+  };
+  for(var k in N) if(!SCENY[k]) SCENY[k] = N[k];
+}
+
+/* ---------- ROZDZIAŁ PIERWSZY: ROZSZERZENIE ---------- */
+rozszerzGre();
 
 rysujPasek();
 pokaz("start");
