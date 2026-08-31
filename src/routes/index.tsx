@@ -1,24 +1,53 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import "../game/argena.css";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Argena — mroczna gra tekstowa RPG" },
+      {
+        name: "description",
+        content:
+          "Argena to polska gra tekstowa RPG: Ziemie Niczyje, walka na supercios, zielarstwo, questy, bestiariusz i frakcje.",
+      },
+      { property: "og:title", content: "Argena — mroczna gra tekstowa RPG" },
+      {
+        property: "og:description",
+        content:
+          "Wciel się w najemnika na Ziemiach Niczyich. Ucz się rzemiosła, poluj, handluj i przetrwaj wojnę dwóch królestw.",
+      },
+    ],
+    links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500&display=swap",
+      },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    import("../game/argena.js").then((m) => {
+      stop = m.startArgena();
+    });
+    return () => {
+      if (stop) stop();
+    };
+  }, []);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="argena">
+      <h1>Argena</h1>
+      <p className="podtytul">Rozdział pierwszy</p>
+      <div id="gra" />
+      <div id="panel" hidden />
+      <nav id="pasek" />
     </div>
   );
 }
