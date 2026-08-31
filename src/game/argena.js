@@ -6259,32 +6259,37 @@ function rozdzialDrugi(){
     drogi:[{n:"Drogą Poselską", lok:"droga_poselska"}]
   },
 
+  wietrznica_pusta_ch2:{ n:"", ukryta:true }
+  };
+  for(var lid in L) if(!LOKACJE[lid]) LOKACJE[lid] = L[lid];
+  delete LOKACJE.wietrznica_pusta_ch2;
+
+  var T2 = {
   droga_poselska_teren:{
-    n:"Zarośla przy Drodze Poselskiej", teren:true, wraca:"droga_poselska",
+    n:"Zarośla przy Drodze Poselskiej", wraca:"droga_poselska",
     opis:"Za słupami granicznymi ciągnie się pas nieskoszonej trawy. Widać z niego drogę, a z drogi nie widać nikogo.",
     punkty:[
-      {id:"dp_kurier", typ:"mob", n:"Kurier z torbą przypiętą do pasa", wrog:"kurier", x:38, y:44},
-      {id:"dp_ziola", typ:"zasob", n:"Czarci kwiat w rowie", wymaga:"zielarstwo", zbierz:{czarci_kwiat:2}, x:66, y:62,
-       opis:"Rośnie w rowie, gdzie woda stoi od wiosny."},
-      {id:"dp_skrytka", typ:"skrzynia", n:"Wydrążony słup graniczny", wymaga:"tropienie", zloto:120, x:22, y:70,
-       opis:"Ktoś zostawia tu zapłatę dla kogoś, kto nie chce jej odbierać osobiście."}
+      {id:"dp_kurier", typ:"mob", n:"Kurier z torbą przypiętą do pasa", walka:"kurier"},
+      {id:"dp_ziola", typ:"zasob", n:"Czarci kwiat w rowie", wymaga:"zielarstwo", zbierz:{czarci_kwiat:2},
+       wynik:"Rośnie w rowie, gdzie woda stoi od wiosny. Ścinasz dwa i zawijasz w płótno."},
+      {id:"dp_skrytka", typ:"skrzynia", n:"Wydrążony słup graniczny", wymaga:"tropienie", zloto:120,
+       wynik:"Ktoś zostawia tu zapłatę dla kogoś, kto nie chce jej odbierać osobiście. Dziś odbierasz ją ty."}
     ]
   },
-
   obozowisko_teren:{
-    n:"Obrzeża obozowiska", teren:true, wraca:"obozowisko",
+    n:"Obrzeża obozowiska", wraca:"obozowisko",
     opis:"Za linią namiotów zaczyna się śmietnisko czterech armii: połamane drzewce, zdarte podkowy i to, czego nikt nie chciał nieść dalej.",
     punkty:[
-      {id:"ob_ruda", typ:"ruda", n:"Porzucone sztaby w błocie", wymaga:"gornictwo", zbierz:{ruda:2}, x:30, y:38,
-       opis:"Sztaby wypadły z wozu i nikt ich nie podniósł, bo nie były niczyje."},
-      {id:"ob_zwiad", typ:"mob", n:"Zwiadowca, który nie chce rozmawiać", wrog:"zwiadowca_pl", x:70, y:56,
+      {id:"ob_ruda", typ:"ruda", n:"Porzucone sztaby w błocie", wymaga:"gornictwo", zbierz:{ruda:2},
+       wynik:"Sztaby wypadły z wozu i nikt ich nie podniósł, bo nie były niczyje."},
+      {id:"ob_zwiad", typ:"mob", n:"Zwiadowca, który nie chce rozmawiać", walka:"zwiadowca_pl",
        warunek:function(){ return stanZadania("posel5") === "aktywne"; }},
-      {id:"ob_skrytka", typ:"skrzynia", n:"Kufer pod przewróconym wozem", wymaga:"zamki", zloto:180, x:54, y:74,
-       opis:"Zamek prosty, ale kufer wciśnięty tak, że trzeba wiedzieć, gdzie sięgnąć."}
+      {id:"ob_skrytka", typ:"skrzynia", n:"Kufer pod przewróconym wozem", wymaga:"zamki", zloto:180,
+       wynik:"Zamek prosty, ale kufer wciśnięty tak, że trzeba wiedzieć, gdzie sięgnąć."}
     ]
   }
   };
-  for(var lid in L) if(!LOKACJE[lid]) LOKACJE[lid] = L[lid];
+  for(var tid in T2) if(!TERENY[tid]) TERENY[tid] = T2[tid];
 
   /* droga z jarmarku otwiera się po wstąpieniu do frakcji */
   if(LOKACJE.jarmark && !LOKACJE.jarmark.__ch2){
