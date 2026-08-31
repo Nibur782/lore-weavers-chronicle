@@ -6471,7 +6471,7 @@ function rozdzialDrugi(){
         + (info ? "Twoi zapisują to jako twoją zasługę. " + info.n + " nie zapomina takich rzeczy." : "");
     },
     opcje:[{l:"Przemów przy stole", oddajZ:"posel6",
-            ef:function(){ gotoweZadanie("posel6");
+            ef:function(){
               S.rozdzial = 3;
               S.rep.sk += 2; S.rep.nw += 2; S.rep.od += 2; S.rep.pl += 2;
               S.poznane.rozejm = true;
