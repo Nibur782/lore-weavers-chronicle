@@ -201,6 +201,12 @@ var PRZEDMIOTY = {
              o:"Gęsty, ciemnoczerwony wywar w grubym szkle. Smakuje żelazem i czymś słodkim, czego lepiej nie nazywać."},
   mikst_many:{n:"Mikstura many", kat:"napoj", typ:"napoj_many", mana:20, cena:70,
              o:"Klarowna ciecz o barwie starego bursztynu. Po wypiciu w gardle robi się zimno, a w skroniach ciepło."},
+  kly_psa:   {n:"Kły zdziczałego psa", kat:"surowiec", typ:"towar", cena:6,
+             o:"Cztery żółte kły na rzemyku. Dowód, że w zagajniku już nic nie siedzi."},
+  pioro_gluszca:{n:"Pióro głuszca", kat:"surowiec", typ:"towar", cena:10,
+             o:"Czarne z zielonym połyskiem, dłuższe niż przedramię."},
+  leb_wilczycy:{n:"Łeb wilczycy", kat:"surowiec", typ:"towar", cena:0,
+             o:"Ciężki i już zimny. Sierżant będzie chciał go zobaczyć."},
   list_zap:  {n:"Zapieczętowany list", kat:"pismo", typ:"pismo",                      cena:0,  o:"Pieczęć nietknięta. Lepiej, żeby taka została."}
 };
 
@@ -2962,8 +2968,7 @@ function ekranZwyciestwa(){
   var lupZad = ZADANIOWY_LUP[w.id];
   if(lupZad){
     for(var kz in lupZad){
-      if(!S.plecak[kz]) { dodaj(kz, lupZad[kz]); }
-      else if(!w.lup || !w.lup[kz] || !S.umie[w.lupWymaga||"__"]) { dodaj(kz, lupZad[kz]); }
+      if(!S.plecak[kz]) dodaj(kz, lupZad[kz]);
     }
   }
 
