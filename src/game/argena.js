@@ -6743,6 +6743,10 @@ function rozszerzNowozytnych(){
       sekw:["d","g"], finisz:{dmg:[19,25], o:"szarpnięcie za ramię"}, blokSzansa:0,
       wyglad:"Trzymany na łańcuchu przy pochylni, dopóki ktoś tego łańcucha nie odpiął.",
       styl:"Nisko i od razu wysoko, bez przerwy między jednym a drugim."},
+    zlodziej_soli:{n:"Złodziej soli", hp:88, dmg:[10,15], exp:210, zloto:70, lup:{sol_kamienna:2},
+      sekw:["s","d"], finisz:{dmg:[19,25], o:"cios workiem z solą"}, blokSzansa:10,
+      wyglad:"Bosy, w podwiniętych portkach, z workiem przewieszonym przez ramię. Nie ucieka, bo nie ma dokąd.",
+      styl:"Tnie przez środek, potem nisko. Worek unosi dopiero, kiedy uzna, że go nie puścisz."},
     buntownik_kuznicki:{n:"Buntownik z Kuźnic", hp:110, dmg:[13,18], exp:280, zloto:90, lup:{ruda_kuznicka:1},
       sekw:["g","s","s"], finisz:{dmg:[24,32], o:"cios młotem kuźniczym"}, blokSzansa:20,
       wyglad:"Fartuch przepalony w kilkunastu miejscach, młot trzyma jak człowiek, który nim pracuje, nie walczy.",
@@ -6751,7 +6755,7 @@ function rozszerzNowozytnych(){
   for(var wk in W) if(!WROGOWIE[wk]) WROGOWIE[wk] = W[wk];
   if(typeof TYPY_WROGOW === "object"){
     TYPY_WROGOW.portowiec = "obuchowe"; TYPY_WROGOW.kanalarz = "klute";
-    TYPY_WROGOW.wilczur_stoczniowy = "ciete"; TYPY_WROGOW.buntownik_kuznicki = "obuchowe";
+    TYPY_WROGOW.wilczur_stoczniowy = "ciete"; TYPY_WROGOW.zlodziej_soli = "obuchowe"; TYPY_WROGOW.buntownik_kuznicki = "obuchowe";
   }
 
   /* --- lokacje --- */
@@ -7022,7 +7026,7 @@ function rozszerzNowozytnych(){
        wynik:"Zgarniasz sól z brzegu panwi, tak jak robią to warzelnicy."},
       {id:"gr_ryba", typ:"ryba", n:"Przypływ zostawił rybę w rowie", wymaga:"wedkarstwo", zbierz:{sledz_solony:3},
        wynik:"Śledzie zostają w rowach po każdym przypływie."},
-      {id:"gr_mob", typ:"mob", n:"Ktoś kradnie sól z panwi", walka:"portowiec"}
+      {id:"gr_mob", typ:"mob", n:"Ktoś kradnie sól z panwi", walka:"zlodziej_soli"}
     ]
   }
   };
@@ -7058,7 +7062,7 @@ function rozszerzNowozytnych(){
   nw_port:{t:"Trzech przy pochylni", od:"Kapitan portu Trojan",
     pelny:"<span class='mowa'>„Ściągają myto od szkutników, a ja nie mogę posłać straży, bo połowa straży pije z nimi.<br><br>Ty nie jesteś stąd. Ciebie nikt nie rozpozna.”</span>",
     opis:"Portowi zbiry ściągają myto na pochylniach.",
-    cel:"Rozgoń zbirów przy pochylniach w Latarnicy (2).", nagroda:{exp:300, zloto:140, rep:{nw:2}}},
+    cel:"Rozpraw się ze zbirem przy pochylniach w Latarnicy.", nagroda:{exp:300, zloto:140, rep:{nw:2}}},
   nw_wreg:{t:"Wręga z jednego pnia", od:"Szkutnik Wit",
     pelny:"<span class='mowa'>„Potrzebuję żelaza, które nie pęknie na mrozie. Kuźnickie się nada, jeśli je dostanę, zanim skończę kadłub.”</span>",
     opis:"Szkutnik czeka na dobre żelazo.",
@@ -7074,7 +7078,7 @@ function rozszerzNowozytnych(){
   nw_kanal:{t:"Ci spod mostów", od:"Syndyk Bożydar",
     pelny:"<span class='mowa'>„Giełda nie ma sumienia, ma rachunek. A rachunek mówi, że kupcy przestają wchodzić na mosty po zmroku.<br><br>Zrób z tym porządek. Nie pytam, jaki.”</span>",
     opis:"Pod mostami Ostrowa robi się niebezpiecznie.",
-    cel:"Rozpraw się z dwoma kanalarzami pod mostami.", nagroda:{exp:320, zloto:150, rep:{nw:3}}},
+    cel:"Rozpraw się z kanalarzem pod mostami Ostrowa.", nagroda:{exp:320, zloto:150, rep:{nw:3}}},
   nw_ksiega:{t:"Miary obu królestw", od:"Pisarka Wszebora",
     pelny:"<span class='mowa'>„Przepisałam księgę wag i miar dla kogoś, kto po nią nie przyszedł. Zanieś ją wagmistrzyni, a przeczytać możesz po drodze. I tak przeczytasz.”</span>",
     opis:"Księga wag i miar czeka na odbiorcę.",
@@ -7085,6 +7089,12 @@ function rozszerzNowozytnych(){
     cel:"Pokonaj buntownika na pomostach Kuźnic i wróć do Domasława.", nagroda:{exp:340, zloto:80, rep:{nw:2}, przedmiot:"kaftan_syndyka"}}
   };
   for(var zk in Z) if(!ZADANIA[zk]) ZADANIA[zk] = Z[zk];
+
+  WROGOWIE.portowiec.konczy = "nw_port";
+  WROGOWIE.kanalarz.konczy = "nw_kanal";
+  WROGOWIE.wilczur_stoczniowy.konczy = "nw_konie";
+  WROGOWIE.zlodziej_soli.konczy = "nw_sol";
+  WROGOWIE.buntownik_kuznicki.konczy = "nw_zbroja";
 
 }
 rozszerzNowozytnych();
