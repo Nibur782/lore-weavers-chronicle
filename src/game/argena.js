@@ -4840,6 +4840,216 @@ function rozszerzSceny(){
   for(var k in N) if(!SCENY[k]) SCENY[k] = N[k];
 }
 
+/* ================= SOKOLI BRÓD I UROCZYSKO ================= */
+
+function rozszerzSceny2(){
+  var N = {
+
+  wedzarnia:{
+    tekst:"W wędzarni wisi rybi dym tak gęsty, że po chwili przestajesz go czuć. Pod ścianą leży siano i cudza derka.",
+    opcje:[
+      {l:"Prześpij noc przy ogniu (10 godzin)", odpoczynek:{godzin:10, udzial:1, lok:"sokoli_brod",
+        tekst:"Śpisz w dymie, przez co rano cuchniesz rybą, ale za to nic cię nie ugryzło."}},
+      {l:"Zdrzemnij się (4 godziny)", odpoczynek:{godzin:4, udzial:0.4, lok:"sokoli_brod",
+        tekst:"Krótka drzemka między jednym wsadem a drugim."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_sokoli_brod"}
+    ]
+  },
+
+  nieszka:{
+    portret:"kobieta", npc:"nieszka", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Nieszka",
+    intro:{
+      tekst:"Liczy sieci rozwieszone na żerdziach i przy co czwartej zatrzymuje palec.<br><br><span class='mowa'>„Osiemnaście całych na czterdzieści. Jeszcze dwa tygodnie takiego liczenia i wieś będzie jadła korę.”</span>",
+      opcje:[
+        {l:"Kto je tnie?", idz:"nieszka_w1"},
+        {l:"Kim jesteś?", idz:"nieszka_w2"},
+        {l:"Odejdź", idz:"__lok_sokoli_brod"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Mów. Ręce mi zajęte, ale uszy nie.”</span>",
+    opcje:[
+      {l:"Powiedz, co się tu dzieje.", dajZ:"rzeka1", warunekZ:{id:"rzeka1", stan:"brak"}, idz:"nieszka_rzeka1"},
+      {l:"Rzeka znowu daje.", warunekZ:{id:"rzeka5", stan:"oddane"}, idz:"nieszka_koniec", raz:true},
+      {l:"Kto tu rządzi?", idz:"nieszka_wies", raz:true},
+      {l:"Odejdź", idz:"__lok_sokoli_brod"}
+    ]
+  },
+  nieszka_w1:{portret:"kobieta", npc:"nieszka", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Nieszka",
+    tekst:"<span class='mowa'>„Gdybym wiedziała, tobym nie liczyła sieci, tylko trumny.<br><br>Wiem tyle, że tnie równo i zawsze w tym samym miejscu. To nie zwierzę i nie złość. To robota.”</span>",
+    opcje:[{l:"Kim jesteś?", idz:"nieszka_w2"}]},
+  nieszka_w2:{portret:"kobieta", npc:"nieszka", ktoNieznany:"Kobieta licząca sieci", kto:"Starościna Nieszka",
+    tekst:"<span class='mowa'>„Nieszka. Wybrali mnie starościną, bo umiem liczyć i nie piję.<br><br>Sokoli Bród jest wolny, dopóki ma czym płacić obu stronom. Jak zabraknie ryby, zabraknie wolności - w tej kolejności.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"nieszka", poznaj:"nieszka"}]},
+  nieszka_wies:{portret:"kobieta", kto:"Starościna Nieszka",
+    tekst:"<span class='mowa'>„Nikt i wszyscy. Prom jest Chwaliboga, sieci są wspólne, a łodzie czyje kto zbudował.<br><br>Ismaal mówi, że jesteśmy ich, bo brzeg jest ich. Nowożytni mówią, że jesteśmy ich, bo droga jest ich. My mówimy, że jesteśmy rzeki.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"nieszka"}]},
+  nieszka_rzeka1:{portret:"kobieta", kto:"Starościna Nieszka",
+    tekst:function(){ return ZADANIA.rzeka1.pelny; },
+    opcje:[{l:"Pogadam z Mileną.", dajZ:"rzeka1", idz:"nieszka"}]},
+  nieszka_koniec:{portret:"kobieta", kto:"Starościna Nieszka",
+    tekst:"Pierwszy raz odkłada sieć.<br><br><span class='mowa'>„Trzy łodzie wróciły pełne. Nie wiem, co zrobiłeś po tamtej stronie, i nie chcę wiedzieć.<br><br>Ale gdyby ktoś pytał w Brodzie, czy można ci ufać, powiem, że tak. To u nas znaczy więcej niż złoto.”</span>",
+    opcje:[{l:"Dziękuję.", rep:{pl:1, od:1}, exp:120, wynik:"Wieś przyjmuje cię jak swojego. Tego się nie kupuje.", idz:"nieszka"}]},
+
+  milena:{
+    portret:"kobieta", npc:"milena", ktoNieznany:"Dziewczyna z łukiem", kto:"Milena",
+    intro:{
+      tekst:"Siedzi na przewróconej łodzi z łukiem na kolanach i naciąga cięciwę co jakiś czas, żeby nie zwiotczała.<br><br><span class='mowa'>„Nie stawaj mi w linii strzału. Nawet jak nie strzelam.”</span>",
+      opcje:[
+        {l:"Do czego celujesz o tej porze?", idz:"milena_w1"},
+        {l:"Kim jesteś?", idz:"milena_w2"},
+        {l:"Odejdź", idz:"__lok_sokoli_brod"}
+      ]
+    },
+    tekst:"<span class='mowa'>„No?”</span>",
+    opcje:[
+      {l:"Nieszka mówi, że coś widziałaś.", oddajZ:"rzeka1", warunekZ:{id:"rzeka1", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("rzeka1"); }, idz:"milena_rzeka1"},
+      {l:"Już go nie ma.", oddajZ:"rzeka2", warunekZ:{id:"rzeka2", stan:"gotowe"}, idz:"milena_rzeka2"},
+      {l:"Naucz mnie strzelać.", idz:"milena_nauka"},
+      {l:"Odejdź", idz:"__lok_sokoli_brod"}
+    ]
+  },
+  milena_w1:{portret:"kobieta", npc:"milena", ktoNieznany:"Dziewczyna z łukiem", kto:"Milena",
+    tekst:"<span class='mowa'>„W trzcinę. Trzeci wieczór z rzędu stoi tam ktoś, kto nie łowi. Stoi i patrzy, kiedy łodzie odbijają.<br><br>Trafiłabym, gdyby nie trzcina. Przez trzcinę strzała skręca.”</span>",
+    opcje:[{l:"Kim jesteś?", idz:"milena_w2"}]},
+  milena_w2:{portret:"kobieta", npc:"milena", ktoNieznany:"Dziewczyna z łukiem", kto:"Milena",
+    tekst:"<span class='mowa'>„Milena. Siostrzenica starościny, co znaczy dokładnie tyle, że muszę pracować dwa razy więcej, żeby nikt nie gadał.<br><br>Łuk mam po ojcu. Ojca nie mam.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"milena", poznaj:"milena"}]},
+  milena_rzeka1:{portret:"kobieta", kto:"Milena",
+    tekst:function(){ return ZADANIA.rzeka2.pelny; },
+    opcje:[{l:"Pójdę tam po zmroku.", dajZ:"rzeka2", ef:function(){ oddajZadanie("rzeka1"); }, idz:"milena"}]},
+  milena_rzeka2:{portret:"kobieta", kto:"Milena",
+    tekst:"Ogląda nóż, który mu zabrałeś, i odkłada go bardzo ostrożnie.<br><br><span class='mowa'>„To nóż szkutniczy. Taki ma Dratwa i taki miał mój ojciec.<br><br>Ktoś mu za to płacił, a Chwalibóg wie kto, bo Chwalibóg widzi wszystko z promu. Tylko on nie mówi na sucho - jemu się płaci rybą.”</span>",
+    opcje:[{l:"Załatwię ryby.", dajZ:"rzeka3", idz:"milena"}]},
+  milena_nauka:{portret:"kobieta", kto:"Milena", trener:true, uczy:"milena", wraca:"milena", wracaOpis:"Dość",
+    tekst:"<span class='mowa'>„Łuk to nie siła. Łuk to oddech i to, żeby nie chcieć trafić za bardzo.”</span>"},
+
+  chwalibog:{
+    portret:"kowal", npc:"chwalibog", ktoNieznany:"Przewoźnik", kto:"Chwalibóg",
+    intro:{
+      tekst:"Siedzi na promie i splata linę, choć lina nie wygląda na przetartą.<br><br><span class='mowa'>„Na drugą stronę nie wożę. Krata zamknięta, a ja mam jedną łódź i jedną głowę.”</span>",
+      opcje:[
+        {l:"Kiedy zamknęli kratę?", idz:"chwalibog_w1"},
+        {l:"Kim jesteś?", idz:"chwalibog_w2"},
+        {l:"Odejdź", idz:"__lok_sokoli_brod"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Woda dziś spokojna. To znaczy, że coś się szykuje, bo woda zawsze wie pierwsza.”</span>",
+    opcje:[
+      {l:"Cztery ryby. Mów, co widziałeś.", oddajZ:"rzeka3", warunekZ:{id:"rzeka3", stan:"aktywne"},
+       wymagaDowolne:["szczupak","wegorz"], ile:4, idz:"chwalibog_rzeka3"},
+      {l:"Przewieź mnie na drugą stronę.", warunek:function(){ return !!S.poznane.prom; }, idz:"chwalibog_prom"},
+      {l:"Co jest po tamtej stronie?", idz:"chwalibog_puszcza", raz:true},
+      {l:"Odejdź", idz:"__lok_sokoli_brod"}
+    ]
+  },
+  chwalibog_w1:{portret:"kowal", npc:"chwalibog", ktoNieznany:"Przewoźnik", kto:"Chwalibóg",
+    tekst:"<span class='mowa'>„Dwa lata temu, w Głodnym miesiącu. Wcześniej chodzili tu i tam, wymieniali się solą i ziołami, a raz w roku palili ognisko po obu brzegach naraz.<br><br>Potem ktoś stąd wywiózł ich zmarłych razem z torfem. I było po ogniskach.”</span>",
+    opcje:[{l:"Kim jesteś?", idz:"chwalibog_w2"}]},
+  chwalibog_w2:{portret:"kowal", npc:"chwalibog", ktoNieznany:"Przewoźnik", kto:"Chwalibóg",
+    tekst:"<span class='mowa'>„Chwalibóg. Prom po dziadku, lina po ojcu, a reszta moja.<br><br>Trzydzieści lat przewożę i wiem o tej wsi rzeczy, których nikomu nie powiem, bo za przewóz płaci się raz.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"chwalibog", poznaj:"chwalibog"}]},
+  chwalibog_puszcza:{portret:"kowal", kto:"Chwalibóg",
+    tekst:"<span class='mowa'>„Las, który był, zanim ktokolwiek zaczął liczyć lata. Nie ma tam ścieżek, bo ścieżki robi ten, kto się spieszy.<br><br>Mieszkają tam ludzie. Nie dzicy - starzy. To co innego.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"chwalibog"}]},
+  chwalibog_rzeka3:{portret:"kowal", kto:"Chwalibóg",
+    tekst:function(){ return ZADANIA.rzeka4.pelny; },
+    opcje:[{l:"Przewieź mnie.", dajZ:"rzeka4", ef:function(){ S.poznane.prom = true; }, idz:"chwalibog"}]},
+  chwalibog_prom:{portret:"kowal", kto:"Chwalibóg",
+    tekst:"Odbija od brzegu bez słowa. Lina skrzypi, woda uderza w burtę, a po dwustu krokach las po tamtej stronie przestaje wyglądać jak las stąd.",
+    opcje:[{l:"Zejdź na brzeg", idz:"__lok_uroczysko", ef:function(){ mijaCzas(60); }}]},
+
+  dratwa:{
+    portret:"kowal", npc:"dratwa", ktoNieznany:"Szkutnik", kto:"Dratwa",
+    intro:{
+      tekst:"Kleci kadłub z desek, które sam wygina nad ogniem. Ręce ma czarne od smoły do połowy przedramienia.<br><br><span class='mowa'>„Jak przyszedłeś po łódź, to za rok. Jak po nóż, to nie sprzedaję.”</span>",
+      opcje:[
+        {l:"Czemu nie sprzedajesz noży?", idz:"dratwa_w1"},
+        {l:"Kim jesteś?", idz:"dratwa_w2"},
+        {l:"Odejdź", idz:"__lok_sokoli_brod"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Mów przy robocie, i tak cię słyszę.”</span>",
+    opcje:[
+      {l:"Skóra starego suma.", oddajZ:"rzeka5", warunekZ:{id:"rzeka5", stan:"gotowe"},
+       wymagaPrzedmiotu:"lusk_suma", idz:"dratwa_rzeka5"},
+      {l:"Pokaż, co masz na sprzedaż.", idz:"dratwa_sklep"},
+      {l:"Twój nóż znalazł się w trzcinie.", warunekZ:{id:"rzeka3", stan:"aktywne"}, idz:"dratwa_noz", raz:true},
+      {l:"Odejdź", idz:"__lok_sokoli_brod"}
+    ]
+  },
+  dratwa_w1:{portret:"kowal", npc:"dratwa", ktoNieznany:"Szkutnik", kto:"Dratwa",
+    tekst:"<span class='mowa'>„Bo nóż szkutniczy tnie linę jak masło i każdy we wsi pozna, czyja to robota.<br><br>Rozdałem trzy w życiu i żałuję dwóch.”</span>",
+    opcje:[{l:"Kim jesteś?", idz:"dratwa_w2"}]},
+  dratwa_w2:{portret:"kowal", npc:"dratwa", ktoNieznany:"Szkutnik", kto:"Dratwa",
+    tekst:"<span class='mowa'>„Dratwa. Nie imię, przezwisko, ale odzywam się tylko na nie.<br><br>Buduję łodzie, które przeżyją tych, co nimi pływają. Tak się buduje albo wcale.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"dratwa", poznaj:"dratwa"}]},
+  dratwa_noz:{portret:"kowal", kto:"Dratwa",
+    tekst:"Ogląda nóż i długo nic nie mówi.<br><br><span class='mowa'>„Ten dałem chłopakowi, który u mnie terminował. Odszedł zimą, bo płaciłem mało.<br><br>Nie tłumaczę go. Tłumaczę siebie, i to wychodzi jeszcze gorzej.”</span>",
+    opcje:[{l:"Zostaw go z tym.", idz:"dratwa"}]},
+  dratwa_rzeka5:{portret:"kowal", kto:"Dratwa",
+    tekst:"Rozkłada skórę na kozłach i mierzy ją łokciem, jakby liczył, na ile dziobów starczy.<br><br><span class='mowa'>„Trzydzieści lat go widywałem i nie wierzyłem, że jest naprawdę.<br><br>Masz. Robiłem ten łuk dla siebie, ale ja już nie napnę takiego. Ty napniesz.”</span>",
+    opcje:[{l:"Weź łuk", oddajZ:"rzeka5", idz:"dratwa"}]},
+  dratwa_sklep:{portret:"kowal", kto:"Dratwa", sklep:true, wraca:"dratwa", wracaOpis:"Dość",
+    tekst:"<span class='mowa'>„Co mam, to leży. Ceny nie schodzą, bo i tak sprzedam.”</span>",
+    oferta:["luk_prosty","strzaly","noz_mysl","kaftan","szczupak","wegorz","chleb"]},
+
+  jarogniewa:{
+    portret:"kobieta", npc:"jarogniewa", ktoNieznany:"Kobieta z popiołem na twarzy", kto:"Wieszczka Jarogniewa",
+    intro:{
+      tekst:"Siedzi przy ognisku, które się pali, ale nie dymi. Popiół na jej twarzy jest ułożony w trzy pasy, jak u strażników kraty.<br><br><span class='mowa'>„Przyszedłeś promem, więc ktoś ci zaufał. Siadaj z tej strony ognia, gdzie wiatr nie niesie.”</span>",
+      opcje:[
+        {l:"Dlaczego zamknęliście kratę?", idz:"jarogniewa_w1"},
+        {l:"Kim jesteś?", idz:"jarogniewa_w2"},
+        {l:"Odejdź", idz:"__lok_uroczysko"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Mów. Ogień słucha razem ze mną.”</span>",
+    opcje:[
+      {l:"Dwa czarcie kwiaty.", oddajZ:"rzeka4", warunekZ:{id:"rzeka4", stan:"aktywne"},
+       wymagaPrzedmiotu:"czarci_kwiat", ile:2, idz:"jarogniewa_rzeka4"},
+      {l:"Masz dla mnie próbę?", dajZ:"pl_1", warunekZ:{id:"pl_1", stan:"brak"},
+       warunek:function(){ return stanZadania("rzeka4") === "oddane"; }, idz:"jarogniewa_pl1"},
+      {l:"Trzy czarcie kwiaty.", oddajZ:"pl_1", warunekZ:{id:"pl_1", stan:"aktywne"},
+       wymagaPrzedmiotu:"czarci_kwiat", ile:3, idz:"jarogniewa_pl1k"},
+      {l:"Ryby z rzeki.", oddajZ:"pl_2", warunekZ:{id:"pl_2", stan:"aktywne"},
+       wymagaDowolne:["wegorz","szczupak"], ile:4, idz:"jarogniewa_pl2"},
+      {l:"Stanę przeciw strażnikowi kraty.", warunekZ:{id:"pl_3", stan:"aktywne"}, idz:"jarogniewa_proba"},
+      {l:"Przeszedłem próbę.", oddajZ:"pl_3", warunekZ:{id:"pl_3", stan:"gotowe"}, idz:"jarogniewa_pl3k"},
+      {l:"Chcę należeć do Prastarego Ludu.", idz:"wstap_pl", warunek:function(){ return gotowyDoFrakcji("pl"); }},
+      {l:"Odejdź", idz:"__lok_uroczysko"}
+    ]
+  },
+  jarogniewa_w1:{portret:"kobieta", npc:"jarogniewa", ktoNieznany:"Kobieta z popiołem na twarzy", kto:"Wieszczka Jarogniewa",
+    tekst:"<span class='mowa'>„Bo kopali torf tam, gdzie leżą nasi. Wywieźli ich razem z ziemią i spalili pod kotłami w Kuźnicy.<br><br>Nie zamknęliśmy kraty z gniewu. Zamknęliśmy ją dlatego, że nikt po tamtej stronie nie zrozumiał, co się stało.”</span>",
+    opcje:[{l:"Kim jesteś?", idz:"jarogniewa_w2"}]},
+  jarogniewa_w2:{portret:"kobieta", npc:"jarogniewa", ktoNieznany:"Kobieta z popiołem na twarzy", kto:"Wieszczka Jarogniewa",
+    tekst:"<span class='mowa'>„Jarogniewa. Pilnuję, żeby to, co pamiętamy, było pamiętane tak samo przez wszystkich.<br><br>To jest cała moja władza i wystarcza mi.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"jarogniewa", poznaj:"jarogniewa"}]},
+  jarogniewa_rzeka4:{portret:"kobieta", kto:"Wieszczka Jarogniewa",
+    tekst:function(){ return ZADANIA.rzeka5.pelny; },
+    opcje:[{l:"Zajmę się nim.", dajZ:"rzeka5", idz:"jarogniewa"}]},
+  jarogniewa_pl1:{portret:"kobieta", kto:"Wieszczka Jarogniewa",
+    tekst:function(){ return ZADANIA.pl_1.pelny; },
+    opcje:[{l:"Przyniosę.", dajZ:"pl_1", idz:"jarogniewa"}]},
+  jarogniewa_pl1k:{portret:"kobieta", kto:"Wieszczka Jarogniewa",
+    tekst:"Kładzie kwiaty na kamieniu i przygląda się, jak więdną w cieple ognia.<br><br><span class='mowa'>„Trzy kwiaty, trzy noce. Wszystkie widziały to samo: łódź bez latarni.<br><br>Rzeka daje temu, kto bierze własną ręką. Przynieś mi cztery ryby, które sam wyciągniesz.”</span>",
+    opcje:[{l:"Złowię je.", dajZ:"pl_2", idz:"jarogniewa"}]},
+  jarogniewa_pl2:{portret:"kobieta", kto:"Wieszczka Jarogniewa",
+    tekst:"<span class='mowa'>„Pachną wodą, a nie targiem. Dobrze.<br><br>Zostało jedno. Strażnik kraty nie zna cię i nie ma powodu, żeby cię znać. Stań przed nim jawnie.”</span>",
+    opcje:[{l:"Stanę.", dajZ:"pl_3", idz:"jarogniewa"}]},
+  jarogniewa_proba:{portret:"kobieta", kto:"Wieszczka Jarogniewa",
+    tekst:"Wskazuje głową na krąg słupów. Spomiędzy nich wychodzi człowiek w płaszczu z kory, z oszczepem opuszczonym do ziemi.<br><br><span class='mowa'>„Bij się tak, żebym mogła o tym opowiedzieć.”</span>",
+    opcje:[{l:"Stań naprzeciw", walka:"strazak_kraty", po:"jarogniewa"}]},
+  jarogniewa_pl3k:{portret:"kobieta", kto:"Wieszczka Jarogniewa",
+    tekst:"Strażnik siada pod słupem i opatruje sobie bok, nie patrząc na ciebie z urazą.<br><br><span class='mowa'>„Stanąłeś jawnie i nie uderzyłeś od tyłu. Puszcza nie wymaga więcej.<br><br>Weź ten pierścień. Nosi go ten, kto przeszedł przez kratę i wrócił.”</span>",
+    opcje:[{l:"Weź pierścień", oddajZ:"pl_3", idz:"jarogniewa"}]}
+
+  };
+  for(var k in N) if(!SCENY[k]) SCENY[k] = N[k];
+}
+
 /* ---------- ROZDZIAŁ PIERWSZY: ROZSZERZENIE ---------- */
 rozszerzGre();
 
