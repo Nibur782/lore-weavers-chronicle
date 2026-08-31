@@ -3327,6 +3327,12 @@ if(a === "zdejmij") zdejmij(k);
 if(a === "znacznik"){ pokazZnacznik(+k); return; }
 if(a === "zpaska"){ zPaska(+k); odswiezPanel(); rysujPasek(); return; }
 if(a === "zakladka"){ S.zakladka = k; S.rozwiniete = null; odswiezPanel(); return; }
+if(a === "zakEkw"){ S.zakEkw = k; odswiezPanel(); return; }
+if(a === "lancuch"){ S.zakLancuch = k; S.rozwiniete = null; odswiezPanel(); return; }
+if(a === "zakPost"){ S.zakPost = k; odswiezPanel(); return; }
+if(a === "zaklWid"){ S.zakleciaUkryte[k] = !S.zakleciaUkryte[k]; odswiezPanel(); return; }
+if(a === "zaklGora"){ przesunZaklecie(k, -1); odswiezPanel(); return; }
+if(a === "zaklDol"){ przesunZaklecie(k, 1); odswiezPanel(); return; }
 if(a === "rozwin"){ S.rozwiniete = (S.rozwiniete === k) ? null : k; odswiezPanel(); return; }
 if(a === "idzDoMapy"){ panel = "mapa"; odswiezPanel(); rysujPasek(); setTimeout(function(){ pokazZnacznik(+k); }, 30); return; }
 if(a === "zoom"){ zoomMapy(+k); return; }
@@ -3407,50 +3413,96 @@ function naglowek(t, p){
        + (p ? '<p class="tekst" style="font-size:16px">'+p+'</p>' : "");
 }
 
+function katPrzedmiotu(p){
+  if(!p) return "surowiec";
+  if(p.typ === "ksiega" || p.typ === "pismo" || p.kat === "pismo") return "pismo";
+  if(p.typ === "amunicja") return "amunicja";
+  if(p.slot === "amulet" || p.slot === "pierscien" || p.kat === "artefakt") return "bizuteria";
+  if(p.kat === "napoj" || p.typ === "napoj_many") return "mikstura";
+  return p.kat || "surowiec";
+}
+
+var KATEGORIE_EKW = [
+  {id:"bron", n:"Bronie"},
+  {id:"pancerz", n:"Pancerze"},
+  {id:"bizuteria", n:"Biżuteria"},
+  {id:"amunicja", n:"Amunicja"},
+  {id:"mikstura", n:"Mikstury"},
+  {id:"roslina", n:"Rośliny"},
+  {id:"zywnosc", n:"Pożywienie"},
+  {id:"pismo", n:"Pisma i księgi"},
+  {id:"surowiec", n:"Surowce"}
+];
+
+function wierszPrzedmiotu(k){
+  var p = PRZEDMIOTY[k];
+  return '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]
+     + '<div class="rzecz-o">'+p.o+'</div>'
+     + (opisDzialania(p) ? '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisDzialania(p)+'</div>' : '')
+     + (p.typ==="wyposazenie" && !S.wrog ? (brakWymagan(p)
+         ? '<div class="rzecz-o" style="margin-top:8px;color:var(--krew)">Wymaga '+brakWymagan(p)+'</div>'
+         : '<button data-akcja="zaloz" data-klucz="'+k+'" class="mini-akcja">Załóż</button>') : "")
+     + (p.typ==="ksiega" && !S.wrog ? '<button data-akcja="czytaj" data-klucz="'+k+'" class="mini-akcja">Przeczytaj</button>' : "")
+     + (p.typ==="napoj_many" && !S.wrog ? '<button data-akcja="pij" data-klucz="'+k+'" class="mini-akcja">Wypij</button>' : "")
+     + (p.typ==="jadalne" && !S.wrog && mozeUzyc(k) ? '<button data-akcja="zjedz" data-klucz="'+k+'" class="mini-akcja">'+(p.jad ? "Natrzyj ostrze" : "Użyj")+'</button>' : "")
+     + ((p.typ==="jadalne"||p.typ==="napoj_many"||p.typ==="wyposazenie") && !S.wrog ? '<button data-akcja="pasek" data-klucz="'+k+'" class="mini-akcja">Do paska</button>' : "")
+     + '</span><span class="rzecz-o">'+(p.cena ? p.cena+" zł" : "")+'</span></div>';
+}
+
 function widokEkwipunku(){
-  var h = naglowek("Ekwipunek", S.wrog ? "W trakcie walki możesz tylko patrzeć. Jedzenie i zmiana wyposażenia - z ekranu walki." : "");
-  h += '<div class="sloty rama">' + SLOTY.map(function(sl){
-    var k = S.zalozone[sl.id];
-    return '<div class="slot"><div class="slot-e">'+sl.n+'</div>'
-         + '<div class="slot-w '+(k?"":"pusty")+'">'+(k ? PRZEDMIOTY[k].n : "puste")+'</div>'
-         + (k && !S.wrog ? '<button data-akcja="zdejmij" data-klucz="'+sl.id+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0">Zdejmij</button>' : "")
+  var zak = S.zakEkw || "rzeczy";
+  var h = naglowek("Ekwipunek", S.wrog ? "W trakcie walki możesz tylko patrzeć." : "");
+  h += '<div class="zakladki">'
+     + [{id:"rzeczy",n:"Rzeczy"},{id:"wyposazenie",n:"Na sobie"},{id:"zaklecia",n:"Zaklęcia"}].map(function(z){
+         return '<button data-akcja="zakEkw" data-klucz="'+z.id+'" class="zakladka'+(zak===z.id?" on":"")+'">'+z.n+'</button>';
+       }).join("") + '</div>';
+
+  if(zak === "wyposazenie"){
+    h += '<div class="sloty rama">' + SLOTY.map(function(sl){
+      var k = S.zalozone[sl.id];
+      return '<div class="slot"><div class="slot-e">'+sl.n+'</div>'
+           + '<div class="slot-w '+(k && k!=="__zajete"?"":"pusty")+'">'+(k && k!=="__zajete" ? PRZEDMIOTY[k].n : "puste")+'</div>'
+           + (k && k!=="__zajete" && !S.wrog ? '<button data-akcja="zdejmij" data-klucz="'+sl.id+'" class="mini-akcja">Zdejmij</button>' : "")
+           + '</div>';
+    }).join("") + '</div>';
+    h += '<div class="kat">Pasek szybkiego wyboru - dostępny w walce</div>';
+    h += '<div class="sloty rama" style="grid-template-columns:repeat(5,1fr)">';
+    S.pasek.forEach(function(k,i){
+      var jest = k && S.plecak[k];
+      h += '<div class="slot" style="text-align:center;min-height:58px;padding:8px 3px">'
+         + '<div class="slot-e">'+(i+1)+'</div>'
+         + '<div class="slot-w '+(jest?"":"pusty")+'" style="font-size:11px;line-height:1.25">'
+         + (jest ? PRZEDMIOTY[k].n : "puste")+'</div>'
+         + (jest && !S.wrog ? '<button data-akcja="zpaska" data-klucz="'+i+'" class="mini-akcja">Wyjmij</button>' : "")
          + '</div>';
-  }).join("") + '</div>';
-
-  h += '<div class="kat">Pasek szybkiego wyboru - dostępny w walce</div>';
-  h += '<div class="sloty rama" style="grid-template-columns:repeat(5,1fr)">';
-  S.pasek.forEach(function(k,i){
-    var jest = k && S.plecak[k];
-    h += '<div class="slot" style="text-align:center;min-height:58px;padding:8px 3px">'
-       + '<div class="slot-e">'+(i+1)+'</div>'
-       + '<div class="slot-w '+(jest?"":"pusty")+'" style="font-size:11px;line-height:1.25">'
-       + (jest ? PRZEDMIOTY[k].n : "puste")+'</div>'
-       + (jest && !S.wrog ? '<button data-akcja="zpaska" data-klucz="'+i+'" style="min-height:28px;font-size:11px;padding:3px;margin:6px 0 0">Wyjmij</button>' : "")
-       + '</div>';
-  });
-  h += '</div>';
-
-  var puste = true;
-  KATEGORIE.forEach(function(kat){
-    var rzeczy = Object.keys(S.plecak).filter(function(k){ return PRZEDMIOTY[k].kat === kat.id; });
-    if(!rzeczy.length) return;
-    puste = false;
-    h += '<div class="kat">'+kat.n+'</div><div class="rzeczy">';
-    rzeczy.forEach(function(k){
-      var p = PRZEDMIOTY[k];
-      h += '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]
-         + '<div class="rzecz-o">'+p.o+'</div>'
-         + (opisDzialania(p) ? '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisDzialania(p)+'</div>' : '')
-         + (p.typ==="wyposazenie" && !S.wrog ? (brakWymagan(p)
-             ? '<div class="rzecz-o" style="margin-top:8px;color:var(--krew)">Wymaga '+brakWymagan(p)+'</div>'
-             : '<button data-akcja="zaloz" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">Załóż</button>') : "")
-         + (p.typ==="ksiega" && !S.wrog ? '<button data-akcja="czytaj" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">'+"Przeczytaj"+'</button>' : "")
-         + (p.typ==="napoj_many" && !S.wrog ? '<button data-akcja="pij" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">Wypij</button>' : "")
-         + (p.typ==="jadalne" && !S.wrog && mozeUzyc(k) ? '<button data-akcja="zjedz" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0;width:auto">'+(p.jad ? "Natrzyj ostrze" : "Użyj")+'</button>' : "")
-+ ((p.typ==="jadalne"||p.typ==="napoj_many"||p.typ==="wyposazenie") && !S.wrog ? '<button data-akcja="pasek" data-klucz="'+k+'" style="min-height:34px;font-size:13px;padding:6px 10px;margin:8px 0 0 6px;width:auto">Do paska</button>' : "")
-         + '</span><span class="rzecz-o">'+(p.cena ? p.cena+" zł" : "")+'</span></div>';
     });
     h += '</div>';
+    return h;
+  }
+
+  if(zak === "zaklecia"){
+    var zn = znaneZaklecia();
+    if(!zn.length) return h + '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nie znasz jeszcze żadnego zaklęcia. Uczą ich Ożóg, Dobrogost i Zbysława.</span></div></div>';
+    h += '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Wybierz, które zaklęcia widzisz w walce i w jakiej kolejności.</p>';
+    h += '<div class="rzeczy rama">' + kolejnoscZaklec().map(function(z, idx){
+      var ukryte = !!S.zakleciaUkryte[z.id];
+      return '<div class="rzecz"><span>'+(idx+1)+'. '+z.n+' <span class="rzecz-o">('+z.mana+' many)</span>'
+        + '<div class="rzecz-o">'+z.o+'</div>'
+        + '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisZaklecia(z)+'</div>'
+        + '<button data-akcja="zaklWid" data-klucz="'+z.id+'" class="mini-akcja">'+(ukryte?"Pokaż w walce":"Ukryj w walce")+'</button>'
+        + '<button data-akcja="zaklGora" data-klucz="'+z.id+'" class="mini-akcja">W górę</button>'
+        + '<button data-akcja="zaklDol" data-klucz="'+z.id+'" class="mini-akcja">W dół</button>'
+        + '</span><span class="rzecz-o">'+(ukryte?"ukryte":"w walce")+'</span></div>';
+    }).join("") + '</div>';
+    return h;
+  }
+
+  var puste = true;
+  KATEGORIE_EKW.forEach(function(kat){
+    var rzeczy = Object.keys(S.plecak).filter(function(k){ return PRZEDMIOTY[k] && katPrzedmiotu(PRZEDMIOTY[k]) === kat.id; });
+    if(!rzeczy.length) return;
+    puste = false;
+    h += '<div class="kat">'+kat.n+'</div><div class="rzeczy">' + rzeczy.map(wierszPrzedmiotu).join("") + '</div>';
   });
   if(puste) h += '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Plecak jest pusty.</span></div></div>';
   return h;
@@ -3515,38 +3567,86 @@ pl.style.width = (k*100)+"%";
 }
 
 function widokPostaci(){
+  uzupelnijStan();
+  var zak = S.zakPost || "walka";
+  var karty = [{id:"walka",n:"Walka"},{id:"profesje",n:"Profesje"},{id:"umiejetnosci",n:"Umiejętności"},{id:"magia",n:"Magia"},{id:"swiat",n:"Pozycja"}];
   var h = naglowek("Postać", "Bez imienia. Nikt cię jeszcze nie zapisał po żadnej stronie.");
   h += '<div class="staty rama">'
      + stat("Poziom", S.poziom, "")
      + stat("Doświadcz.", S.exp+"/"+progExp(S.poziom), "")
      + stat("Nauka", S.pn, "")
-     + stat("Siła", S.sila + (bonusStatu("sila") ? " +"+bonusStatu("sila") : ""), "")
-     + stat("Zręcz.", S.zrecz + (bonusStatu("zrecz") ? " +"+bonusStatu("zrecz") : ""), "")
      + stat("Życie", S.hp+"/"+S.hpMax, "hp")
      + stat("Mana", S.manaMax ? S.mana+"/"+S.manaMax : "-", "")
-     + stat("Intelekt", S.intelekt, "")
      + stat("Złoto", S.zloto, "zl")
-     + stat("Plecak", sztukWPlecaku(), "")
      + '</div>';
+  h += '<div class="zakladki">' + karty.map(function(z){
+    return '<button data-akcja="zakPost" data-klucz="'+z.id+'" class="zakladka'+(zak===z.id?" on":"")+'">'+z.n+'</button>';
+  }).join("") + '</div>';
+
+  if(zak === "walka"){
+    h += '<div class="staty rama">'
+       + stat("Siła", S.sila + (bonusStatu("sila") ? " +"+bonusStatu("sila") : ""), "")
+       + stat("Zręcz.", S.zrecz + (bonusStatu("zrecz") ? " +"+bonusStatu("zrecz") : ""), "")
+       + stat("Intelekt", S.intelekt, "")
+       + '</div>';
+    var b = bronWRece();
+    h += '<div class="kat">Oręż</div><div class="rzeczy rama">'
+       + '<div class="rzecz"><span>Broń</span><span class="rzecz-o">'+(b ? b.n : "gołe pięści")+'</span></div>'
+       + '<div class="rzecz"><span>Obrażenia</span><span class="rzecz-o">'+opisObrazen()+'</span></div>'
+       + '<div class="rzecz"><span>Szansa na unik</span><span class="rzecz-o">'+unikSzansa().toFixed(1)+'%</span></div>'
+       + '<div class="rzecz"><span>Szansa na krytyka</span><span class="rzecz-o">'+(5 + (S.zrecz+bonusStatu("zrecz"))/5 + bonusStatu("kryt")).toFixed(1)+'%</span></div>'
+       + '</div>';
+    h += '<div class="kat">Odporności</div><div class="rzeczy rama">'
+       + '<div class="rzecz"><span class="rzecz-o">Odporność zmniejsza obrażenia danego rodzaju (najwyżej 70%).</span></div>'
+       + Object.keys(NAZWY_OBRAZEN).map(function(t){
+           return '<div class="rzecz"><span>'+NAZWY_OBRAZEN[t]+'</span><span class="rzecz-o">'+redukcja(t)+'%</span></div>';
+         }).join("") + '</div>';
+    h += '<div class="kat">Superciosy</div><div class="rzeczy rama">' + (moje().length
+      ? moje().map(function(c){ return '<div class="rzecz"><span>'+c.n+'<div class="rzecz-o">'+c.z.map(function(z){return STREFA[z];}).join(" - ")+'</div></span><span class="rzecz-o">'+c.o+'</span></div>'; }).join("")
+      : '<div class="rzecz"><span class="rzecz-o">Nie umiesz jeszcze żadnego.</span></div>') + '</div>';
+    return h;
+  }
+
+  if(zak === "profesje"){
+    h += '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Każda profesja rośnie od pracy. Wyższy poziom to lepszy urobek i trudniejsze receptury.</p>';
+    h += '<div class="rzeczy rama">' + PROFESJE.map(function(pr){
+      var st = profStan(pr.id);
+      var umie = !pr.um || S.umie[pr.um];
+      return '<div class="rzecz"><span>'+pr.n+' <span class="rzecz-o">'+(umie?"":" - nieuczony")+'</span>'
+        + '<div class="rzecz-o">'+pr.o+'</div>'
+        + '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">Doświadczenie '+st.e+'/'+progProf(st.p)+'</div>'
+        + '</span><span class="rzecz-o">poziom '+st.p+'/10</span></div>';
+    }).join("") + '</div>';
+    h += '<div class="kat">Receptury</div><div class="rzeczy rama">' + RECEPTURY.map(function(r){
+      var st = profStan(r.prof);
+      return '<div class="rzecz"><span>'+r.n+'<div class="rzecz-o">'+skladnikiOpis(r)+'</div></span>'
+        + '<span class="rzecz-o">'+nazwaProfesji(r.prof)+' '+r.lvl+(st.p >= r.lvl ? "" : " - za mało wprawy")+'</span></div>';
+    }).join("") + '</div>';
+    return h;
+  }
+
+  if(zak === "umiejetnosci"){
+    var u = NAUKA.filter(function(w){ return w.raz && S.kupione[w.id] && w.id !== "wytrz"; });
+    h += '<div class="rzeczy rama">' + (u.length
+      ? u.map(function(w){ return '<div class="rzecz"><span>'+w.l+'</span><span class="rzecz-o">'+({walka:"walka",puszcza:"puszcza",rzemioslo:"rzemiosło",magia:"magia"}[w.grupa]||"")+'</span></div>'; }).join("")
+      : '<div class="rzecz"><span class="rzecz-o">Nic jeszcze nie umiesz.</span></div>') + '</div>';
+    return h;
+  }
+
+  if(zak === "magia"){
+    h += '<div class="staty rama">' + stat("Mana", S.mana+"/"+S.manaMax, "") + stat("Intelekt", S.intelekt, "") + stat("Runy", (S.umie.runy3?"prastare":(S.umie.runy2?"wyższe":(S.umie.runy1?"proste":"żadne"))), "") + '</div>';
+    var zn = znaneZaklecia();
+    h += '<div class="kat">Znane zaklęcia</div><div class="rzeczy rama">' + (zn.length
+      ? zn.map(function(z){ return '<div class="rzecz"><span>'+z.n+'<div class="rzecz-o">'+z.o+'</div><div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisZaklecia(z)+'</div></span><span class="rzecz-o">'+z.mana+' many</span></div>'; }).join("")
+      : '<div class="rzecz"><span class="rzecz-o">Żadnego. Ożóg z Popielnicy uczy pierwszego.</span></div>') + '</div>';
+    return h;
+  }
+
   h += '<div class="kat">Reputacja</div>' + panelReputacji();
-  h += '<div class="kat">Umiejętności</div><div class="rzeczy">';
-  var u = NAUKA.filter(function(w){ return w.raz && S.kupione[w.id] && w.id !== "wytrz"; });
-  if(!u.length) h += '<div class="rzecz"><span class="rzecz-o">Nic jeszcze nie umiesz.</span></div>';
-  else u.forEach(function(w){ h += '<div class="rzecz"><span>'+w.l+'</span></div>'; });
-  h += '</div>';
-  h += '<div class="kat">Unik i krytyk</div><div class="rzeczy rama">'
-     + '<div class="rzecz"><span>Unik</span><span class="rzecz-o">'+unikSzansa().toFixed(1)+'%</span></div>'
-     + '<div class="rzecz"><span>Krytyk</span><span class="rzecz-o">'+(5 + (S.zrecz+bonusStatu("zrecz"))/5 + bonusStatu("kryt")).toFixed(1)+'%</span></div>'
-     + '</div><div class="kat">Odporności</div><div class="rzeczy rama">'
-     + '<div class="rzecz"><span class="rzecz-o">Odporność zmniejsza obrażenia danego rodzaju o tyle procent (najwyżej 70%).</span></div>'
-     + ODPORNOSCI.map(function(o){
-         var v = odpornosc(o.id);
-         return '<div class="rzecz"><span>'+o.n+'</span><span class="rzecz-o">'+(v?"-"+redukcja(o.id)+"% obrażeń":"brak")+'</span></div>';
-       }).join("")
-     + '</div><div class="kat">Walka</div><div class="rzeczy rama">'
-     + '<div class="rzecz"><span>Obrażenia</span><span class="rzecz-o">'+opisObrazen()+'</span></div>'
-     + '<div class="rzecz"><span>Szansa na unik</span><span class="rzecz-o">'+unikSzansa().toFixed(1)+'%</span></div>'
-     + '<div class="rzecz"><span>Szansa na krytyka</span><span class="rzecz-o">'+(5 + S.zrecz/5).toFixed(1)+'%</span></div></div>';
+  h += '<div class="kat">Czas</div>' + blokCzasu();
+  h += '<div class="kat">Frakcja</div><div class="rzeczy rama"><div class="rzecz"><span>'
+     + (S.frakcja ? "Nosisz barwy: "+S.frakcja : "Bez barw. Wszyscy patrzą, nikt nie ufa.")
+     + '</span><span class="rzecz-o">rozdział '+S.rozdzial+'</span></div></div>';
   return h;
 }
 
@@ -3570,22 +3670,55 @@ function widokDziennika(){
   return h;
 }
 
+function lancuchZadania(id){
+  var m = id.match(/^([a-z]+?)_?\d+$/);
+  return m ? m[1] : "inne";
+}
+var NAZWY_LANCUCHOW = {
+  sol:"Szlak solny", trakt:"Krew na trakcie", rzeka:"Rzeka oddaje",
+  zelazo:"Żelazo z Wietrznicy", popiol:"Kroniki popiołu", chor:"Trzy chorągwie",
+  sk:"Sprawy Ludu Ismaala", nw:"Sprawy Nowożytnych", od:"Sprawy Odeszłych", pl:"Sprawy Prastarego Ludu",
+  inne:"Sprawy pojedyncze"
+};
+
 function czescZadania(){
   var wpisy = Object.keys(ZADANIA).filter(function(id){ return stanZadania(id) !== "brak"; });
   if(!wpisy.length) return '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nikt cię jeszcze o nic nie poprosił.</span></div></div>';
-  var kolej = {gotowe:0, aktywne:1, oddane:2};
-  wpisy.sort(function(a,b){ return kolej[stanZadania(a)] - kolej[stanZadania(b)]; });
-  return '<div class="rzeczy rama">' + wpisy.map(function(id){
-    var z = ZADANIA[id], st = stanZadania(id), otw = S.rozwiniete === ("z_"+id);
+
+  var grupy = {}, kolejnosc = [];
+  wpisy.forEach(function(id){
+    var l = lancuchZadania(id);
+    if(!grupy[l]){ grupy[l] = []; kolejnosc.push(l); }
+    grupy[l].push(id);
+  });
+  kolejnosc.sort(function(a,b){
+    if(a === "inne") return 1;
+    if(b === "inne") return -1;
+    return grupy[b].length - grupy[a].length;
+  });
+
+  var wybrany = S.zakLancuch && grupy[S.zakLancuch] ? S.zakLancuch : kolejnosc[0];
+  var h = '<div class="zakladki">' + kolejnosc.map(function(l){
+    var trwa = grupy[l].some(function(id){ return stanZadania(id) !== "oddane"; });
+    return '<button data-akcja="lancuch" data-klucz="'+l+'" class="zakladka'+(wybrany===l?" on":"")+'">'
+      + (NAZWY_LANCUCHOW[l] || l) + (trwa ? " &bull;" : "") + '</button>';
+  }).join("") + '</div>';
+
+  var lista = grupy[wybrany].slice().sort();
+  var biezacy = lista.filter(function(id){ return stanZadania(id) !== "oddane"; })[0];
+  h += '<div class="rzeczy rama">' + lista.map(function(id, nr){
+    var z = ZADANIA[id], st = stanZadania(id), otw = S.rozwiniete === ("z_"+id) || id === biezacy;
     var op = {aktywne:"w toku", gotowe:"do oddania", oddane:"zakończone"}[st];
-    var t = '<div class="rzecz"><span style="width:100%">'
-      + '<button data-akcja="rozwin" data-klucz="z_'+id+'" class="wpis">'+z.t
+    var t = '<div class="rzecz"'+(id === biezacy ? ' style="border-left:2px solid var(--zloto);padding-left:10px"' : '')+'><span style="width:100%">'
+      + '<button data-akcja="rozwin" data-klucz="z_'+id+'" class="wpis">'
+      + (lista.length > 1 ? "Etap "+(nr+1)+": " : "") + z.t
       + '<span class="rzecz-o" style="float:right">'+op+'</span></button>';
     if(otw){
       t += '<div class="rozwiniete">'
+         + (id === biezacy ? '<p style="color:var(--zloto)"><b>Teraz do zrobienia:</b> '+z.cel+'</p>' : '')
          + '<p class="rzecz-o">Od: '+z.od+'</p>'
          + '<p>'+(z.pelny || z.opis)+'</p>'
-         + (st === "oddane" ? '' : '<p><b>Do zrobienia:</b> '+z.cel+'</p>')
+         + (st === "oddane" || id === biezacy ? '' : '<p><b>Do zrobienia:</b> '+z.cel+'</p>')
          + (z.krok ? '<p class="rzecz-o">Krok '+z.krok()+'</p>' : '')
          + (z.miejsce !== undefined
             ? '<button data-akcja="idzDoMapy" data-klucz="'+z.miejsce+'" class="odnosnik">Pokaż na mapie: '+MAPA.znaczniki[z.miejsce].n+'</button>'
@@ -3594,6 +3727,7 @@ function czescZadania(){
     }
     return t + '</span></div>';
   }).join("") + '</div>';
+  return h;
 }
 
 function czescBestie(){
