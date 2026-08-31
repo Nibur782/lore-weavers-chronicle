@@ -2461,7 +2461,8 @@ var FRAKCJE = [
 function panelReputacji(){
   return '<div class="rzeczy rama">' + FRAKCJE.map(function(f){
     var v = S.rep[f.id] || 0;
-    var szer = Math.min(50, Math.abs(v) * 5);
+    var szer = Math.min(100, Math.abs(v) * 2);
+
     return '<div class="rzecz"><span style="width:100%">'
       + '<span style="color:'+f.kolor+'">'+f.n+'</span>'
       + '<span class="rzecz-o" style="float:right">'+(v>0?"+":"")+v+'</span>'
