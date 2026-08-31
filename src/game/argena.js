@@ -2683,11 +2683,13 @@ function ekranTrenera(sc){
     wGrupie.forEach(function(w){
       var pn = kosztPn(w), cenaN = kosztZl(w);
       var umie = w.raz && S.kupione[w.id];
-      var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm]);
+      var zaNiski = w.wymPoziom && S.poziom < w.wymPoziom;
+      var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm]) && !zaNiski;
       if(!umie && stac) cokolwiek = true;
       var etykieta = umie ? (w.l.replace(/ \+1$/,"") + " - już to umiesz")
         : (w.uczy === "nikt" ? w.l + " - nikt tu tego nie uczy"
-        : ((w.wymagaUm && !S.umie[w.wymagaUm]) ? w.l + " - najpierw " + nazwaUmiejetnosci(w.wymagaUm) : w.l));
+        : (zaNiski ? w.l + " - wymaga " + w.wymPoziom + " poziomu"
+        : ((w.wymagaUm && !S.umie[w.wymagaUm]) ? w.l + " - najpierw " + nazwaUmiejetnosci(w.wymagaUm) : w.l)));
       html += '<button data-i="'+i+'"'+((umie||!stac)?" disabled":"")+'>'
             + (umie ? "" : '<span class="koszt">'+pn+' pn &middot; '+cenaN+' zł</span>')
             + etykieta + '</button>';
