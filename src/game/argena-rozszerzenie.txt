@@ -1,0 +1,403 @@
+/* ================= ROZSZERZENIE ŚWIATA ================= */
+
+/* ---------- PORA DNIA ---------- */
+if(S.pora === undefined) S.pora = "dzien";
+if(!S.krok) S.krok = {};
+function jestNoc(){ return S.pora === "noc"; }
+function zmienPore(){
+  S.pora = jestNoc() ? "dzien" : "noc";
+  if(!jestNoc()){ S.hp = Math.min(S.hpMax, S.hp + Math.round(S.hpMax*0.35)); S.mana = S.manaMax; }
+  ekranLokacji(S.lokacja);
+}
+function krok(id){ return S.krok[id] || 0; }
+function ustawKrok(id, n){ S.krok[id] = n; }
+
+/* ---------- NOWE PRZEDMIOTY ---------- */
+var NOWE_PRZEDMIOTY = {
+  ruda_wietrzna:{n:"Ruda wietrznicka", kat:"surowiec", typ:"towar", cena:28, o:"Ciemna, z niebieskim nalotem. Hordak twierdzi, że z niej wychodzi klinga, która nie kruszy się na mrozie."},
+  kilof_szychtowy:{n:"Kilof szychtowy", kat:"bron", typ:"bron", obr:[9,15], cena:110, wym:{sila:12},
+    o:"Krótki kilof z Wietrznicy, wyważony tak, żeby robić nim pod stropem."},
+  sum:{n:"Sum z rozlewiska", kat:"zywnosc", typ:"jadalne", leczy:12, cena:24, o:"Cięższy od psa i tłusty jak zima. Nakarmi trzech."},
+  siec_mileny:{n:"Sieć Mileny", kat:"surowiec", typ:"towar", cena:18, o:"Zszywana trzy razy i trzy razy zerwana. Ktoś ją przecinał nożem, nie zębami."},
+  medalion_opactwa:{n:"Medalion opactwa", kat:"artefakt", typ:"amulet", odp:{ogien:8, energia:6}, cena:140,
+    o:"Blaszka z wypalonym znakiem popiołu. Ciepła, choć leży w cieniu."},
+  relikwia_popiolu:{n:"Relikwiarz popiołu", kat:"artefakt", typ:"towar", cena:0,
+    o:"Garść popiołu w ołowianym pudełku. Brat Dobrogost mówi, że to nie prochy człowieka."},
+  list_zelazny:{n:"List żelazny", kat:"pismo", typ:"towar", cena:0,
+    o:"Pieczęć rogatki i podpis, którego nikt nie potrafi odczytać. Otwiera szlabany, których nie otwiera złoto."},
+  ksiega_szychty:{n:"Księga szychty", kat:"pismo", typ:"ksiega", intelekt:2, cena:70,
+    o:"Rejestr zjazdów i wyjazdów z szybu. Ktoś dopisywał ludzi, którzy nie wyjechali."},
+  chorag_strzep:{n:"Strzęp chorągwi", kat:"surowiec", typ:"towar", cena:12,
+    o:"Trzy barwy zszyte razem przez kogoś, kto nie chciał wybierać."},
+  sol_kamienna:{n:"Sól kamienna", kat:"surowiec", typ:"towar", cena:30,
+    o:"Bryła szara od pyłu. Na Ziemiach Niczyich warta więcej niż srebro tej samej wagi."}
+};
+for(var __k in NOWE_PRZEDMIOTY) PRZEDMIOTY[__k] = NOWE_PRZEDMIOTY[__k];
+
+/* ---------- NOWI WROGOWIE ---------- */
+var NOWI_WROGOWIE = {
+  szychtowy:{n:"Duch szychty", hp:120, dmg:[11,16], exp:320, zloto:70,
+    sekw:["s","g","s","d"], finisz:{dmg:[26,34], o:"chwyt zimnymi rękami"}, blokSzansa:20,
+    wyglad:"Postać w kurtce górniczej, sczerniałej i mokrej. Lampa u pasa się nie pali, a jednak coś przy niej jaśnieje.",
+    styl:"Prowadzi cztery ruchy w rytm kilofa: środek, góra, środek, dół. Kiedy staje bez ruchu, znaczy, że policzył ludzi na szychcie i ciebie też."},
+  sum_stary:{n:"Stary sum", hp:98, dmg:[10,14], exp:220, zloto:0, lup:{sum:1}, lupWymaga:"oprawianie",
+    sekw:["d","d","s"], finisz:{dmg:[22,29], o:"uderzenie ogonem"}, blokSzansa:0,
+    wyglad:"Dłuższy od łodzi Nieszki, wąs gruby jak palec. Rybacy mówią o nim jak o sąsiedzie, nie o rybie.",
+    styl:"Bije nisko, przy wodzie, dwa razy, potem podrywa się na wysokość piersi. Ogon zostawia na koniec."},
+  spalony_brat:{n:"Spalony brat", hp:108, dmg:[10,15], exp:280, zloto:40, lup:{relikwia_popiolu:1},
+    sekw:["g","s","g"], finisz:{dmg:[24,31], o:"objęcie, po którym zostaje ślad na skórze"}, blokSzansa:15,
+    wyglad:"Habit spieczony w skorupę, twarz przykryta kapturem, który nie chce się zsunąć. Idzie powoli i nie omija ognia.",
+    styl:"Podnosi ręce wysoko dwa razy, jakby błogosławił, i tnie przez środek. Trzeci raz nie tnie - obejmuje."},
+  rzezimieszek:{n:"Rzezimieszek z jarmarku", hp:74, dmg:[8,13], exp:160, zloto:55, lup:{noz_zbira:1},
+    sekw:["d","s","d"], finisz:{dmg:[18,24], o:"pchnięcie pod żebro"}, blokSzansa:20,
+    wyglad:"Chudy, w czystej koszuli i brudnych butach. Trzyma nóż w rękawie, nie w dłoni.",
+    styl:"Kłuje nisko, żeby patrzeć ci na ręce, raz idzie w środek na próbę i wraca w dół. Kiedy się cofa o krok, to nie ucieczka."},
+  rys_gorski:{n:"Ryś z serpentyny", hp:82, dmg:[9,13], exp:180, zloto:0, lup:{skora:1, futro:1}, lupWymaga:"oprawianie",
+    sekw:["g","d"], finisz:{dmg:[20,26], o:"skok z półki skalnej"}, blokSzansa:5,
+    wyglad:"Kity na uszach, łapy nieproporcjonalnie szerokie. Widzisz go dopiero, kiedy się rusza.",
+    styl:"Uderza raz z góry, raz przy nogach i znika za kamieniem. Trzeci raz spada na ciebie z półki."}
+};
+for(var __w in NOWI_WROGOWIE) WROGOWIE[__w] = NOWI_WROGOWIE[__w];
+TYPY_WROGOW.szychtowy = "energia";
+TYPY_WROGOW.sum_stary = "obuch";
+TYPY_WROGOW.spalony_brat = "ogien";
+TYPY_WROGOW.rzezimieszek = "klute";
+TYPY_WROGOW.rys_gorski = "ciete";
+
+/* ---------- NOWE ZNACZNIKI NA MAPIE ---------- */
+var M_WIETRZNICA = MAPA.znaczniki.push({x:34.5, y:39.4, n:"Wietrznica", typ:"osada", o:"Osada nad szybem. Dymi i skrzypi przez całą dobę."}) - 1;
+var M_SERPENTYNA = MAPA.znaczniki.push({x:35, y:40.3, n:"Serpentyna", typ:"punkt", o:"Droga zawinięta na zboczu w osiem zakrętów."}) - 1;
+var M_BROD = MAPA.znaczniki.push({x:55, y:48.6, n:"Sokoli Bród", typ:"osada", o:"Wieś rybacka na obu brzegach, spięta liną."}) - 1;
+var M_TRZCINY = MAPA.znaczniki.push({x:54, y:47.4, n:"Trzcinowy Trakt", typ:"punkt", o:"Grobla z faszyny w trzcinie wyższej od jeźdźca."}) - 1;
+var M_OPACTWO = MAPA.znaczniki.push({x:59.5, y:48.4, n:"Spopielone Opactwo", typ:"osada", o:"Mury stoją, dachu nie ma. Bracia zostali."}) - 1;
+var M_ALEJA = MAPA.znaczniki.push({x:58.3, y:47.6, n:"Aleja Kamienna", typ:"punkt", o:"Dwa rzędy kamiennych słupów prowadzące donikąd."}) - 1;
+var M_JARMARK = MAPA.znaczniki.push({x:50, y:45.4, n:"Jarmark Trzech Chorągwi", typ:"osada", o:"Targ, na którym wiszą trzy flagi i żadna nie jest gospodarzem."}) - 1;
+var M_WAWOZ = MAPA.znaczniki.push({x:51, y:44.4, n:"Wąwóz Kupiecki", typ:"punkt", o:"Wąsko, ciemno i słychać każdy krok dwa razy."}) - 1;
+
+/* ---------- NOWE LOKACJE ---------- */
+var NOWE_LOKACJE = {
+
+serpentyna:{
+  n:"Serpentyna", region:"Ziemie Niczyje",
+  opis:"Droga zawija się na zboczu osiem razy i za każdym zakrętem robi się węższa. Po lewej skała, po prawej nic.<br><br>Ktoś wbił w szczeliny drewniane kołki i rozciągnął między nimi linę - dla tych, którzy idą tędy z ładunkiem.",
+  opisNoc:"W ciemności lina jest jedyną rzeczą, której możesz się trzymać. Z dołu dochodzi skrzypienie kołowrotu z Wietrznicy - pracują też w nocy.<br><br>Coś przeszło tędy przed chwilą: kamyki wciąż się osypują.",
+  tereny:[{n:"Wejdź na półki skalne", teren:"serpentyna_teren"}],
+  drogi:[
+    {n:"W górę, do Wietrznicy", lok:"wietrznica"},
+    {n:"W dół, na płaskowyż", lok:"plaskowyz"}
+  ]
+},
+
+wietrznica:{
+  n:"Wietrznica", region:"granica Ziem Nowożytnych",
+  opis:"Osada wisi na zboczu nad szybem. Kołowrót chodzi bez przerwy, a lina, która z niego schodzi, jest dłuższa niż całe zbocze.<br><br>Domy postawiono z tego, co zostało z rusztowań. Nikt tu nie mieszka dłużej niż trzy zimy - i wszyscy o tym wiedzą.",
+  opisNoc:"Nocna szychta zjeżdża o zmierzchu. Kobiety odprowadzają mężów do klatki i nie machają - to podobno przynosi pecha.<br><br>Latarnie palą się tylko przy kołowrocie. Reszta osady jest czarna.",
+  postacie:[
+    {n:"Sztygarka Ludmiła", id:"ludmila", nieznany:"Kobieta z lampą i taśmą", rola:"sztygarka", scena:"ludmila", portret:"kobieta"},
+    {n:"Bogna", id:"bogna", nieznany:"Kobieta przy kotle", rola:"kucharka szychtowa", scena:"bogna", portret:"kobieta"},
+    {n:"Kuna", id:"kuna", nieznany:"Chłopak z lampą", rola:"nocny szychtowy", scena:"kuna", portret:"kowal",
+     warunek:function(){return jestNoc();}}
+  ],
+  miejsca:[
+    {n:"Kołowrót i klatka", scena:"kolowrot"},
+    {n:"Barak szychtowy", scena:"barak"}
+  ],
+  tereny:[{n:"Obejdź hałdę", teren:"wietrznica_teren"}],
+  drogi:[
+    {n:"Zejdź serpentyną", lok:"serpentyna"},
+    {n:jestNoc() ? "Prześpij się do świtu w baraku" : "Zaczekaj do zmroku przy kotle", pora:true}
+  ]
+},
+
+trzcinowy:{
+  n:"Trzcinowy Trakt", region:"Ziemie Niczyje",
+  opis:"Grobla usypana z faszyny prowadzi przez trzcinę wyższą od jeźdźca. Nie widać nic poza pasem nieba nad głową i nie słychać nic poza wodą po obu stronach.",
+  opisNoc:"Trzcina szeleści równo, a potem w jednym miejscu przestaje. Idziesz dalej i to miejsce idzie za tobą.",
+  tereny:[{n:"Zejdź w trzcinę", teren:"trzcinowy_teren"}],
+  drogi:[
+    {n:"Dalej, do Sokolego Brodu", lok:"sokoli_brod"},
+    {n:"Wróć na przeprawę wschodnią", lok:"przeprawa_wsch"}
+  ]
+},
+
+sokoli_brod:{
+  n:"Sokoli Bród", region:"Ziemie Niczyje",
+  opis:"Wieś leży na obu brzegach i jest spięta liną grubą jak ramię. Po linie chodzi prom, a przy promie stoi kolejka, która nigdy nie jest dłuższa niż trzy osoby.<br><br>Na palach suszą się sieci. Połowa z nich jest pocięta.",
+  opisNoc:"Na wodzie palą się lampy - rybacy wyszli na sumy. Z drugiego brzegu ktoś odpowiada im światłem, choć po tamtej stronie nie ma wsi.",
+  postacie:[
+    {n:"Chwalibóg", id:"chwalibog", nieznany:"Człowiek przy linie promu", rola:"promowy", scena:"chwalibog", portret:"kowal"},
+    {n:"Milena", id:"milena", nieznany:"Rybaczka nad siecią", rola:"rybaczka", scena:"milena", portret:"kobieta"},
+    {n:"Dratwa", id:"dratwa", nieznany:"Skupujący ryby", rola:"kupiec rzeczny", scena:"dratwa", portret:"urzednik"}
+  ],
+  miejsca:[
+    {n:"Prom na linie", scena:"prom"},
+    {n:"Susznia sieci", scena:"susznia"}
+  ],
+  tereny:[{n:"Wyjdź nad rozlewisko", teren:"brod_teren"}],
+  drogi:[
+    {n:"Trzcinowym traktem na zachód", lok:"trzcinowy"},
+    {n:jestNoc() ? "Prześpij się w suszni do świtu" : "Zaczekaj, aż rybacy wypłyną po zmroku", pora:true}
+  ]
+},
+
+aleja_kamienna:{
+  n:"Aleja Kamienna", region:"Ziemie Niczyje",
+  opis:"Dwa rzędy kamiennych słupów prowadzą przez pole ku murom bez dachu. Na każdym słupie wykuto twarz, a każdej twarzy ktoś skuł oczy.",
+  opisNoc:"Nocą słupy rzucają cienie w dwie strony naraz, choć księżyc jest jeden. Nie zatrzymujesz się, żeby to sprawdzić.",
+  tereny:[{n:"Obejdź słupy", teren:"aleja_teren"}],
+  drogi:[
+    {n:"Do Spopielonego Opactwa", lok:"opactwo"},
+    {n:"Wróć na stary cmentarz", lok:"cmentarz"}
+  ]
+},
+
+opactwo:{
+  n:"Spopielone Opactwo", region:"Ziemie Niczyje",
+  opis:"Mury stoją i są czarne do połowy wysokości. Dachu nie ma od siedmiu lat i nikt go nie kładzie z powrotem - bracia mówią, że tak lepiej widać.<br><br>W krużgankach ustawiono stoły z ocalałych ław i przepisuje się na nich to, co udało się wynieść z ognia.",
+  opisNoc:"Bracia śpiewają po zmroku i robią to bardzo cicho, jakby nie chcieli kogoś obudzić. W bocznym skrzydle pali się jedno światło i nie porusza się wcale.",
+  postacie:[
+    {n:"Brat Dobrogost", id:"dobrogost", nieznany:"Zakonnik z poparzoną ręką", rola:"przeor", scena:"dobrogost", portret:"urzednik"},
+    {n:"Zbysława", id:"zbyslawa", nieznany:"Ślepa kobieta przy pulpicie", rola:"kronikarka", scena:"zbyslawa", portret:"kobieta"},
+    {n:"Kopista Wit", id:"wit", nieznany:"Młody kopista", rola:"kopista", scena:"wit", portret:"urzednik"}
+  ],
+  miejsca:[
+    {n:"Skryptorium pod gołym niebem", scena:"skryptorium"},
+    {n:"Spalone skrzydło", scena:"skrzydlo", warunek:function(){return jestNoc();}}
+  ],
+  tereny:[{n:"Przejdź krużgankami", teren:"opactwo_teren"}],
+  drogi:[
+    {n:"Aleją Kamienną z powrotem", lok:"aleja_kamienna"},
+    {n:jestNoc() ? "Prześpij się w celi do świtu" : "Zostań do wieczornego śpiewu", pora:true}
+  ]
+},
+
+wawoz_kupiecki:{
+  n:"Wąwóz Kupiecki", region:"Ziemie Niczyje",
+  opis:"Skały schodzą się tak blisko, że dwa wozy się nie miną. Wszyscy jeżdżą tędy i nikt tędy nie chce jechać.<br><br>Na ścianie ktoś wypisał węglem rachunek: trzy kreski, potem cztery, potem przerwa.",
+  opisNoc:"W wąwozie nocą słychać własne kroki dwa razy: raz swoje, raz cudze, o pół uderzenia później.",
+  tereny:[{n:"Sprawdź szczeliny w skale", teren:"wawoz_teren"}],
+  drogi:[
+    {n:"Na Jarmark Trzech Chorągwi", lok:"jarmark"},
+    {n:"Wróć na Rozstaje Wschodnie", lok:"rozstaje_wschodnie"}
+  ]
+},
+
+jarmark:{
+  n:"Jarmark Trzech Chorągwi", region:"Ziemie Niczyje",
+  opis:"Na klepisku wielkości wsi stoi sto straganów i trzy maszty. Na masztach wiszą chorągwie Ismaala, Nowożytnych i Odeszłych - wszystkie trzy, żeby żadna strona nie mogła powiedzieć, że jarmark jest cudzy.<br><br>Handluje się tu wszystkim, a rozliczenia idą na kredę.",
+  opisNoc:"Stragany zwinięte, ale klepisko nie jest puste. Za masztami pali się ognisko i przy nim odbywa się drugi jarmark - ten, który nie płaci myta.",
+  postacie:[
+    {n:"Herold Racibor", id:"racibor", nieznany:"Człowiek z laską i dzwonkiem", rola:"herold jarmarczny", scena:"racibor", portret:"urzednik"},
+    {n:"Halszka", id:"halszka", nieznany:"Kupcowa w trzech chustach", rola:"kupcowa", scena:"halszka", portret:"kobieta"},
+    {n:"Pchła", id:"pchla", nieznany:"Ktoś, kto stoi za blisko", rola:"złodziejka", scena:"pchla", portret:"kobieta",
+     warunek:function(){return jestNoc();}}
+  ],
+  miejsca:[
+    {n:"Maszty z chorągwiami", scena:"maszty"},
+    {n:"Kreda rozliczeniowa", scena:"kreda"}
+  ],
+  tereny:[{n:"Obejdź zaplecze straganów", teren:"jarmark_teren"}],
+  drogi:[
+    {n:"Wąwozem z powrotem", lok:"wawoz_kupiecki"},
+    {n:jestNoc() ? "Prześpij się pod płótnem do świtu" : "Zaczekaj, aż zwiną stragany", pora:true}
+  ]
+}
+
+};
+for(var __l in NOWE_LOKACJE) LOKACJE[__l] = NOWE_LOKACJE[__l];
+
+LOKACJE.plaskowyz.drogi.unshift({n:"Ścieżką w górę, do Wietrznicy", lok:"serpentyna"});
+LOKACJE.przeprawa_wsch.drogi.unshift({n:"Trzcinowym traktem, do Sokolego Brodu", lok:"trzcinowy"});
+LOKACJE.cmentarz.drogi.unshift({n:"Aleją Kamienną, do opactwa", lok:"aleja_kamienna"});
+LOKACJE.rozstaje_wschodnie.drogi.unshift({n:"Wąwozem, na jarmark", lok:"wawoz_kupiecki"});
+
+/* ---------- NOWE TERENY ---------- */
+var NOWE_TERENY = {
+serpentyna_teren:{
+  n:"Półki skalne", wraca:"serpentyna",
+  opis:"Kamień jest tu suchy i ciepły od słońca, a w szczelinach rośnie to, czego nie ma niżej.",
+  punkty:[
+    {id:"s_ziola", typ:"zasob", n:"Kępa arcydzięgla w szczelinie", wymaga:"zielarstwo", zbierz:{arcydziegiel:2, dziurawiec:1},
+     wynik:"Korzeń wychodzi z kamienia trudno i cały. Bierzesz dwa i jeszcze garść dziurawca z półki wyżej."},
+    {id:"s_ruda", typ:"ruda", n:"Żyła w odsłonięciu", wymaga:"gornictwo", zbierz:{ruda_wietrzna:2},
+     wynik:"Żyła idzie skosem przez całą półkę. Odbijasz dwie bryły i zostawiasz ślad, po którym ktoś tu wróci."},
+    {id:"s_rys", typ:"mob", n:"Cień na wyższej półce", walka:"rys_gorski"},
+    {id:"s_lina", typ:"skrzynia", n:"Zerwana lina i tobołek", zloto:40, noc:true,
+     wynik:"Ktoś spadł tu niedawno i nie zdążył krzyknąć. Tobołek zaczepił się o kołek: czterdzieści złota i list bez adresata."}
+  ]
+},
+
+wietrznica_teren:{
+  n:"Hałda i zaplecze szybu", wraca:"wietrznica",
+  opis:"Hałda sypie się na drogę, a z boku stoją wózki ustawione w rząd na końcu ostatniej szychty.",
+  punkty:[
+    {id:"w_ruda", typ:"ruda", n:"Przebierz hałdę", wymaga:"gornictwo", zbierz:{ruda_wietrzna:1, galena:1},
+     wynik:"To, co dla nich było odpadem, dla ciebie jest zapłatą. Dwie bryły nadają się do pieca."},
+    {id:"w_sol", typ:"ruda", n:"Biały nalot na ścianie chodnika", wymaga:"gornictwo", zbierz:{sol_kamienna:1},
+     wynik:"To nie saletra. Liżesz palec i wiesz już, dlaczego wozy z Wietrznicy jeżdżą nocą."},
+    {id:"w_ksiega", typ:"skrzynia", n:"Buda sztygarska", zbierz:{ksiega_szychty:1}, noc:true,
+     wynik:"Nocą buda stoi otworem, bo sztygarka jest pod ziemią. Księga leży na stole, otwarta na stronie, na której trzech ludzi nie ma podpisu wyjazdu."},
+    {id:"w_duch", typ:"mob", n:"Światło przy zamkniętym szybie", walka:"szychtowy", noc:true}
+  ]
+},
+
+trzcinowy_teren:{
+  n:"Trzcina", wraca:"trzcinowy",
+  opis:"Woda stoi między kępami i jest cieplejsza niż powietrze. Trzcina zamyka się za tobą po dwóch krokach.",
+  punkty:[
+    {id:"t_ziola", typ:"zasob", n:"Bagno zwyczajne przy wodzie", wymaga:"zielarstwo", zbierz:{bagno:2},
+     wynik:"Rośnie tu gęsto i pachnie tak, że kręci się w głowie. Ścinasz dwie kępy i odchodzisz szybciej, niż przyszedłeś."},
+    {id:"t_ryba", typ:"ryba", n:"Dołek pod faszyną", wymaga:"wedkarstwo", zbierz:{szczupak:2},
+     wynik:"Pod faszyną stoi woda głębsza niż wygląda i pełna ryby, która nie widziała jeszcze haczyka."},
+    {id:"t_szczur", typ:"mob", n:"Plusk zbyt ciężki na rybę", walka:"szczur"},
+    {id:"t_lodz", typ:"skrzynia", n:"Zatopiona łódź", zbierz:{siec_mileny:1}, zloto:15,
+     wynik:"Łódź leży dnem do góry, przywalona faszyną. Pod nią sieć - pocięta nożem, nie zerwana."}
+  ]
+},
+
+brod_teren:{
+  n:"Rozlewisko", wraca:"sokoli_brod",
+  opis:"Rzeka rozlewa się tu na trzy ramiona i żadne nie jest głębsze niż po pas. Dno jest twarde - stąd bród.",
+  punkty:[
+    {id:"b_ryba", typ:"ryba", n:"Głęboczek przy brodzie", wymaga:"wedkarstwo", zbierz:{szczupak:1, wegorz:1},
+     wynik:"Bierze od razu, jakby nikt tu nie łowił od lat. Może i nie łowił."},
+    {id:"b_sum", typ:"mob", n:"Cień pod korzeniem", walka:"sum_stary", noc:true},
+    {id:"b_ziola", typ:"zasob", n:"Krwawnik na łasze", wymaga:"zielarstwo", zbierz:{krwawnik:3},
+     wynik:"Na piachu, gdzie nic nie powinno rosnąć, stoi go całe pole."},
+    {id:"b_skrzynka", typ:"skrzynia", n:"Skrzynka zaklinowana między kamieniami", zloto:55, noc:true,
+     wynik:"Wypłynęła z góry rzeki i utknęła. W środku złoto zawinięte w wosk i kartka z jednym słowem: „później”."}
+  ]
+},
+
+aleja_teren:{
+  n:"Kamienne słupy", wraca:"aleja_kamienna",
+  opis:"Słupy są starsze niż opactwo i postawione przez kogoś, kto nie budował dla ludzi.",
+  punkty:[
+    {id:"a_runy", typ:"zasob", n:"Znaki u podstawy słupa", wymaga:"tropienie", zloto:35,
+     wynik:"Ziemia przy trzecim słupie była ruszana w tym tygodniu. Ktoś zakopał tu sakiewkę i najwyraźniej nie wrócił."},
+    {id:"a_ziola", typ:"zasob", n:"Dziewanna między słupami", wymaga:"zielarstwo", zbierz:{dziewanna:2, tojad:1},
+     wynik:"Dziewanna rośnie w rzędzie, jakby ją sadzono. Tojad rośnie osobno i nikt go nie sadził."},
+    {id:"a_brat", typ:"mob", n:"Ktoś idzie aleją i nie omija ognisk", walka:"spalony_brat", noc:true}
+  ]
+},
+
+opactwo_teren:{
+  n:"Krużganki", wraca:"opactwo",
+  opis:"Ściany do połowy czarne, wyżej czyste. Deszcz zmył sadzę tylko tam, gdzie sięgał.",
+  punkty:[
+    {id:"o_karty", typ:"skrzynia", n:"Karty przywiane pod ścianę", zbierz:{ksiega_kron:1},
+     wynik:"Wiatr zebrał je w rogu krużganka i przycisnął kamieniem. Ktoś zrobił to celowo."},
+    {id:"o_ziola", typ:"zasob", n:"Zielnik w ocalałym ogródku", wymaga:"zielarstwo", zbierz:{dziurawiec:2, krwawnik:2},
+     wynik:"Grządki są równe do dziś, bo ktoś je pieli, choć nie ma już po co."},
+    {id:"o_medalion", typ:"skrzynia", n:"Nisza za ołtarzem", zbierz:{medalion_opactwa:1}, noc:true,
+     wynik:"Nisza jest w cieniu tylko za dnia. Nocą świeci ją światło z bocznego skrzydła i wtedy widać w niej blaszkę."}
+  ]
+},
+
+wawoz_teren:{
+  n:"Szczeliny w skale", wraca:"wawoz_kupiecki",
+  opis:"W szczelinach zalega to, co spadło z wozów przez ostatnie sto lat, i to, co ktoś schował celowo.",
+  punkty:[
+    {id:"ww_skrytka", typ:"skrzynia", n:"Kamień, który nie pasuje", zloto:45, zbierz:{chorag_strzep:1},
+     wynik:"Kamień daje się wyjąć jednym ruchem. Za nim skrytka: złoto i strzęp chorągwi zszytej z trzech barw."},
+    {id:"ww_ziola", typ:"zasob", n:"Dziurawiec na osypisku", wymaga:"zielarstwo", zbierz:{dziurawiec:2},
+     wynik:"Rośnie na osypisku, w miejscu, gdzie nikt nie stanie bez powodu."},
+    {id:"ww_rzez", typ:"mob", n:"Ktoś stoi w wąskim miejscu", walka:"rzezimieszek", noc:true}
+  ]
+},
+
+jarmark_teren:{
+  n:"Zaplecze straganów", wraca:"jarmark",
+  opis:"Za płótnami leży to, czego nie wystawia się z przodu: skrzynie bez pieczęci i wagi z podwójnym dnem.",
+  punkty:[
+    {id:"j_waga", typ:"skrzynia", n:"Waga z podwójnym dnem", zloto:35,
+     wynik:"Odejmujesz spód i wysypuje się garść monet, które ktoś odkładał po jednej z każdego ważenia."},
+    {id:"j_sol", typ:"skrzynia", n:"Skrzynia bez pieczęci", zbierz:{sol_kamienna:1}, noc:true,
+     wynik:"Skrzynia jest z Wietrznicy - poznajesz po wypalonym znaku. W środku sól, której nie ma w żadnym rejestrze."},
+    {id:"j_rzez", typ:"mob", n:"Dwóch przy ognisku wstaje na twój widok", walka:"rzezimieszek", noc:true}
+  ]
+}
+};
+for(var __t in NOWE_TERENY) TERENY[__t] = NOWE_TERENY[__t];
+
+/* ---------- NOWE ZADANIA (ŁAŃCUCHY) ---------- */
+var NOWE_ZADANIA = {
+sol_szlak:{
+  miejsce:M_JARMARK, t:"Szlak solny", od:"Lgota",
+  pelny:"Sól z Wietrznicy nie istnieje w żadnym rejestrze, a mimo to jest wszędzie. Lgota chce wiedzieć, kto ją wpuszcza na jarmark - i czyim nazwiskiem.",
+  opis:"Łańcuch: Lgota, Bodzięta, Iwo, Halszka i sierżant Wielisław. Każde z nich zna jedną część tej samej drogi.",
+  cel:"Przejdź szlak od karczmy w Kruczym Dole po maszty na jarmarku i wróć do Lgoty.",
+  krok:function(){ return krok("sol_szlak")+"/5"; },
+  nagroda:{exp:320, zloto:180, rep:{od:2}, przedmiot:"list_zelazny"}
+},
+kroniki_popiolu:{
+  miejsce:M_OPACTWO, t:"Kroniki popiołu", od:"Brat Ożóg",
+  pelny:"Opactwo spłonęło siedem lat temu w jedną noc, przy bezwietrznej pogodzie i po deszczu. Ożóg twierdzi, że to niemożliwe, i chce wiedzieć, kto przepisał kronikę tak, żeby wyszło inaczej.",
+  opis:"Łańcuch: Ożóg, brat Dobrogost, ślepa kronikarka Zbysława, kopista Wit i stary Nawoj.",
+  cel:"Odtwórz prawdziwy zapis nocy pożaru i przynieś go Ożogowi.",
+  krok:function(){ return krok("kroniki_popiolu")+"/5"; },
+  nagroda:{exp:340, zloto:120, rep:{nw:1, sk:1}, przedmiot:"medalion_opactwa"}
+},
+rzeka_oddaje:{
+  miejsce:M_BROD, t:"Rzeka oddaje", od:"Nieszka",
+  pelny:"Sieci w Sokolim Brodzie są cięte nożem, a rzeka wyrzuca na łachy rzeczy, których nikt nie zgubił. Nieszka mówi, że to się zaczęło, kiedy zamknięto kratę na moście.",
+  opis:"Łańcuch: Nieszka, promowy Chwalibóg, rybaczka Milena, kupiec Dratwa i strażnik Leszy.",
+  cel:"Dowiedz się, kto tnie sieci, i doprowadź sprawę do końca po obu brzegach.",
+  krok:function(){ return krok("rzeka_oddaje")+"/5"; },
+  nagroda:{exp:300, zloto:150, rep:{pl:2}, przedmiot:"siec_mileny"}
+},
+zelazo_wietrznicy:{
+  miejsce:M_WIETRZNICA, t:"Żelazo z Wietrznicy", od:"Sztygar Bolko",
+  pelny:"Z Wietrznicy nie wyjechał w tym miesiącu ani jeden wóz z rudą, choć szychty schodzą pełne. Bolko chce wiedzieć, gdzie się podziewa żelazo - i dlaczego trzech ludzi nie ma podpisu wyjazdu.",
+  opis:"Łańcuch: Bolko, sztygarka Ludmiła, kucharka Bogna, nocny szychtowy Kuna i kowal Hordak.",
+  cel:"Zejdź do szybu, dowiedz się, co jest pod nim, i zamknij sprawę u Hordaka.",
+  krok:function(){ return krok("zelazo_wietrznicy")+"/5"; },
+  nagroda:{exp:360, zloto:200, rep:{nw:2}, przedmiot:"kilof_szychtowy"}
+},
+trzy_chorag:{
+  miejsce:M_JARMARK, t:"Trzy chorągwie", od:"Herold Racibor",
+  pelny:"Jarmark stoi, dopóki żadna ze stron nie uzna go za swój. W tym roku wszystkie trzy przysłały pisma i każde mówi to samo: to nasza ziemia.",
+  opis:"Łańcuch: herold Racibor, pisarz Kalina, inspektor Roszko, kupcowa Halszka i złodziejka Pchła.",
+  cel:"Zbierz trzy pisma, ustal, które jest fałszywe, i zdecyduj, czyja chorągiew zostanie zdjęta.",
+  krok:function(){ return krok("trzy_chorag")+"/5"; },
+  nagroda:{exp:380, zloto:160, przedmiot:"chorag_strzep"}
+}
+};
+for(var __z in NOWE_ZADANIA) ZADANIA[__z] = NOWE_ZADANIA[__z];
+
+/* ---------- WIEDZA O ŚWIECIE ---------- */
+WIEDZA.push(
+  {id:"wietrznica", t:"Wietrznica", grupa:"Świat",
+   w:function(){ return !!S.odwiedzone.wietrznica || !!LOKACJE.wietrznica.__byl; },
+   o:"Osada nad szybem, formalnie nowożytna, faktycznie niczyja. Wydobywa się tu rudę, a wywozi sól, o której nie ma wpisu."},
+  {id:"brod", t:"Sokoli Bród", grupa:"Świat",
+   w:function(){ return poznany("chwalibog") || poznany("milena"); },
+   o:"Wieś na obu brzegach, spięta liną. Odkąd zamknięto kratę na moście zachodnim, rzeka jest jedyną drogą do puszczy - i ktoś tnie tu sieci."},
+  {id:"opactwo", t:"Spopielone Opactwo", grupa:"Świat",
+   w:function(){ return poznany("dobrogost") || poznany("zbyslawa"); },
+   o:"Spłonęło siedem lat temu w bezwietrzną noc po deszczu. Bracia zostali w murach bez dachu i przepisują to, co ocalało."},
+  {id:"jarmark", t:"Jarmark Trzech Chorągwi", grupa:"Świat",
+   w:function(){ return poznany("racibor") || poznany("halszka"); },
+   o:"Trzy maszty i trzy flagi, żeby żadna strona nie mogła nazwać go swoim. Rozliczenia idą na kredę, a kreda nie zostawia śladu w rejestrze."},
+  {id:"noc", t:"Noc na Ziemiach Niczyich", grupa:"Świat",
+   w:function(){ return jestNoc() || !!S.bylaNoc; },
+   o:"Po zmroku drogi należą do innych. Wozy jeżdżą bez latarni, szychty schodzą pod ziemię, a to, czego nie widać za dnia, wychodzi na alej i hałdy."},
+  {id:"pozar", t:"Noc pożaru", grupa:"Świat",
+   w:function(){ return krok("kroniki_popiolu") >= 3; },
+   o:"Kronika mówi o piorunie. Deszcz padał od trzech dni, a ogień zaczął się w trzech miejscach naraz, wszystkich od wewnątrz."},
+  {id:"solny", t:"Szlak solny", grupa:"Świat",
+   w:function(){ return krok("sol_szlak") >= 3; },
+   o:"Sól idzie z Wietrznicy wąwozem na jarmark, a stamtąd w obie strony wojny. Papier na nią wystawia rogatka, a podpisuje ktoś, kogo nazwiska nikt nie wymawia głośno."}
+);
+
+LUDZIE.push(
+  {id:"ludmila", n:"Sztygarka Ludmiła", gdzie:"Wietrznica", rola:"nauczyciel", o:"Uczy górnictwa lepiej niż ktokolwiek - jeśli zejdziesz z nią na dół."},
+  {id:"bogna", n:"Bogna", gdzie:"Wietrznica", rola:"kupiec", o:"Kucharka szychtowa. Jedzenie, wódka i wszystko, co słychać przy kotle."},
+  {id:"chwalibog", n:"Chwalibóg", gdzie:"Sokoli Bród", rola:"kupiec", o:"Promowy. Przewozi, sprzedaje sprzęt rzeczny i zna każdą łachę."},
+  {id:"milena", n:"Milena", gdzie:"Sokoli Bród", rola:"nauczyciel", o:"Uczy wędkarstwa na rozlewisku, jeśli pomożesz przy sieciach."},
+  {id:"dratwa", n:"Dratwa", gdzie:"Sokoli Bród", rola:"kupiec", o:"Skupuje ryby po cenie, którą sam ustala, i sprzedaje sól, której nie ma."},
+  {id:"dobrogost", n:"Brat Dobrogost", gdzie:"Spopielone Opactwo", rola:"nauczyciel", o:"Przeor. Uczy run prostych i czytania starego pisma."},
+  {id:"zbyslawa", n:"Zbysława", gdzie:"Spopielone Opactwo", rola:"nauczyciel", o:"Ślepa kronikarka. Pamięta zapisy, których już nie ma na papierze."},
+  {id:"halszka", n:"Halszka", gdzie:"Jarmark Trzech Chorągwi", rola:"kupiec", o:"Kupcowa. Kupi wszystko, sprzeda dwa razy drożej i policzy na kredzie."},
+  {id:"racibor", n:"Herold Racibor", gdzie:"Jarmark Trzech Chorągwi", rola:"kupiec", o:"Ogłasza ceny i wyroki jarmarczne. Za wiadomość płaci lepiej niż za towar."}
+);
