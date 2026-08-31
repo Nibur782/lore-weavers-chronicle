@@ -426,7 +426,13 @@ function poznany(id){ return !!S.poznani[id]; }
 function poznaj(id){ S.poznani[id] = true; }
 
 function stanZadania(id){ return S.zadania[id] || "brak"; }
-function dajZadanie(id){ if(stanZadania(id)==="brak") S.zadania[id] = "aktywne"; }
+function dajZadanie(id){
+  if(stanZadania(id)==="brak"){
+    S.zadania[id] = "aktywne";
+    S.zabici = S.zabici || {};
+    for(var w in WROGOWIE){ if(WROGOWIE[w].konczy === id && S.zabici[w]) gotoweZadanie(id); }
+  }
+}
 function gotoweZadanie(id){ if(stanZadania(id)==="aktywne") S.zadania[id] = "gotowe"; }
 function oddajZadanie(id){
   if(stanZadania(id) !== "gotowe") return;
@@ -455,6 +461,16 @@ function usun(id){
   if(!S.plecak[id]) return;
   S.plecak[id]--;
   if(S.plecak[id] <= 0) delete S.plecak[id];
+}
+function ileZListy(lista){
+  var n = 0;
+  lista.forEach(function(k){ n += (S.plecak[k]||0); });
+  return n;
+}
+function usunZListy(lista, ile){
+  for(var i=0;i<lista.length && ile>0;i++){
+    while(ile>0 && S.plecak[lista[i]]){ usun(lista[i]); ile--; }
+  }
 }
 function sztukWPlecaku(){ var n=0; for(var k in S.plecak) n += S.plecak[k]; return n; }
 function wartoscTowarow(){
@@ -1457,7 +1473,7 @@ bodzieta:{
   },
   opcje:[
     {l:"Masz co do kotła?", dajZ:"ryby_bodziety", warunekZ:{id:"ryby_bodziety", stan:"brak"}, idz:"bodzieta"},
-    {l:"Cztery ryby, jak chciałeś.", oddajZ:"ryby_bodziety", warunekZ:{id:"ryby_bodziety", stan:"aktywne"}, wymagaPrzedmiotu:"szczupak", ile:4, idz:"bodzieta"},
+    {l:"Cztery ryby, jak chciałeś.", oddajZ:"ryby_bodziety", warunekZ:{id:"ryby_bodziety", stan:"aktywne"}, wymagaDowolne:["szczupak","wegorz"], ile:4, idz:"bodzieta"},
     {l:"Wiem, kto zabił posłańca.", oddajZ:"poslaniec", warunekZ:{id:"poslaniec", stan:"gotowe"}, idz:"bodzieta_koniec"},
     {l:"Przy poboczu leży zabity człowiek. Kto to był?", dajZ:"poslaniec", warunekZ:{id:"poslaniec", stan:"brak"}, idz:"bodzieta_cialo",
      warunek:function(){return !!S.zebrane.g_cialo;}},
@@ -1597,11 +1613,11 @@ lgota:{
   },
   opcje:[
     {l:"Wóz stoi pod granicą. Twój?", dajZ:"sol_lgoty", warunekZ:{id:"sol_lgoty", stan:"brak"}, idz:"lgota_sol",
-     warunek:function(){return !!S.poznane.lgota_uczy;}},
+     warunek:function(){return poznany("lgota");}},
     {l:"Trzy grudy soli.", oddajZ:"sol_lgoty", warunekZ:{id:"sol_lgoty", stan:"aktywne"}, wymagaPrzedmiotu:"gruda", ile:3, idz:"lgota"},
     {l:"Ten zabity posłaniec pod granicą. Twoja robota?", idz:"lgota_poslaniec", raz:true,
      warunek:function(){return stanZadania("poslaniec")==="aktywne" && !!S.poznane.poslaniec_bodzieta;}},
-    {l:"Naucz mnie tego, co robisz.", idz:"lgota_nauka", warunek:function(){return (S.cierpliwosc.lgota||0) < 2 && !!S.poznane.lgota_uczy;}},
+    {l:"Naucz mnie tego, co robisz.", idz:"lgota_nauka", warunek:function(){return (S.cierpliwosc.lgota||0) < 2 && poznany("lgota");}},
     {l:"Widziałem koleiny pod granicą. Wiem, że to twój wóz.", idz:"lgota_woz", raz:true, warunek:function(){return (S.cierpliwosc.lgota||0) < 2 && !!S.poznane.lgota_woz;}},
     {l:"Ładny kaptur. Ciepło ci w nim?", idz:"lgota_kaptur", raz:true, natret:"lgota", warunek:function(){return (S.cierpliwosc.lgota||0) < 2;}},
     {l:"Wracam do sali.", idz:"karczma"}
@@ -2611,7 +2627,7 @@ function ekranTrenera(sc){
         S.pn -= p; S.zloto -= w.zl;
         if(w.raz) S.kupione[w.id] = true;
         w.ef();
-        pokaz("weteran_nauka");
+        pokaz(sc.__id || "weteran_nauka");
       });
       i++;
     });
@@ -3499,6 +3515,7 @@ function pokaz(id){
   S.scena = id;
   S.odwiedzone[id] = true;
   var sc = SCENY[id];
+  if(sc) sc.__id = id;
 
   if(id === "osada" && !S.autozapis){ S.autozapis = true; zapiszDoSlotu(1, "Początek drogi"); }
 
@@ -3517,6 +3534,7 @@ function pokaz(id){
     if(o.zid && S.zebrane[o.zid]) return false;
     if(o.warunekZ && stanZadania(o.warunekZ.id) !== o.warunekZ.stan) return false;
     if(o.wymagaPrzedmiotu && (S.plecak[o.wymagaPrzedmiotu]||0) < (o.ile||1)) return false;
+    if(o.wymagaDowolne && ileZListy(o.wymagaDowolne) < (o.ile||1)) return false;
     return true;
   });
 
@@ -3579,6 +3597,10 @@ function pokaz(id){
       if(o.poznaj) poznaj(o.poznaj);
       if(o.dajZ) dajZadanie(o.dajZ);
       if(o.oddajZ){
+        if(o.wymagaDowolne){
+          usunZListy(o.wymagaDowolne, o.ile||1);
+          gotoweZadanie(o.oddajZ);
+        }
         if(o.wymagaPrzedmiotu){
           for(var q=0; q<(o.ile||1); q++) usun(o.wymagaPrzedmiotu);
           gotoweZadanie(o.oddajZ);
