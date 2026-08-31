@@ -32,13 +32,9 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   useEffect(() => {
-    let stop: (() => void) | undefined;
     import("../game/argena.js").then((m) => {
-      stop = m.startArgena();
+      m.startArgena();
     });
-    return () => {
-      if (stop) stop();
-    };
   }, []);
 
   return (
