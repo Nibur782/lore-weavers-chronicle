@@ -5559,6 +5559,24 @@ function rozszerzGre(){
   rozszerzSceny2();
   rozszerzSceny3();
 
+
+  /* --- wejście do łańcucha "Krew na trakcie" u starych postaci --- */
+  SCENY.wielislaw_trakt1 = {portret:"weteran", kto:"Sierżant Wielisław",
+    tekst:function(){ return ZADANIA.trakt1.pelny; },
+    opcje:[{l:"Wypytam pisarza.", dajZ:"trakt1", idz:"wielislaw"}]};
+  SCENY.wielislaw.opcje.unshift(
+    {l:"Trzeci trup na trakcie. Co o tym wiesz?", warunekZ:{id:"trakt1", stan:"brak"},
+     warunek:function(){ return poznany("wielislaw") && stanZadania("przepustka") === "oddane"; },
+     idz:"wielislaw_trakt1"});
+
+  SCENY.kalina_trakt1 = {portret:"urzednik", kto:"Pisarz Kalina",
+    tekst:"Zamyka trzecią księgę łokciem, tak jak zamyka ją zawsze, kiedy ktoś pyta o zabitych.<br><br><span class='mowa'>„Trzej. Wszyscy wjechali przez tę bramę i wszyscy mają wpis kontorowy zamiast imienia.<br><br>Ja tylko przepisuję. Kto ich wpisał tak, a nie inaczej, wie rachmistrz w Wietrznicy.”</span>",
+    opcje:[{l:"Pojadę do rachmistrza.", dajZ:"trakt2",
+            ef:function(){ oddajZadanie("trakt1"); }, idz:"kalina"}]};
+  SCENY.kalina.opcje.unshift(
+    {l:"Sierżant pyta o wpisy zabitych.", warunekZ:{id:"trakt1", stan:"aktywne"},
+     ef:function(){ gotoweZadanie("trakt1"); }, idz:"kalina_trakt1"});
+
   SCENY.wstap_sk = scenaWstapienia("sk", "dobroslawa");
   SCENY.wstap_nw = scenaWstapienia("nw", "sedziwoj");
   SCENY.wstap_od = scenaWstapienia("od", "sedzimir");
