@@ -10316,6 +10316,635 @@ function rozszerzOdeszlych(){
 }
 rozszerzOdeszlych();
 
+function scenyOdeszlych(){
+
+  /* ---------- WILKOSZ BEZIMIENNY ---------- */
+  SCENY.wilkosz = {
+    portret:"weteran", npc:"wilkosz", ktoNieznany:"Człowiek, przy którym wszyscy zniżają głos", kto:"Wilkosz Bezimienny",
+    intro:{
+      tekst:"Siedzi na skrzyni na najwyższej półce wyrobiska, plecami do przepaści, i je z miski. Nie wstaje.<br><br><span class='mowa'>„Nie kłaniaj się. U nas się nie kłania, bo potem trudno wstać, jak trzeba biec.”</span>",
+      opcje:[
+        {l:"Dlaczego Bezimienny?", idz:"wilkosz_w1"},
+        {l:"Czym są Odeszli?", idz:"wilkosz_w2"},
+        {l:"Przyszedłem szukać roboty.", idz:"wilkosz", poznaj:"wilkosz"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        od:"<span class='mowa'>„Nasz. To znaczy: nikt cię nie będzie bronił, ale nikt też nie sprzeda. Na razie.”</span>",
+        nw:"<span class='mowa'>„Nowożytny. Twoi wpisali nas do ksiąg jako stratę i zamknęli rubrykę. Wolę być stratą niż pozycją.”</span>",
+        sk:"<span class='mowa'>„Ismaal. Połowa moich ludzi uciekła spod waszych chorągwi. Druga połowa uciekła przed nimi. To nie to samo, ale kończy się tu samo.”</span>",
+        pl:"<span class='mowa'>„Prastary Lud. Jedyni, którzy nas nie ścigali. Nie z dobroci - po prostu wasza puszcza sama nas przerzedza.”</span>",
+        brak:"<span class='mowa'>„Bez barw. Wiesz, ilu takich tu przyszło? Wszyscy. Dlatego to miasto istnieje.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Mam listę imion, znalezioną przy łowcy głów.", warunekZ:{id:"od_lan5", stan:"aktywne"},
+       wymagaPrzedmiotu:"lista_imion", ile:1, oddajZ:"od_lan5", idz:"wilkosz_lista"},
+      {l:"Co widzą wasze patrole na wschodzie?", warunekZ:{id:"od_zwiad", stan:"brak"}, dajZ:"od_zwiad", idz:"wilkosz"},
+      {l:"Rozmawiałem z tymi, którzy wrócili ze wschodu.", warunekZ:{id:"od_zwiad", stan:"aktywne"},
+       warunek:function(){ return !!S.odwiedzone.zgorzel_teren; }, oddajZ:"od_zwiad", idz:"wilkosz_wschod"},
+      {l:"Co trzeba zrobić, żeby zostać jednym z was?", idz:"wilkosz_w3"},
+      {l:"Odejdź", idz:"__lok_zgorzel"}
+    ]
+  };
+  SCENY.wilkosz_w1 = {portret:"weteran", kto:"Wilkosz Bezimienny",
+    tekst:"<span class='mowa'>„Bo imię, które nosiłem, należało do kogoś, kto miał pana. Zostawiłem je razem z panem.<br><br>Wilkosz to przezwisko. Przezwisko możesz zmienić, kiedy zechcesz, i nikt nie napisze o tym w księdze.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"wilkosz", poznaj:"wilkosz"}]};
+  SCENY.wilkosz_w2 = {portret:"weteran", kto:"Wilkosz Bezimienny",
+    tekst:"<span class='mowa'>„Wszyscy, którzy komuś zniknęli. Zbiegli chłopi, zdegradowani oficerowie, magowie, którym zabroniono, i tacy, którzy po prostu nie wytrzymali dnia w miejscu, gdzie się urodzili.<br><br>Nie mamy króla, wiecu ani kapituły. Mamy tabliczkę Grzebienia i ścianę kontraktów w Suchym Brodzie. To starcza na dziewiętnaście lat, więc pewnie starczy dalej.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"wilkosz", poznaj:"wilkosz", ef:function(){ S.poznane.odeszli_ustroj = true; }}]};
+  SCENY.wilkosz_w3 = {portret:"weteran", kto:"Wilkosz Bezimienny",
+    tekst:function(){
+      return "<span class='mowa'>„Nic uroczystego. Robisz dla nas, aż ludzie przestaną pytać, kim jesteś. Wtedy jesteś nasz i sam się zorientujesz kiedy.<br><br>Świeżak, buntownik, najemnik. Trzy stopnie i żadnej ceremonii przy żadnym z nich.”</span><br><br>"
+        + "<span class='mowa'>„Uczymy każdego stylu: białą bronią, kuszą, łukiem, wodą. Nie dlatego, że jesteśmy najlepsi. Dlatego, że nie wolno nam odmówić nikomu, kto ucieka.”</span>";
+    },
+    opcje:[{l:"Zapamiętam.", idz:"wilkosz", ef:function(){ S.poznane.sciezki_od = true; }}]};
+  SCENY.wilkosz_lista = {portret:"weteran", kto:"Wilkosz Bezimienny",
+    tekst:"Odstawia miskę. Czyta listę powoli, wodząc palcem, i przy każdym przezwisku robi krótką pauzę, jakby przypominał sobie twarz.<br><br><span class='mowa'>„Trzydzieści sześć. Jedenaście z ceną. Przy mnie ceny nie ma, tylko słowo: żywy.<br><br>Kto chce mnie żywego, ten nie chce zemsty. Ten czegoś ode mnie potrzebuje - a jedyne, co mam, to ludzie znający Ziemie Niczyje na pamięć.”</span><br><br>Zwija listę i chowa ją za pas.<br><br><span class='mowa'>„Ktoś zbiera przewodników na wschód. Zapamiętaj to zdanie. Za pół roku wszyscy będą udawali, że wiedzieli pierwsi.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"wilkosz", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.od_lista = true; S.poznane.przewodnicy_wschod = true; }}]};
+  SCENY.wilkosz_wschod = {portret:"weteran", kto:"Wilkosz Bezimienny",
+    tekst:"<span class='mowa'>„Więc słyszałeś to samo co ja: że one nie zostawiają rannych. Że idą w linii i nie łamią jej nawet po stracie.<br><br>Ludzie tak nie chodzą. Zwierzęta tym bardziej.”</span><br><br>Patrzy w dół, na ognisko na dnie wyrobiska.<br><br><span class='mowa'>„Powiem to frakcjom, kiedy przyjdzie czas. Na razie nikt nie uwierzy zbiegom. Nigdy nie wierzą, dopóki nie zaczną ginąć ich właśni.”</span>",
+    opcje:[{l:"Będę pamiętał.", idz:"wilkosz", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.demony_wschod = true; }}]};
+
+  /* ---------- STRUGA ---------- */
+  SCENY.struga = {
+    portret:"kobieta", npc:"struga", ktoNieznany:"Kobieta z mokrymi rękawami", kto:"Struga",
+    intro:{
+      tekst:"Trzyma dłoń nad wiadrem i woda w nim stoi wypukłym garbem, wyżej niż krawędź. Puszcza ją dopiero, kiedy podchodzisz.<br><br><span class='mowa'>„Sztuczka. Ale jak długo patrzyłeś, to znaczy, że warto ci pokazać coś, co sztuczką nie jest.”</span>",
+      opcje:[
+        {l:"Dlaczego woda?", idz:"struga_w1"},
+        {l:"Chcę się uczyć.", idz:"struga", poznaj:"struga"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Ogień zabija szybciej. Woda za to nie zdradza, nie kończy się i nie płonie razem z tobą, kiedy się pomylisz.”</span>",
+    opcje:[
+      {l:"Nauka", idz:"struga_nauka"},
+      {l:"Odejdź", idz:"__lok_zgorzel"}
+    ]
+  };
+  SCENY.struga_w1 = {portret:"kobieta", kto:"Struga",
+    tekst:"<span class='mowa'>„Bo nikt inny jej nie chciał. Ismaal ma ogień i ciemność, Prastary Lud ma korzenie, Nowożytni mają pieniądze, które działają szybciej niż jedno i drugie.<br><br>Nam zostało to, co leży pod nogami i czego nie da się zabrać. Wyszło nam to na dobre częściej, niż się spodziewaliśmy.”</span>",
+    opcje:[{l:"Ucz mnie.", idz:"struga", poznaj:"struga", ef:function(){ S.poznane.magia_wody = true; }}]};
+
+  /* ---------- GRZEBIEŃ ---------- */
+  SCENY.grzebien = {
+    portret:"urzednik", npc:"grzebien", ktoNieznany:"Chudy człowiek z tabliczką i rylcem", kto:"Grzebień",
+    intro:{
+      tekst:"Nie podnosi wzroku znad tabliczki. Rylec chodzi po wosku bez przerwy, jakby zapisywał także ciebie.<br><br><span class='mowa'>„Przezwisko. Nie imię, nie skąd, nie po co. Przezwisko wystarczy i wystarczy na zawsze.”</span>",
+      opcje:[
+        {l:"Po co ten spis?", idz:"grzebien_w1"},
+        {l:"Wpisz mnie.", idz:"grzebien", poznaj:"grzebien"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Kreska za robotę, data przy tych, którzy przestali przychodzić. Cała moja praca mieści się na jednej tabliczce i to o nas mówi wszystko.”</span>",
+    opcje:[
+      {l:"Daj mi pierwszą robotę.", warunekZ:{id:"od_swiezak", stan:"brak"}, dajZ:"od_swiezak", idz:"grzebien"},
+      {l:"Mam cztery worki węgla.", warunekZ:{id:"od_swiezak", stan:"aktywne"}, wymagaPrzedmiotu:"wegiel_drzewny", ile:4,
+       oddajZ:"od_swiezak", idz:"grzebien_kreska"},
+      {l:"Chcę robić coś, czego nikt nie chce.", warunekZ:{id:"od_lan1", stan:"brak"},
+       warunek:function(){ return !!(S.zadania && S.zadania.od_swiezak && S.zadania.od_swiezak.stan === "zrobione"); },
+       dajZ:"od_lan1", idz:"grzebien_nabor"},
+      {l:"Pokaż mi rejestr.", warunekZ:{id:"od_rejestr", stan:"brak"}, dajZ:"od_rejestr", idz:"grzebien_rejestr",
+       ef:function(){ dodaj("ksiega_wolnych", 1); }},
+      {l:"Przeczytałem rejestr.", warunekZ:{id:"od_rejestr", stan:"aktywne"},
+       warunek:function(){ return !!(S.przeczytane && S.przeczytane.ksiega_wolnych); }, oddajZ:"od_rejestr", idz:"grzebien_po_rejestrze"},
+      {l:"Nauka", idz:"grzebien_nauka"},
+      {l:"Odejdź", idz:"__lok_zgorzel"}
+    ]
+  };
+  SCENY.grzebien_w1 = {portret:"urzednik", kto:"Grzebień",
+    tekst:"<span class='mowa'>„Żeby ktokolwiek pamiętał. Nie mamy grobów z nazwiskami, bo nazwisk nie używamy, i nie mamy kronikarza, bo nikt by mu nie płacił.<br><br>Zostaje wosk. Kiedy tabliczka się zapełni, przepisuję ją do rejestru i zaczynam nową. Zapełniłem dziewiętnaście.”</span>",
+    opcje:[{l:"Wpisz mnie.", idz:"grzebien", poznaj:"grzebien"}]};
+  SCENY.grzebien_kreska = {portret:"urzednik", kto:"Grzebień",
+    tekst:"Waży worki w ręku, nie na wadze, i kiwa głową. Rylec robi jedną krótką kreskę.<br><br><span class='mowa'>„Jedna. Wygląda na nic, ale połowa ludzi w tym mieście nie ma ani jednej i wszyscy o tym wiedzą.”</span>",
+    opcje:[{l:"Będzie ich więcej.", idz:"grzebien"}]};
+  SCENY.grzebien_nabor = {portret:"urzednik", kto:"Grzebień",
+    tekst:"<span class='mowa'>„Coś, czego nikt nie chce. Dobrze.<br><br>Idź do Suchego Brodu, do Szpona, i powiedz, że przysyła cię Grzebień. On ma sprawę, o której nie chce mówić na głos, a to u niego znaczy, że sprawa jest zła.”</span>",
+    opcje:[{l:"Idę do Suchego Brodu.", idz:"grzebien"}]};
+  SCENY.grzebien_rejestr = {portret:"urzednik", kto:"Grzebień",
+    tekst:"Podaje ci gruby zwój przewiązany rzemieniem, trzymając go dłużej, niż trzeba.<br><br><span class='mowa'>„Czytaj do końca. Ludzie zawsze czytają pierwsze strony, gdzie są kwoty, i nigdy ostatniej, gdzie są daty.”</span>",
+    opcje:[{l:"Przeczytam.", idz:"grzebien"}]};
+  SCENY.grzebien_po_rejestrze = {portret:"urzednik", kto:"Grzebień",
+    tekst:"<span class='mowa'>„I co, policzyłeś?<br><br>Czterystu dwunastu. Wróciło dwustu dziewięćdziesięciu. Reszta ma przy przezwisku datę i nic więcej.<br><br>Teraz możesz stawiać kreski dalej. Ale już nie powiesz, że nie wiedziałeś.”</span>",
+    opcje:[{l:"Wiem, na co się piszę.", idz:"grzebien", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.od_rejestr = true; }}]};
+
+  /* ---------- CYNA ---------- */
+  SCENY.cyna = {
+    portret:"kobieta", npc:"cyna", ktoNieznany:"Kobieta ważąca coś, co nie jest srebrem", kto:"Cyna",
+    intro:{
+      tekst:"Sypie na szalkę drobne, matowe krążki i patrzy na ciebie ponad wagą.<br><br><span class='mowa'>„Nie pytaj, co ważę. Pytaj, ile dam - to jedyne pytanie, na które tu odpowiadam.”</span>",
+      opcje:[
+        {l:"Skupujesz wszystko?", idz:"cyna_w1"},
+        {l:"Chcę handlować.", idz:"cyna", poznaj:"cyna"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Biorę wszystko poza dwiema rzeczami: ludźmi i listami. Reszta to towar.”</span>",
+    opcje:[
+      {l:"Co z psami na dnie wyrobiska?", warunekZ:{id:"od_psy", stan:"brak"}, dajZ:"od_psy", idz:"cyna"},
+      {l:"Psy już nikomu nie przeszkodzą.", warunekZ:{id:"od_psy", stan:"gotowe"}, oddajZ:"od_psy", idz:"cyna"},
+      {l:"Handel", idz:"kram_cyna"},
+      {l:"Odejdź", idz:"__lok_zgorzel"}
+    ]
+  };
+  SCENY.cyna_w1 = {portret:"kobieta", kto:"Cyna",
+    tekst:"<span class='mowa'>„Prawie. W Zgorzeli nie pyta się o pochodzenie towaru, bo połowa miasta sama jest towarem, którego ktoś kiedyś szukał.<br><br>Ale monety bitej poza naszymi ziemiami nie wezmę. Taka moneta zawsze ciągnie za sobą kogoś, kto ją wydał.”</span>",
+    opcje:[{l:"Rozsądnie.", idz:"cyna", poznaj:"cyna"}]};
+
+  /* ---------- SZPON ---------- */
+  SCENY.szpon = {
+    portret:"weteran", npc:"szpon", ktoNieznany:"Człowiek z ręką w łubkach i drugą na rękojeści", kto:"Szpon",
+    intro:{
+      tekst:"Stoi przy ścianie kontraktów i przekłada kartki zdrową ręką. Druga, w łubkach, wisi bezużytecznie i wyraźnie mu to nie przeszkadza.<br><br><span class='mowa'>„Jeśli przyszedłeś się litować nad ręką, to wyjdź. Jeśli przyszedłeś po robotę, to stań tak, żebym cię widział cały.”</span>",
+      opcje:[
+        {l:"Przysyła mnie Grzebień.", idz:"szpon", poznaj:"szpon"},
+        {l:"Co się stało z ręką?", idz:"szpon_w1"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        od:"<span class='mowa'>„Swój. To znaczy, że mogę cię posłać tam, gdzie obcego bym nie posłał - i że będę potem musiał na ciebie czekać.”</span>",
+        sk:"<span class='mowa'>„Ismaal. Uczyłem trzech waszych. Dwóch było lepszych ode mnie i obaj nie żyją, bo w waszym wojsku umiejętność nie chroni przed rozkazem.”</span>",
+        nw:"<span class='mowa'>„Nowożytny. Wy wynajmujecie nas, kiedy trzeba zrobić coś, czego nie da się wpisać do ksiąg. Płacicie dobrze i nie patrzycie w oczy.”</span>",
+        pl:"<span class='mowa'>„Prastary Lud. Wasi strzelają lepiej niż moi. Za to moi biją się dalej niż do pierwszej rany.”</span>",
+        brak:"<span class='mowa'>„Bez barw i bez szkoły. Tu się to naprawia albo tu się z tym umiera.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Grzebień mówi, że masz sprawę.", warunekZ:{id:"od_lan1", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("od_lan1"); }, idz:"szpon_kontrakt"},
+      {l:"Ten najemnik już nikomu nie odpowie.", warunekZ:{id:"od_lan2", stan:"gotowe"}, oddajZ:"od_lan2", idz:"szpon_sakwa"},
+      {l:"Nauka", idz:"szpon_nauka"},
+      {l:"Kim jest najemnik u Odeszłych?", idz:"szpon_w2"},
+      {l:"Odejdź", idz:"__lok_suchy_brod"}
+    ]
+  };
+  SCENY.szpon_w1 = {portret:"weteran", kto:"Szpon",
+    tekst:"<span class='mowa'>„Kontrakt, którego nie powinienem był brać, i tarcza, której nie powinienem był stawiać.<br><br>Uczę teraz, bo ręka do uczenia wystarczy jedna. Głos też jeden i jak dotąd nikt nie zgłaszał, że za cichy.”</span>",
+    opcje:[{l:"Ucz mnie.", idz:"szpon", poznaj:"szpon"}]};
+  SCENY.szpon_w2 = {portret:"weteran", kto:"Szpon",
+    tekst:"<span class='mowa'>„Trzeci stopień i ostatni. Świeżak nie wie nic, buntownik wie już, przed czym uciekł, a najemnik wie, ile to było warte w monecie.<br><br>Nie mamy rycerzy ani strażników. Mamy ludzi, którzy potrafią wszystko po trochu i jedną rzecz naprawdę dobrze. Wybierz sobie tę jedną wcześnie.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"szpon", ef:function(){ S.poznane.sciezka_najemnik = true; }}]};
+  SCENY.szpon_kontrakt = {portret:"weteran", kto:"Szpon",
+    tekst:"Odciąga cię za przyczółek, poza zasięg cudzych uszu.<br><br><span class='mowa'>„Trzech moich wróciło z pieniędzmi, których nie mogli zarobić u nikogo, kogo znam. Dwóch już nie ma w mieście. Trzeci ćwiczy sam w wyschłym korycie i przestał ze mną rozmawiać.<br><br>Zapytaj go ty. Mnie by nie podpuścił bliżej niż na dziesięć kroków.”</span>",
+    opcje:[{l:"Idę do koryta.", dajZ:"od_lan2", idz:"szpon"}]};
+  SCENY.szpon_sakwa = {portret:"weteran", kto:"Szpon",
+    tekst:"Wysypuje zawartość sakwy na kamień i rozgarnia monety zdrową ręką.<br><br><span class='mowa'>„Bita nie u nas i nie w Nowym Ostrowie. Takiej monety nikt tu nie wymieni jawnie.<br><br>W Krzywych Dołach wymienią wszystko. Idź do Ropuchy i powiedz, że pytam nie jako Szpon, tylko jako ten, który jej kiedyś nie wydał.”</span>",
+    opcje:[{l:"Jadę do Krzywych Dołów.", dajZ:"od_lan3", idz:"szpon"}]};
+
+  /* ---------- RYZA ---------- */
+  SCENY.ryza = {
+    portret:"kobieta", npc:"ryza", ktoNieznany:"Kobieta naciągająca kuszę nogą", kto:"Ryza",
+    intro:{
+      tekst:"Opiera kuszę o ziemię, wkłada stopę w strzemię i naciąga cięciwę jednym płynnym ruchem, patrząc przy tym na ciebie.<br><br><span class='mowa'>„Umiesz to zrobić raz. Sztuka w tym, żeby umieć to zrobić czterdziesty raz, kiedy ci się już trzęsą nogi.”</span>",
+      opcje:[
+        {l:"Kusza czy łuk?", idz:"ryza_w1"},
+        {l:"Naucz mnie.", idz:"ryza", poznaj:"ryza"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Kusza nie wybacza pośpiechu, ale wybacza słabe ręce. Dla większości z nas to lepszy układ.”</span>",
+    opcje:[
+      {l:"Co wisi na ścianie kontraktów?", warunekZ:{id:"od_kontrakt", stan:"brak"}, dajZ:"od_kontrakt", idz:"ryza"},
+      {l:"Łowca głów spod Podkowy nie żyje.", warunekZ:{id:"od_kontrakt", stan:"aktywne"},
+       warunek:function(){ return !!(S.zabici && S.zabici.lowca_glow); }, oddajZ:"od_kontrakt", idz:"ryza_kontrakt"},
+      {l:"Nauka", idz:"ryza_nauka"},
+      {l:"Odejdź", idz:"__lok_suchy_brod"}
+    ]
+  };
+  SCENY.ryza_w1 = {portret:"kobieta", kto:"Ryza",
+    tekst:"<span class='mowa'>„Łuku uczysz się dziesięć lat, kuszy dziesięć dni. Dlatego panowie na nizinach zakazywali kusz chłopom, a łuków nie.<br><br>To wszystko, co musisz wiedzieć o kuszy i o panach.”</span>",
+    opcje:[{l:"Wezmę kuszę.", idz:"ryza", poznaj:"ryza"}]};
+  SCENY.ryza_kontrakt = {portret:"kobieta", kto:"Ryza",
+    tekst:"Zdejmuje kartkę ze ściany, składa ją na czworo i wrzuca do ognia pod kotłem.<br><br><span class='mowa'>„Wisiał trzy tygodnie. Trzy tygodnie nikt z nas nie chciał go tknąć, bo za takimi ludźmi zawsze ktoś stoi.<br><br>Teraz zobaczymy, kto stał za tym. I tak się dowiemy - oni zawsze przysyłają drugiego.”</span>",
+    opcje:[{l:"Będę czekał na drugiego.", idz:"ryza"}]};
+
+  /* ---------- MIEDZA ---------- */
+  SCENY.miedza = {
+    portret:"kobieta", npc:"miedza", ktoNieznany:"Karczmarka z rachunkiem w głowie", kto:"Miedza",
+    intro:{
+      tekst:"Wyciera kufel ścierką, która niczego już nie wyciera, i liczy coś pod nosem.<br><br><span class='mowa'>„Siadaj albo nie zasłaniaj. Trzecia możliwość jest, ale kończy się na dworze.”</span>",
+      opcje:[
+        {l:"Kto tu przychodzi?", idz:"miedza_w1"},
+        {l:"Usiądę.", idz:"miedza", poznaj:"miedza"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Karczma w Suchym Brodzie to nie miejsce na rozmowy. To miejsce, gdzie się czeka, aż ktoś przyjdzie z robotą.”</span>",
+    opcje:[
+      {l:"Potrzebujesz węgorzy?", warunekZ:{id:"od_ryby", stan:"brak"}, dajZ:"od_ryby", idz:"miedza"},
+      {l:"Mam cztery węgorze.", warunekZ:{id:"od_ryby", stan:"aktywne"}, wymagaPrzedmiotu:"wegorz", ile:4,
+       oddajZ:"od_ryby", idz:"miedza_ryby"},
+      {l:"Nocleg i wyszynk", idz:"karczma_brod"},
+      {l:"Odejdź", idz:"__lok_suchy_brod"}
+    ]
+  };
+  SCENY.miedza_w1 = {portret:"kobieta", kto:"Miedza",
+    tekst:"<span class='mowa'>„Wszyscy. Ismaalscy kwatermistrzowie w cywilnym płaszczu, kupcy z Nowego Ostrowa, raz nawet ktoś z puszczy.<br><br>Płacą tym samym, jedzą to samo i tak samo kłamią o tym, po co przyjechali. Karczma wyrównuje ludzi lepiej niż wojna.”</span>",
+    opcje:[{l:"Trafne.", idz:"miedza", poznaj:"miedza"}]};
+  SCENY.miedza_ryby = {portret:"kobieta", kto:"Miedza",
+    tekst:"Ogląda węgorze pod światło, jednego odkłada na bok.<br><br><span class='mowa'>„Trzy świeże, jeden wczorajszy. Wczorajszego dam najemnikom, oni i tak nie poznają.<br><br>Masz zapłatę i masz u mnie kąt, gdyby kiedyś zrobiło się w mieście za gorąco.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"miedza"}]};
+
+  /* ---------- ŚLEPA NAWKA ---------- */
+  SCENY.nawka = {
+    portret:"kobieta", npc:"nawka", ktoNieznany:"Starucha z bielmem na obu oczach", kto:"Ślepa Nawka",
+    intro:{
+      tekst:"Siedzi bokiem do jeziora, choć nic nie widzi. Kiedy podchodzisz, odwraca głowę dokładnie w twoją stronę.<br><br><span class='mowa'>„Woda mi mówi, gdzie stoisz. Nie zachwycaj się - powiedziałaby to każdemu, kto by słuchał tak długo jak ja.”</span>",
+      opcje:[
+        {l:"Czym jest magia wody?", idz:"nawka_w1"},
+        {l:"Chcę się uczyć.", idz:"nawka", poznaj:"nawka"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Najsłabsza szkoła świata. Uczę jej trzydzieści lat i nie mam z tego powodu żadnych złudzeń ani żadnego wstydu.”</span>",
+    opcje:[
+      {l:"Sprawdzisz mnie?", warunekZ:{id:"od_woda", stan:"brak"}, dajZ:"od_woda", idz:"nawka"},
+      {l:"Mam trzy wywary mgliste.", warunekZ:{id:"od_woda", stan:"aktywne"}, wymagaPrzedmiotu:"mikst_mglowa", ile:3,
+       oddajZ:"od_woda", idz:"nawka_wywar"},
+      {l:"Co jest w tej mgle nad jeziorem?", idz:"nawka_w2"},
+      {l:"Nauka", idz:"nawka_nauka"},
+      {l:"Odejdź", idz:"__lok_mgielnik"}
+    ]
+  };
+  SCENY.nawka_w1 = {portret:"kobieta", kto:"Ślepa Nawka",
+    tekst:"<span class='mowa'>„Ogień pyta: jak mocno. Ciemność pyta: jak długo. Woda pyta tylko: dokąd.<br><br>Nie zabijesz nią szybko. Ale spowolnisz, przewrócisz, zmyjesz krew z rany i doprowadzisz człowieka do brzegu. Więcej ludzi uratowała woda niż zabiła jakakolwiek inna szkoła.”</span>",
+    opcje:[{l:"To mi wystarczy.", idz:"nawka", poznaj:"nawka", ef:function(){ S.poznane.magia_wody = true; }}]};
+  SCENY.nawka_w2 = {portret:"kobieta", kto:"Ślepa Nawka",
+    tekst:function(){
+      return "<span class='mowa'>„Mgła stoi nad tym jeziorem od dnia, w którym pierwszy z nas tu przyszedł. Nie schodzi latem, nie schodzi przy wietrze i nie schodzi, kiedy się ją rozgania.<br><br>Woda mówi mi, że jezioro nie ma dna w jednym miejscu. Nie 'jest głębokie'. Nie ma dna.”</span><br><br>"
+        + (S.wiedza && S.wiedza.rubin
+            ? "<span class='mowa'>„Widzę po twoim oddechu, że słyszałeś już coś o bramach, których nikt nie stawiał. To dobrze. Będzie ci łatwiej uwierzyć, kiedy przyjdzie pora.”</span>"
+            : "<span class='mowa'>„Nie pytaj mnie o więcej. Nie dlatego, że nie powiem - dlatego, że nie umiem.”</span>");
+    },
+    opcje:[{l:"Zapamiętam.", idz:"nawka", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.mgielnik_jezioro = true; }}]};
+  SCENY.nawka_wywar = {portret:"kobieta", kto:"Ślepa Nawka",
+    tekst:"Odkorkowuje jeden i wącha, potem zanurza w nim palec.<br><br><span class='mowa'>„Nabrane z głębi, nie z brzegu. Brzegowy pachnie trzciną, a ten pachnie zimnem.<br><br>Zszedłeś do wody, choć się bałeś. Uczę tylko takich - tacy nie uciekają w połowie zaklęcia.”</span>",
+    opcje:[{l:"Zaczynajmy.", idz:"nawka", ef:function(){ S.umie.uczen_wody = true; }}]};
+
+  /* ---------- KROPLA ---------- */
+  SCENY.kropla = {
+    portret:"urzednik", npc:"kropla", ktoNieznany:"Chłopak przemoczony do suchej nitki", kto:"Kropla",
+    intro:{
+      tekst:"Stoi w wodzie po kolana i próbuje utrzymać nad dłonią kulę wody, która co chwila mu spada.<br><br><span class='mowa'>„Nie patrz. Serio, nie patrz, bo wtedy zawsze spada.”</span>",
+      opcje:[
+        {l:"Od dawna się uczysz?", idz:"kropla_w1"},
+        {l:"Odwrócę wzrok.", idz:"kropla", poznaj:"kropla"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Nawka mówi, że pierwsze dwa lata to nie nauka, tylko sprawdzanie, czy się nie znudzi. Jestem w drugim.”</span>",
+    opcje:[
+      {l:"Coś cię gryzie.", warunekZ:{id:"od_utopiec", stan:"brak"}, dajZ:"od_utopiec", idz:"kropla_utopiec"},
+      {l:"To z jeziora już nie wyjdzie na brzeg.", warunekZ:{id:"od_utopiec", stan:"gotowe"}, oddajZ:"od_utopiec", idz:"kropla_koniec"},
+      {l:"Odejdź", idz:"__lok_mgielnik"}
+    ]
+  };
+  SCENY.kropla_w1 = {portret:"urzednik", kto:"Kropla",
+    tekst:"<span class='mowa'>„Rok i osiem miesięcy. Uciekłem z Kuźnic Wodnych, bo tam mnie chcieli przy młocie do końca życia.<br><br>Tu jestem tylko mokry. To duża poprawa.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"kropla", poznaj:"kropla"}]};
+  SCENY.kropla_utopiec = {portret:"urzednik", kto:"Kropla",
+    tekst:"<span class='mowa'>„Patrzyłem w mgłę, choć nie wolno. I coś stamtąd wyszło na brzeg, na czworakach, a potem wróciło do wody.<br><br>Jak powiem Nawce, że patrzyłem, to mnie odeśle. Jak nie powiem, a ono weźmie kogoś z miasta, to będzie moja wina. Widzisz, w czym rzecz.”</span>",
+    opcje:[{l:"Zajmę się tym.", idz:"kropla"}]};
+  SCENY.kropla_koniec = {portret:"urzednik", kto:"Kropla",
+    tekst:"Wychodzi z wody pierwszy raz, odkąd cię widział.<br><br><span class='mowa'>„Dziękuję. Nie mam czym zapłacić, więc powiem ci coś, czego nie mówimy obcym: Nawka od miesiąca nie śpi. Siedzi nad wodą i słucha.<br><br>Mówi, że jezioro zaczęło odpowiadać w innym języku.”</span>",
+    opcje:[{l:"Uważaj na siebie.", idz:"kropla", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.jezioro_glos = true; }}]};
+
+  /* ---------- BRUZDA ---------- */
+  SCENY.bruzda = {
+    portret:"kowal", npc:"bruzda", ktoNieznany:"Człowiek z wiosłem zamiast laski", kto:"Przewoźnik Bruzda",
+    intro:{
+      tekst:"Opiera się na wiośle jak na kiju i patrzy w mgłę.<br><br><span class='mowa'>„Wożę po tym jeziorze od trzydziestu lat i przepłynąłem je w poprzek dwa razy. Oba razy przez pomyłkę.”</span>",
+      opcje:[
+        {l:"Co jest po drugiej stronie?", idz:"bruzda_w1"},
+        {l:"Zostań z tym.", idz:"bruzda", poznaj:"bruzda"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Wożę wzdłuż brzegu. Kto chce w poprzek, ten płynie sam i zwykle nie wraca po wiosło.”</span>",
+    opcje:[
+      {l:"Handel", idz:"kram_mgielnik"},
+      {l:"Odejdź", idz:"__lok_mgielnik"}
+    ]
+  };
+  SCENY.bruzda_w1 = {portret:"kowal", kto:"Przewoźnik Bruzda",
+    tekst:"<span class='mowa'>„Brzeg. Zwykły, z trzcinami. Byłem tam dwa razy i za każdym razem trwało to inaczej długo - raz pół dnia, raz cztery.<br><br>Ta sama łódź, ten sam wiatr, ten sam ja. Od tamtej pory wożę wzdłuż.”</span>",
+    opcje:[{l:"Nie dziwię się.", idz:"bruzda", poznaj:"bruzda"}]};
+
+  /* ---------- KULAWY KSIN ---------- */
+  SCENY.ksin = {
+    portret:"kowal", npc:"ksin", ktoNieznany:"Kowal, który kuje na siedząco", kto:"Kulawy Ksin",
+    intro:{
+      tekst:"Siedzi na niskim stołku przy kowadle obniżonym pod jego wzrost. Kuje krótkimi, oszczędnymi uderzeniami.<br><br><span class='mowa'>„Wszystko, co potrzebne, dałem sobie na wysokość siedzenia. Kto stoi przy kowadle, ten się tylko szybciej męczy.”</span>",
+      opcje:[
+        {l:"Kujesz dla całego Suchego Brodu?", idz:"ksin_w1"},
+        {l:"Pokaż, co masz.", idz:"ksin", poznaj:"ksin"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Robię broń, która ma działać, a nie wyglądać. U nas to jedno i to samo, tylko w innej kolejności niż na nizinach.”</span>",
+    opcje:[
+      {l:"Handel", idz:"kuznia_podkowa"},
+      {l:"Nauka", idz:"ksin_nauka"},
+      {l:"Odejdź", idz:"__lok_podkowa"}
+    ]
+  };
+  SCENY.ksin_w1 = {portret:"kowal", kto:"Kulawy Ksin",
+    tekst:"<span class='mowa'>„Dla Brodu, dla Zgorzeli i dla każdego, kto przyjdzie z węglem. Bez węgla nie kuję nikomu, nawet Wilkoszowi.<br><br>Szabla popielna to moja robota. Hartuję w popiele z mielerzy - dlatego jest szara i dlatego nie błyska nocą. Wygląda jak zepsuta. Kosztuje jak niezepsuta.”</span>",
+    opcje:[{l:"Pokaż towar.", idz:"ksin", poznaj:"ksin"}]};
+
+  /* ---------- BOSA WANDA ---------- */
+  SCENY.wanda = {
+    portret:"kobieta", npc:"wanda", ktoNieznany:"Kobieta prowadząca trzy konie naraz", kto:"Bosa Wanda",
+    intro:{
+      tekst:"Idzie boso po ubitej ziemi wybiegu, trzymając trzy konie za uzdy w jednej ręce.<br><br><span class='mowa'>„Boso, bo koń słyszy but i nie słyszy stopy. Trzydzieści lat i ani razu żaden mnie nie kopnął.”</span>",
+      opcje:[
+        {l:"Skąd macie tyle koni?", idz:"wanda_w1"},
+        {l:"Nie przeszkadzam.", idz:"wanda", poznaj:"wanda"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Konia się nie kupuje na oko. Konia się kupuje na słuch: jak oddycha po biegu.”</span>",
+    opcje:[
+      {l:"Potrzebujesz rzemieni?", warunekZ:{id:"od_rzemien", stan:"brak"}, dajZ:"od_rzemien", idz:"wanda"},
+      {l:"Mam sześć rzemieni.", warunekZ:{id:"od_rzemien", stan:"aktywne"}, wymagaPrzedmiotu:"rzemien", ile:6,
+       oddajZ:"od_rzemien", idz:"wanda_rzemien"},
+      {l:"Odejdź", idz:"__lok_podkowa"}
+    ]
+  };
+  SCENY.wanda_w1 = {portret:"kobieta", kto:"Bosa Wanda",
+    tekst:function(){
+      return "<span class='mowa'>„Kupujemy od wszystkich czterech. Ismaal sprzedaje wybrakowane, Nowożytni sprzedaje drogie i zdrowe, Prastary Lud w ogóle nie sprzedaje, więc kupujemy od tych, którzy od nich kradną.<br><br>A potem wszyscy czterej przyjeżdżają tu po konie, których u siebie nie mają. Nie widzę w tym sprzeczności. Widzę zarobek.”</span><br><br>"
+        + ocenaFrakcyjna({
+          nw:"<span class='mowa'>„Twoi płacą najlepiej i targują się najdłużej. Nie rozumiem tego do dziś.”</span>",
+          sk:"<span class='mowa'>„Twoi biorą na kredyt i oddają po kampanii. Zdarza się, że kampania nie wraca.”</span>",
+          brak:"<span class='mowa'>„Ty nie masz barw, więc zapłacisz od razu. Tak to działa.”</span>"
+        });
+    },
+    opcje:[{l:"Uczciwie.", idz:"wanda", poznaj:"wanda"}]};
+  SCENY.wanda_rzemien = {portret:"kobieta", kto:"Bosa Wanda",
+    tekst:"Rozciąga każdy pas między rękami, sprawdzając, czy nie pęka na zgięciu.<br><br><span class='mowa'>„Dobre. Nie moczone na siłę, tylko suszone powoli.<br><br>Będzie z tego uprząż na trzy konie i jeden pas dla ciebie, jak kiedyś będziesz musiał kogoś związać. Nie pytaj, skąd wiem, że będziesz musiał.”</span>",
+    opcje:[{l:"Nie pytam.", idz:"wanda"}]};
+
+  /* ---------- ZGAGA ---------- */
+  SCENY.zgaga = {
+    portret:"kowal", npc:"zgaga", ktoNieznany:"Człowiek z twarzą czarną od sadzy", kto:"Zgaga",
+    intro:{
+      tekst:"Obchodzi mielerz dookoła i dokłada darni tam, gdzie z kopca idzie zbyt jasny dym.<br><br><span class='mowa'>„Mielerz to nie ognisko. Mielerz ma się dusić, nie palić. Jak zobaczysz płomień, to znaczy, że ktoś zawinił, i zwykle jestem to ja.”</span>",
+      opcje:[
+        {l:"Ile trwa jeden wypał?", idz:"zgaga_w1"},
+        {l:"Nie przeszkadzam.", idz:"zgaga", poznaj:"zgaga"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Cała ta wieś stoi na węglu i przez węgiel jest szara. Przywykasz po tygodniu.”</span>",
+    opcje:[
+      {l:"Potrzebujesz węgla do Podkowy?", warunekZ:{id:"od_wegiel", stan:"brak"}, dajZ:"od_wegiel", idz:"zgaga"},
+      {l:"Mam sześć worków węgla.", warunekZ:{id:"od_wegiel", stan:"aktywne"}, wymagaPrzedmiotu:"wegiel_drzewny", ile:6,
+       oddajZ:"od_wegiel", idz:"zgaga_wegiel"},
+      {l:"Nauka", idz:"zgaga_nauka"},
+      {l:"Odejdź", idz:"__lok_popielisko"}
+    ]
+  };
+  SCENY.zgaga_w1 = {portret:"kowal", kto:"Zgaga",
+    tekst:"<span class='mowa'>„Osiem dni i osiem nocy bez odejścia. Śpi się przy kopcu, po dwie godziny.<br><br>Dlatego wypalacz nigdy nie jest sam. Zawsze jest dwóch: jeden śpi, drugi patrzy w dym.”</span>",
+    opcje:[{l:"Ciężki chleb.", idz:"zgaga", poznaj:"zgaga"}]};
+  SCENY.zgaga_wegiel = {portret:"kowal", kto:"Zgaga",
+    tekst:"Potrząsa jednym z worków przy uchu i kiwa głową.<br><br><span class='mowa'>„Dźwięczy. Dobry węgiel dźwięczy jak potłuczona gliniana miska, zły chrzęści jak piach.<br><br>Ksin nie będzie miał do mnie pretensji jeszcze przez trzy tygodnie. To u nas nazywa się spokój.”</span>",
+    opcje:[{l:"Miłego spokoju.", idz:"zgaga"}]};
+
+  /* ---------- SĘK ---------- */
+  SCENY.sek = {
+    portret:"kowal", npc:"sek", ktoNieznany:"Drwal z siekierą wetkniętą za pas", kto:"Sęk",
+    intro:{
+      tekst:"Siedzi na pniu przewróconego dębu i ostrzy siekierę ruchami tak równymi, że brzmi to jak zegar.<br><br><span class='mowa'>„Wiatr położył tu pół lasu w jedną noc. My z tego żyjemy od dwunastu lat i jeszcze nam nie zeszło do połowy.”</span>",
+      opcje:[
+        {l:"Nie boicie się tu mieszkać?", idz:"sek_w1"},
+        {l:"Mów dalej.", idz:"sek", poznaj:"sek"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Drewno, węgiel, sucha kora. Wszystko, co Popielisko potem zamienia w czerń.”</span>",
+    opcje:[
+      {l:"Co z tym odyńcem?", warunekZ:{id:"od_dzik", stan:"brak"}, dajZ:"od_dzik", idz:"sek"},
+      {l:"Odyniec nie poharata już nikogo.", warunekZ:{id:"od_dzik", stan:"gotowe"}, oddajZ:"od_dzik", idz:"sek_dzik"},
+      {l:"Nauka", idz:"sek_nauka"},
+      {l:"Odejdź", idz:"__lok_wykrot"}
+    ]
+  };
+  SCENY.sek_w1 = {portret:"kowal", kto:"Sęk",
+    tekst:"<span class='mowa'>„Boimy się. Tylko że tu nikt nas nie szuka, bo nikt nie wierzy, że da się mieszkać w wywrotach.<br><br>Strach przed lasem jest tańszy niż strach przed ludźmi. Sprawdziliśmy oba.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"sek", poznaj:"sek"}]};
+  SCENY.sek_dzik = {portret:"kowal", kto:"Sęk",
+    tekst:"Odkłada osełkę i pierwszy raz przestaje ostrzyć.<br><br><span class='mowa'>„Stary był, co? Siwy na karku.<br><br>Chodził tu, zanim myśmy przyszli. Nie mam z tego radości, ale mam dwóch ludzi, którzy jutro wyjdą do roboty bez oglądania się za siebie.”</span>",
+    opcje:[{l:"Tak wychodzi.", idz:"sek"}]};
+
+  /* ---------- ROPUCHA ---------- */
+  SCENY.ropucha = {
+    portret:"kobieta", npc:"ropucha", ktoNieznany:"Niska kobieta o bardzo niskim głosie", kto:"Ropucha",
+    intro:{
+      tekst:"Siedzi w wejściu do ziemianki, na progu, tak że nie da się wejść ani wyjść bez jej zgody.<br><br><span class='mowa'>„Wchodzisz z jednej strony, wychodzisz z drugiej. Trzeciej możliwości w tej wsi nie ma i to jest cała nasza konstytucja.”</span>",
+      opcje:[
+        {l:"Czym handlujesz?", idz:"ropucha_w1"},
+        {l:"Nic nie chcę, na razie.", idz:"ropucha", poznaj:"ropucha"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Nie sprzedaję jawnie i nie kupuję jawnie. Za to nigdy nie kłamię o cenie - kłamstwo o cenie to jedyna rzecz, za którą u nas się bije.”</span>",
+    opcje:[
+      {l:"Szpon pyta o obcą monetę.", warunekZ:{id:"od_lan3", stan:"aktywne"}, oddajZ:"od_lan3", idz:"ropucha_moneta"},
+      {l:"Mam listę imion od łowcy głów.", warunekZ:{id:"od_lan4", stan:"gotowe"}, oddajZ:"od_lan4", idz:"ropucha_lista"},
+      {l:"Kto ściąga myto w twoich przekopach?", warunekZ:{id:"od_zbiry", stan:"brak"}, dajZ:"od_zbiry", idz:"ropucha"},
+      {l:"Zbiry już nikogo nie zatrzymają.", warunekZ:{id:"od_zbiry", stan:"aktywne"},
+       warunek:function(){ return !!(S.zabici && S.zabici.zbir_ropuchy); }, oddajZ:"od_zbiry", idz:"ropucha"},
+      {l:"Nauka", idz:"ropucha_nauka"},
+      {l:"Odejdź", idz:"__lok_krzywe_doly"}
+    ]
+  };
+  SCENY.ropucha_w1 = {portret:"kobieta", kto:"Ropucha",
+    tekst:"<span class='mowa'>„Solą bez cła, żelazem bez pieczęci i wiadomościami, których nikt nie chce nieść w torbie z herbem.<br><br>Największy zarobek jest na wiadomościach. Nie ważą nic, nie psują się i nikt ich nie waży na rogatce.”</span>",
+    opcje:[{l:"Sprytnie.", idz:"ropucha", poznaj:"ropucha"}]};
+  SCENY.ropucha_moneta = {portret:"kobieta", kto:"Ropucha",
+    tekst:"Bierze jedną monetę, kładzie ją na języku, wypluwa i wyciera o rękaw.<br><br><span class='mowa'>„Smakuje obco. Za dużo cyny, za mało srebra i bita stemplem, którego nie znam - a znam wszystkie cztery.<br><br>Przywiózł ją człowiek w czystym płaszczu i brudnych butach. Miał ze sobą listę: trzydzieści sześć przezwisk, przy jedenastu kwoty. Nie wzięłam jej, bo takich rzeczy się nie trzyma w domu.<br><br>Siedzi teraz na dnie wyrobiska w Zgorzeli i porównuje twarze przy ognisku. Ognisko jest jedyne, więc każdy tam kiedyś przyjdzie.”</span>",
+    opcje:[{l:"Idę po niego.", dajZ:"od_lan4", idz:"ropucha"}]};
+  SCENY.ropucha_lista = {portret:"kobieta", kto:"Ropucha",
+    tekst:"Rozwija listę na kolanie, przesuwa palcem po kolumnie kwot i zatrzymuje się w jednym miejscu.<br><br><span class='mowa'>„Tu. Przy Wilkoszu nie ma ceny. Jest napisane: żywy.<br><br>Za trupy płaci się z zemsty albo z rachunku. Za żywych płaci ktoś, kto czegoś potrzebuje i nie umie tego wziąć siłą.<br><br>Nieś to na górną półkę, do niego. I nie zatrzymuj się po drodze, nawet jeśli ktoś cię zawoła po przezwisku.”</span>",
+    opcje:[{l:"Idę do Zgorzeli.", dajZ:"od_lan5", idz:"ropucha", ef:function(){ dodaj("lista_imion", 1); }}]};
+
+  /* ---------- MIEJSCA: NOCLEGI I HANDEL ---------- */
+  SCENY.nora_zgorzel = {
+    tekst:"Nora na drugiej półce: wykuta w skale izba z pryczami w dwóch rzędach i jednym oknem, przez które widać tylko przeciwległą ścianę wyrobiska.",
+    opcje:[
+      {l:"Prześpij noc na pryczy (10 godzin, 4 zł)", warunek:function(){ return S.zloto >= 4; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"zgorzel", tekst:"Skała trzyma ciepło z dnia. Śpisz twardo i nikt cię nie budzi, bo tu nikt nie wstaje o świcie."},
+       ef:function(){ S.zloto -= 4; }},
+      {l:"Przesiedź na półce (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"zgorzel",
+        tekst:"Siedzisz z nogami nad przepaścią i patrzysz, jak miasto załatwia swoje sprawy trzy poziomy niżej."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_zgorzel"}
+    ]
+  };
+  SCENY.kram_cyna = {kto:"Kram Cyny", portret:"kobieta", handel:true,
+    oferta:["rzemien","wegiel_drzewny","pierscien_cynowy","suchar_zolnierski","mikst_zycia","ksiega_wolnych"],
+    tekst:"Kram bez szyldu, za to z wagą, która stoi krzywo w stronę Cyny. Wszyscy o tym wiedzą i wszyscy tu handlują.",
+    opcje:[{l:"Odejdź od kramu", idz:"__lok_zgorzel"}]};
+  SCENY.zbrojownia_zgorzel = {kto:"Zbrojownia wolnych rąk", portret:"weteran", handel:true,
+    oferta:["kord_najemniczy","kaftan_przeszywany","kolczyk_najemnika","strzaly","gorzalka_zgorzelska","mikst_zycia"],
+    tekst:"Broń leży tu w skrzyniach, nie na kołkach - żeby dało się ją wynieść w cztery minuty, gdyby zaszła potrzeba.",
+    opcje:[{l:"Wyjdź", idz:"__lok_zgorzel"}]};
+  SCENY.karczma_brod = {
+    tekst:"Karczma Pod Suchą Wodą: dach z płótna naciągnięty między dwa kamienne przyczółki, długie stoły i kocioł, który nie gaśnie nigdy.",
+    opcje:[
+      {l:"Prześpij noc pod płótnem (10 godzin, 5 zł)", warunek:function(){ return S.zloto >= 5; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"suchy_brod", tekst:"Przez pół nocy ktoś się kłóci o zapłatę, ale i tak zasypiasz - a rano obaj piją razem."},
+       ef:function(){ S.zloto -= 5; }},
+      {l:"Posiedź przy kotle (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"suchy_brod",
+        tekst:"Słuchasz, kto skąd wrócił i za ile. Wiedza wieczorem tania, rano droga."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_suchy_brod"}
+    ]
+  };
+  SCENY.kramy_brod = {kto:"Kramy kontraktowe", portret:"kobieta", handel:true,
+    oferta:["kusza_rzemienna","strzaly","polewka_grochowa","suchar_zolnierski","rzemien","mikst_zycia","mikst_many"],
+    tekst:"Kramy stoją pod ścianą kontraktów, żeby każdy, kto właśnie wziął robotę, mógł od razu dokupić to, czego mu brakuje.",
+    opcje:[{l:"Odejdź od kramów", idz:"__lok_suchy_brod"}]};
+  SCENY.szopa_mgielnik = {
+    tekst:"Szopa nad samą wodą, na palach. W środku suche siano, na zewnątrz mgła, która wchodzi przez każdą szparę i tak.",
+    opcje:[
+      {l:"Prześpij noc w szopie (10 godzin, 4 zł)", warunek:function(){ return S.zloto >= 4; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"mgielnik", tekst:"Woda uderza o pale w równym rytmie. Budzisz się wilgotny i dziwnie wypoczęty."},
+       ef:function(){ S.zloto -= 4; }},
+      {l:"Posiedź na pomoście (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"mgielnik",
+        tekst:"Patrzysz w mgłę i po czwartej godzinie zaczynasz rozumieć, dlaczego mieszkańcy tego nie robią."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_mgielnik"}
+    ]
+  };
+  SCENY.kram_mgielnik = {kto:"Kram magów wody", portret:"kobieta", handel:true,
+    oferta:["mikst_mglowa","plaszcz_mglisty","wegorz","mikst_many","bagno","szczupak"],
+    tekst:"Wszystko tu jest zawinięte w natłuszczone płótno, bo inaczej rozmiękłoby przez jedną noc.",
+    opcje:[{l:"Odejdź od kramu", idz:"__lok_mgielnik"}]};
+  SCENY.poddasze_podkowa = {
+    tekst:"Poddasze nad stajnią, wyścielone słomą. Z dołu idzie ciepło koni i ich spokojne przestępowanie z nogi na nogę.",
+    opcje:[
+      {l:"Prześpij noc na sianie (10 godzin, 3 zł)", warunek:function(){ return S.zloto >= 3; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"podkowa", tekst:"Konie pod tobą oddychają równo i to usypia lepiej niż cokolwiek innego."},
+       ef:function(){ S.zloto -= 3; }},
+      {l:"Popatrz na wybieg (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"podkowa",
+        tekst:"Wanda przeprowadza konie po kolei i przy każdym zatrzymuje się na dokładnie tyle samo czasu."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_podkowa"}
+    ]
+  };
+  SCENY.kuznia_podkowa = {kto:"Kuźnia Ksina", portret:"kowal", handel:true,
+    oferta:["szabla_popielna","kord_najemniczy","kaftan_przeszywany","ruda_zelaza","wegiel_drzewny","mikst_zycia"],
+    tekst:"Kowadło stoi nisko, narzędzia leżą w zasięgu ręki człowieka siedzącego. Wszystko tu jest ułożone pod jednego kowala.",
+    opcje:[{l:"Wyjdź z kuźni", idz:"__lok_podkowa"}]};
+  SCENY.izba_popielisko = {
+    tekst:"Izba przy mielerzu, w której zawsze ktoś śpi po dwie godziny i zawsze ktoś wychodzi patrzeć w dym.",
+    opcje:[
+      {l:"Prześpij noc (10 godzin, 3 zł)", warunek:function(){ return S.zloto >= 3; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"popielisko", tekst:"Budzą cię dwa razy, bo taka tu kolej rzeczy, ale i tak śpisz lepiej niż w drodze."},
+       ef:function(){ S.zloto -= 3; }},
+      {l:"Przeczekaj przy kopcu (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"popielisko",
+        tekst:"Patrzysz w dym i uczysz się rozróżniać jego kolory. To nie jest bezużyteczna umiejętność."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_popielisko"}
+    ]
+  };
+  SCENY.chalupa_wykrot = {
+    tekst:"Chałupa zbudowana z tego, co położył wiatr: krzywa, niska i zaskakująco ciepła.",
+    opcje:[
+      {l:"Prześpij noc (10 godzin, 3 zł)", warunek:function(){ return S.zloto >= 3; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"wykrot", tekst:"Przez całą noc coś trzeszczy w wywrotach, ale drwale mówią, że to tylko drewno pracuje."},
+       ef:function(){ S.zloto -= 3; }},
+      {l:"Przeczekaj (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"wykrot",
+        tekst:"Siedzisz na pniu i słuchasz siekier z czterech stron naraz."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_wykrot"}
+    ]
+  };
+  SCENY.ziemianka_doly = {
+    tekst:"Ziemianka Ropuchy ma dwa wyjścia, jedno posłanie i skrzynie ustawione tak, żeby zasłaniały to drugie wyjście.",
+    opcje:[
+      {l:"Prześpij noc w ziemiance (10 godzin, 4 zł)", warunek:function(){ return S.zloto >= 4; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"krzywe_doly", tekst:"Pod ziemią jest cicho jak nigdzie indziej. Rano nie wiesz, która godzina, i nikt ci nie powie."},
+       ef:function(){ S.zloto -= 4; }},
+      {l:"Przeczekaj w przekopie (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"krzywe_doly",
+        tekst:"Przez przekop przechodzi w tym czasie sześć osób i żadna nie mówi dzień dobry."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_krzywe_doly"}
+    ]
+  };
+
+  /* ---------- SCENY NAUKI ---------- */
+  var TREN = [
+    ["szpon","suchy_brod","Szpon","weteran","„Płacisz raz i ćwiczysz, aż zaczniesz się bronić, kiedy jesteś zmęczony. Wcześniej to nie jest nauka, tylko zabawa.”"],
+    ["ryza","suchy_brod","Ryza","kobieta","„Kusza jest prosta. Ja biorę za to, żebyś nie nauczył się jej źle - to kosztuje najwięcej.”"],
+    ["struga","zgorzel","Struga","kobieta","„Woda nie robi wrażenia. Robi za to dokładnie to, o co ją poprosisz, i nigdy nic ponadto.”"],
+    ["nawka","mgielnik","Ślepa Nawka","kobieta","„Nie patrz na moje ręce, bo ja na twoje też nie patrzę. Słuchaj, jak woda odpowiada.”"],
+    ["grzebien","zgorzel","Grzebień","urzednik","„Uczę tego, co się przydaje świeżakowi: liczyć, targować i wiedzieć, kiedy odejść od stołu.”"],
+    ["ksin","podkowa","Kulawy Ksin","kowal","„Kowalstwa uczę za węgiel albo za złoto. Za obietnice nie uczę nikogo, bo już próbowałem.”"],
+    ["sek","wykrot","Sęk","kowal","„Siekiera, wnyki i to, jak nie dać się przygnieść drzewu. Trzy rzeczy, resztę i tak wiesz.”"],
+    ["ropucha","krzywe_doly","Ropucha","kobieta","„Uczę brać cudze tak, żeby cudzy nie zauważył. Kto zauważy, ten sam sobie winien - i ty też.”"],
+    ["zgaga","popielisko","Zgaga","kowal","„Wypału uczę za darmo. Trzeba tylko wytrzymać osiem dni przy kopcu, a na to mało kto ma ochotę.”"]
+  ];
+  TREN.forEach(function(t){
+    SCENY[t[0] + "_nauka"] = {wraca:t[0], wracaOpis:"Wróć do rozmowy",
+      portret:t[3], kto:t[2], uczy:t[0], trener:true,
+      tekst:"<span class='mowa'>" + t[4] + "</span>"};
+  });
+
+  /* --- nauka u Odeszłych --- */
+  var N = [
+    {id:"od_bron_biala", uczy:"szpon", grupa:"walka", l:"Walka bronią białą", pn:1, zl:45, raz:true,
+     ef:function(){ S.umie.bron_biala = true; }},
+    {id:"od_bron_biala2", uczy:"szpon", grupa:"walka", l:"Szkoła najemnicza (biegłość II)", pn:2, zl:110, raz:true,
+     wymagaUm:"bron_biala", ef:function(){ S.umie.bron_biala2 = true; }},
+    {id:"od_bron_biala3", uczy:"szpon", grupa:"walka", l:"Mistrzostwo najemnicze (biegłość III)", pn:3, zl:230, raz:true,
+     wymagaUm:"bron_biala2", wymPoziom:15, ef:function(){ S.umie.bron_biala3 = true; }},
+    {id:"od_cios_plaszcz", uczy:"szpon", grupa:"walka", l:"Supercios: Cios spod płaszcza", pn:5, zl:230, raz:true,
+     wymagaUm:"bron_biala2", wymPoziom:15, ef:function(){ S.umie.cios_spod_plaszcza = true; }},
+    {id:"od_sila_szpon", uczy:"szpon", grupa:"walka", l:"Siła +1", pn:1, zl:9, ef:function(){ S.sila += 1; }},
+    {id:"od_kusza", uczy:"ryza", grupa:"walka", l:"Kusznictwo", pn:1, zl:60, raz:true,
+     ef:function(){ S.umie.kusza = true; }},
+    {id:"od_belt", uczy:"ryza", grupa:"walka", l:"Supercios: Bełt w kolano", pn:5, zl:210, raz:true,
+     wymagaUm:"kusza", wymPoziom:10, ef:function(){ S.umie.belt_w_kolano = true; }},
+    {id:"od_zrecz_ryza", uczy:"ryza", grupa:"walka", l:"Zręczność +1", pn:1, zl:9, ef:function(){ S.zrecz += 1; }},
+    {id:"od_woda1", uczy:"struga", grupa:"magia", l:"Nowicjusz wody: Struga", pn:2, zl:85, raz:true,
+     ef:function(){ S.umie.struga_wody = true; }},
+    {id:"od_intel_struga", uczy:"struga", grupa:"magia", l:"Intelekt +1", pn:1, zl:9, ef:function(){ S.intelekt += 1; }},
+    {id:"od_woda2", uczy:"nawka", grupa:"magia", l:"Mag wody: Lodowa tafla", pn:4, zl:190, raz:true,
+     wymagaUm:"struga_wody", wymPoziom:12, ef:function(){ S.umie.lodowa_tafla = true; }},
+    {id:"od_mana_nawka", uczy:"nawka", grupa:"magia", l:"Mana +10", pn:1, zl:14,
+     ef:function(){ S.manaMax += 10; S.mana += 10; }},
+    {id:"od_targ", uczy:"grzebien", grupa:"umiejetnosci", l:"Targowanie", pn:1, zl:40, raz:true,
+     ef:function(){ S.umie.targowanie = true; }},
+    {id:"od_intel_grzebien", uczy:"grzebien", grupa:"umiejetnosci", l:"Intelekt +1", pn:1, zl:8, ef:function(){ S.intelekt += 1; }},
+    {id:"od_kowalstwo", uczy:"ksin", grupa:"profesje", l:"Kowalstwo", pn:1, zl:55, raz:true,
+     ef:function(){ S.umie.kowalstwo = true; }},
+    {id:"od_gornictwo_ksin", uczy:"ksin", grupa:"profesje", l:"Górnictwo", pn:1, zl:40, raz:true,
+     ef:function(){ S.umie.gornictwo = true; }},
+    {id:"od_oprawianie", uczy:"sek", grupa:"profesje", l:"Oprawianie skór", pn:1, zl:35, raz:true,
+     ef:function(){ S.umie.oprawianie = true; }},
+    {id:"od_hp_sek", uczy:"sek", grupa:"walka", l:"Zdrowie +12", pn:1, zl:13,
+     ef:function(){ S.hpMax += 12; S.hp += 12; }},
+    {id:"od_kradziez", uczy:"ropucha", grupa:"umiejetnosci", l:"Kradzież kieszonkowa", pn:2, zl:70, raz:true,
+     ef:function(){ S.umie.kradziez = true; }},
+    {id:"od_cichy_od", uczy:"ropucha", grupa:"umiejetnosci", l:"Cichy chód", pn:2, zl:60, raz:true,
+     ef:function(){ S.umie.cichy_chod = true; }},
+    {id:"od_wedkarstwo", uczy:"zgaga", grupa:"profesje", l:"Wędkarstwo", pn:1, zl:30, raz:true,
+     ef:function(){ S.umie.wedkarstwo = true; }},
+    {id:"od_gotowanie_zgaga", uczy:"zgaga", grupa:"profesje", l:"Gotowanie", pn:1, zl:30, raz:true,
+     ef:function(){ S.umie.gotowanie = true; }}
+  ];
+  N.forEach(function(w){ if(!NAUKA.some(function(x){ return x.id === w.id; })) NAUKA.push(w); });
+
+  if(!SUPERCIOSY.some(function(c){ return c.id === "cios_spod_plaszcza"; }))
+    SUPERCIOSY.push({id:"cios_spod_plaszcza", n:"Cios spod płaszcza", z:["g","s","d"], o:"×2.6 obrażeń", v:2.6});
+  if(!SUPERCIOSY.some(function(c){ return c.id === "belt_w_kolano"; }))
+    SUPERCIOSY.push({id:"belt_w_kolano", n:"Bełt w kolano", z:["d","d","s"], o:"×2.3 obrażeń", v:2.3});
+
+  if(!ZAKLECIA.some(function(z){ return z.id === "struga_wody"; }))
+    ZAKLECIA.push({id:"struga_wody", um:"struga_wody", n:"Struga", mana:7, baza:7, wsp:1.4, typ:"obuchowe",
+      o:"Uderzenie zbitą wodą. Tanie, celne i przewraca lżejszych przeciwników z nóg."});
+  if(!ZAKLECIA.some(function(z){ return z.id === "lodowa_tafla"; }))
+    ZAKLECIA.push({id:"lodowa_tafla", um:"lodowa_tafla", n:"Lodowa tafla", mana:14, baza:11, wsp:1.8, typ:"klute", stun:true,
+      o:"Woda pod nogami przeciwnika zamarza w mgnieniu oka. Przez chwilę nie może zrobić kroku."});
+}
+scenyOdeszlych();
+
+
 
 
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
