@@ -3391,7 +3391,9 @@ function zaloz(k){
       S.zalozone.bron1 = k; S.zalozone.bron2 = "__zajete";
     } else {
       if(S.zalozone.bron2 === "__zajete"){ zdejmij("bron1"); S.zalozone.bron2 = null; }
-      var cel = !S.zalozone.bron1 ? "bron1" : (!S.zalozone.bron2 ? "bron2" : "bron1");
+      var cel;
+      if(!p.obr) cel = "bron2";
+      else cel = !S.zalozone.bron1 ? "bron1" : (!S.zalozone.bron2 ? "bron2" : "bron1");
       if(S.zalozone[cel]) dodaj(S.zalozone[cel]);
       S.zalozone[cel] = k;
     }
@@ -6717,12 +6719,12 @@ function rozszerzNowozytnych(){
       o:"Prosta, wąska klinga z podpisem płatnerza wybitym u nasady. W Nowym Ostrowie płaci się nie za ostrze, tylko za podpis."},
     kusza_latarnicza:{n:"Kusza latarnicza", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[13,19], cena:340,
       o:"Krótka, żeby dało się z niej strzelać z pokładu. Łoże wysmarowane smołą przeciw wodzie."},
-    sygnet_gieldowy:{n:"Sygnet giełdowy", kat:"bizuteria", typ:"wyposazenie", slot:"palec", bonus:{intel:2}, cena:300,
+    sygnet_gieldowy:{n:"Sygnet giełdowy", kat:"bizuteria", typ:"wyposazenie", slot:"pierscien", daje:{intel:2}, cena:300,
       o:"Mosiądz udający złoto. Kto go nosi, temu w Ostrowie liczą ceny inaczej - lepiej albo gorzej, zależnie od tego, kto liczy."},
-    naszyjnik_latarni:{n:"Naszyjnik latarnika", kat:"bizuteria", typ:"wyposazenie", slot:"szyja", bonus:{odp_ogien:8}, cena:280,
+    naszyjnik_latarni:{n:"Naszyjnik latarnika", kat:"bizuteria", typ:"wyposazenie", slot:"amulet", odp:{ogien:8}, cena:280,
       o:"Kółko z żelaza obtopione szkłem z rozbitej latarni. Ciepłe nawet w mróz."},
     kaftan_syndyka:{n:"Kaftan syndycki", kat:"pancerz", typ:"wyposazenie", slot:"pancerz",
-      bonus:{odp_klute:6, odp_ciete:6}, cena:320,
+      odp:{klute:6, ciete:6}, cena:320,
       o:"Sukno podbite warstwami klejonego płótna. Nowożytni odkryli, że dwadzieścia warstw lnu trzyma nóż lepiej niż blacha."},
     ksiega_wagowa:{n:"Księga wag i miar", kat:"pismo", typ:"ksiega", cena:120, exp:90, bonusIntel:1,
       o:"Spis miar używanych po obu stronach granicy - i tego, ile na każdej z nich można ukraść."}
@@ -7626,6 +7628,1019 @@ function scenyNowozytnych(){
     SUPERCIOSY.push({id:"rozlupanie", n:"Rozłupanie", z:["g","g","s","d"], o:"×2.7 obrażeń", v:2.7});
 }
 scenyNowozytnych();
+
+
+/* ================= ROZDZIAŁ I: ZIEMIE ISMAALA ================= */
+
+function repSK(){ return S.rep.sk || 0; }
+
+function rozszerzIsmaala(){
+
+  /* --- przedmioty --- */
+  var P = {
+    lak_pieczetny:{n:"Lak pieczętny", kat:"surowiec", typ:"towar", cena:16,
+      o:"Czerwona bryłka żywicy z domieszką cynobru. W Ismaalu pismo bez laku to plotka, nie rozkaz."},
+    proch_zarnowiecki:{n:"Proch żarnowiecki", kat:"surowiec", typ:"towar", cena:34,
+      o:"Sypki, siwy, pachnie siarką. Ismaal nie zdradza, skąd bierze saletrę, i to jest cała ich przewaga."},
+    chleb_zolnierski:{n:"Chleb żołnierski", kat:"zywnosc", typ:"jadalne", leczy:16, cena:8,
+      o:"Pieczony dwa razy, żeby nie pleśniał przez miesiąc. Trzeba go moczyć, bo inaczej łamie zęby."},
+    kord_czerwienski:{n:"Miecz czerwieński", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[13,19], cena:320,
+      o:"Prosta głownia z krwawnikiem po obu stronach. Ismaal robi jeden wzór dla wszystkich - żeby każdy żołnierz umiał walczyć każdą bronią z arsenału."},
+    kusza_grotowa:{n:"Kusza grotowa", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[15,22], dystans:true, cena:400,
+      o:"Ciężka, napinana korbą, bita w twierdzy Grot. Strzela wolno i przebija wszystko, w co trafi."},
+    tarcza_chorag:{n:"Tarcza chorągiewna", kat:"pancerz", typ:"wyposazenie", slot:"bron", odp:{klute:8, ciete:8}, cena:300,
+      o:"Deska lipowa klejona na krzyż, obita skórą, na wierzchu czerwona chorągiew. Lekka jak na to, ile trzyma."},
+    pancerz_ismaalski:{n:"Napierśnik ismaalski", kat:"pancerz", typ:"wyposazenie", slot:"pancerz",
+      odp:{ciete:10, obuch:6}, cena:420,
+      o:"Blacha kuta w Żarnowcu, hartowana w oleju. Nosi się ją na kaftanie, inaczej obtłucze żebra na pierwszym marszu."},
+    amulet_zarliwy:{n:"Amulet żarliwy", kat:"bizuteria", typ:"wyposazenie", slot:"amulet", odp:{ogien:12}, cena:340,
+      o:"Kamień wyjęty z pieca po wypale i oprawiony na gorąco. Magowie ognia noszą go, żeby własne zaklęcie ich nie zeżarło."},
+    sygnet_kruczy:{n:"Sygnet kruczy", kat:"bizuteria", typ:"wyposazenie", slot:"pierscien", daje:{intel:3}, cena:360,
+      o:"Czarne srebro, na oczku wyryty kruk bez oczu. Kruczyńscy twierdzą, że pomaga pamiętać. Nie mówią, komu."},
+    prochno_trumienne:{n:"Próchno trumienne", kat:"surowiec", typ:"towar", cena:28,
+      o:"Rozsypana deska ze starego pochówku. Alchemicy płacą za nie więcej, niż wypada o tym mówić."},
+    ksiega_chorag:{n:"Regestr chorągwi", kat:"pismo", typ:"ksiega", cena:130, exp:110, bonusIntel:1,
+      o:"Spis wszystkich chorągwi Ismaala, ich barw, dowódców i strat. Ostatnie trzydzieści stron dopisano tym samym atramentem, co pierwsze - i to jest w tej księdze najbardziej niepokojące."},
+    ksiega_ognia:{n:"Traktat o żarze", kat:"pismo", typ:"ksiega", cena:160, exp:130, bonusIntel:1,
+      o:"Wykład o tym, że ogień nie jest żywiołem, tylko zgodą materii na rozpad. Czyta się ciężko i trzeba czytać dwa razy."}
+  };
+  for(var pk in P) if(!PRZEDMIOTY[pk]) PRZEDMIOTY[pk] = P[pk];
+
+  /* --- wrogowie --- */
+  var W = {
+    dezerter_chorag:{n:"Dezerter z chorągwi", hp:104, dmg:[12,17], exp:250, zloto:80, lup:{lak_pieczetny:1},
+      sekw:["g","s","d"], finisz:{dmg:[22,30], o:"pchnięcie mieczem spod tarczy"}, blokSzansa:20,
+      wyglad:"Czerwony płaszcz ma nadal, tylko chorągiew z niego spruł. Broń trzyma jak ktoś, kogo uczono porządnie.",
+      styl:"Otwiera wysoko zza tarczy, potem środkiem, na końcu podcina. Wyprowadza pchnięcie dopiero, gdy uzna, że masz opuszczoną gardę."},
+    pogorzelec_zarnowca:{n:"Pogorzelec z Żarnowca", hp:92, dmg:[13,18], exp:240, zloto:60,
+      sekw:["s","s","g"], finisz:{dmg:[24,31], o:"rzut garścią żaru"}, blokSzansa:5,
+      wyglad:"Twarz zrośnięta po oparzeniu, ręce owinięte szmatami. Nie mruga, bo nie ma czym.",
+      styl:"Dwa razy przez środek, potem górą. Żar rzuca na końcu i wtedy się nie zasłonisz."},
+    kruk_kruczyna:{n:"Kruk Kruczyna", hp:88, dmg:[11,16], exp:260, zloto:90, lup:{prochno_trumienne:1},
+      sekw:["d","g","d"], finisz:{dmg:[21,29], o:"dotknięcie martwą ręką"}, blokSzansa:10,
+      wyglad:"Chudy jak żerdź, w kapturze, pod paznokciami czarna ziemia z cmentarza.",
+      styl:"Nisko, wysoko, znowu nisko. Sięga ręką dopiero, kiedy zmyli ci rytm."},
+    zbrojny_najemny:{n:"Zbrojny najemny", hp:120, dmg:[14,19], exp:300, zloto:110,
+      sekw:["g","g","s"], finisz:{dmg:[26,34], o:"cios tarczą i cięcie przez obojczyk"}, blokSzansa:25,
+      wyglad:"Bez barw, bez chorągwi, sprzęt z trzech różnych arsenałów i wszystko dobrane porządnie.",
+      styl:"Dwa razy wysoko, żeby ci podnieść ręce, potem środkiem. Tarczą bije, kiedy stoisz za blisko."},
+    wilk_wrzosowy:{n:"Wilk wrzosowy", hp:82, dmg:[13,18], exp:200, zloto:0, lup:{skora:2}, lupWymaga:"oprawianie",
+      sekw:["d","d"], finisz:{dmg:[20,27], o:"skok do gardła"}, blokSzansa:0,
+      wyglad:"Sierść spalona słońcem na rudo, żebra widać. Na wrzosowiskach nie ma czego jeść poza ludźmi.",
+      styl:"Dwa razy nisko, przy nogach, potem skacze. Prosty i dlatego skuteczny."},
+    poborca_sepnicy:{n:"Poborca z Sępnicy", hp:98, dmg:[12,17], exp:270, zloto:140, lup:{lak_pieczetny:2},
+      sekw:["s","d","g"], finisz:{dmg:[23,30], o:"uderzenie okutą laską"}, blokSzansa:15,
+      wyglad:"Tłusty, w dobrym płaszczu, z laską, której koniec jest okuty nie bez powodu.",
+      styl:"Środek, dół, góra - trzy razy w tej samej kolejności, bo tak go uczono i nie umie inaczej."}
+  };
+  for(var wk in W) if(!WROGOWIE[wk]) WROGOWIE[wk] = W[wk];
+  if(typeof TYPY_WROGOW === "object"){
+    TYPY_WROGOW.dezerter_chorag = "klute"; TYPY_WROGOW.pogorzelec_zarnowca = "ogien";
+    TYPY_WROGOW.kruk_kruczyna = "magia"; TYPY_WROGOW.zbrojny_najemny = "ciete";
+    TYPY_WROGOW.wilk_wrzosowy = "klute"; TYPY_WROGOW.poborca_sepnicy = "obuchowe";
+  }
+
+  /* --- lokacje --- */
+  var L = {
+  gosciniec_czerwony:{
+    n:"Gościniec Czerwony", region:"droga w ziemie Ismaala",
+    opis:function(){
+      return "Droga wysypana kruszonym piaskowcem, od którego wszystko tu ma rudy odcień - buty, koła, psy, ludzie.<br><br>"
+        + "Co milę stoi słup z chorągiewką i liczbą: nie odległość, tylko numer chorągwi, która za ten odcinek odpowiada.<br><br>"
+        + (jestNoc() ? "Nocą gościniec patroluje dwóch jeźdźców na zmianę. Widzą cię, zanim ty zobaczysz ich."
+                     : "Mijają cię kolumny piechoty w marszu ćwiczebnym. Nikt nie schodzi ci z drogi - to ty schodzisz.");
+    },
+    tereny:[{n:"Zejdź we wrzosy przy gościńcu", teren:"gosciniec_teren"}],
+    drogi:[
+      {n:"Do Czerwieni Wysokiej", lok:"czerwien_wysoka"},
+      {n:"Do Wrzosów", lok:"wrzosy"},
+      {n:"Z powrotem pod Strażnicę", lok:"straznica"}
+    ]
+  },
+
+  czerwien_wysoka:{
+    n:"Czerwień Wysoka", region:"stolica Ismaala",
+    opis:function(){
+      return "Miasto wykute w zboczu i obwiedzione murem, którego nikt jeszcze nie przebił. Trzy tarasy jeden nad drugim: na dolnym targ i koszary, na środkowym cechy i świątynia ognia, na górnym Zamek Wysoki, w którym mieszka jedna rodzina i trzystu ludzi ją pilnujących.<br><br>"
+        + "Nad bramą wisi czterdzieści chorągwi. Trzy są czarne - to te, które nie wróciły.<br><br>"
+        + (jestNoc() ? "Po zmroku bramy między tarasami się zamyka. Kto zostanie na niewłaściwym tarasie, śpi tam, gdzie stoi."
+                     : "Zmiana warty odbywa się co trzy godziny i za każdym razem całe miasto na moment milknie.");
+    },
+    postacie:[
+      {n:"Chorąży Wielki Świętopełk", id:"swietopelk", nieznany:"Człowiek w czerwonym płaszczu z czarną podszewką", rola:"chorąży wielki", scena:"swietopelk", portret:"weteran"},
+      {n:"Kanclerz Przecław", id:"przeclaw", nieznany:"Człowiek z pieczęcią na łańcuchu", rola:"kanclerz", scena:"przeclaw", portret:"urzednik"},
+      {n:"Arcymag Bogusza", id:"bogusza", nieznany:"Kobieta, przy której powietrze drga", rola:"arcymag ognia", scena:"bogusza", portret:"kobieta"},
+      {n:"Sierżant Wojsław", id:"wojslaw", nieznany:"Człowiek krzyczący na rekrutów", rola:"sierżant szkolny", scena:"wojslaw", portret:"weteran"}
+    ],
+    miejsca:[
+      {n:"Zajazd Pod Czarną Chorągwią - nocleg", scena:"zajazd_czerwien"},
+      {n:"Arsenał miejski - handel", scena:"arsenal_czerwien"},
+      {n:"Świątynia ognia - handel", scena:"swiatynia_czerwien"}
+    ],
+    tereny:[{n:"Zejdź pod mury, na dolny taras", teren:"czerwien_teren"}],
+    drogi:[
+      {n:"Gościńcem Czerwonym na zachód", lok:"gosciniec_czerwony"},
+      {n:"Do Żarnowca", lok:"zarnowiec"},
+      {n:"Drogą Kruczą na północ", lok:"droga_krucza"},
+      {n:"Do twierdzy Grot", lok:"grot"}
+    ]
+  },
+
+  zarnowiec:{
+    n:"Żarnowiec", region:"miasto ludwisarzy Ismaala",
+    opis:function(){
+      return "Miasto, w którym leje się spiż i miele saletrę. Domy stoją w rozstępach, bo raz na kilka lat jeden z nich znika razem z ulicą.<br><br>"
+        + "Na środku placu stoi dzwon, którego nigdy nie zawieszono - pękł przy odlewie i zostawiono go jako przestrogę.<br><br>"
+        + (jestNoc() ? "Nocą pracują tylko prochownie, bo saletra lubi chłód. Świateł nie wolno tu nosić otwartych."
+                     : "Powietrze jest gorzkie i suche. Po godzinie zaczyna drapać w gardle i nie przestaje do wieczora.");
+    },
+    postacie:[
+      {n:"Ludwisarz Zbrosław", id:"zbroslaw", nieznany:"Człowiek stukający w spiż", rola:"ludwisarz", scena:"zbroslaw", portret:"kowal"},
+      {n:"Prochmistrzyni Racława", id:"raclawa", nieznany:"Kobieta w rękawicach po łokcie", rola:"prochmistrzyni", scena:"raclawa", portret:"kobieta"},
+      {n:"Mistrz Wszerad", id:"wszerad", nieznany:"Człowiek o brwiach wypalonych do skóry", rola:"mag ognia", scena:"wszerad", portret:"urzednik"}
+    ],
+    miejsca:[
+      {n:"Gospoda Pod Pękniętym Dzwonem - nocleg", scena:"gospoda_zarnowiec"},
+      {n:"Skład prochowy - handel", scena:"sklad_zarnowiec"}
+    ],
+    tereny:[{n:"Obejdź zgliszcza po prochowni", teren:"zarnowiec_teren"}],
+    drogi:[
+      {n:"Do Czerwieni Wysokiej", lok:"czerwien_wysoka"},
+      {n:"Do Kamionki", lok:"kamionka"}
+    ]
+  },
+
+  droga_krucza:{
+    n:"Droga Krucza", region:"trakt na północ Ismaala",
+    opis:function(){
+      return "Wąska droga między dwoma pasmami wzgórz, po bokach kurhany starsze niż Ismaal. Ismaalczycy ich nie ruszają i nie tłumaczą dlaczego.<br><br>"
+        + (jestNoc() ? "Nocą na kurhanach widać światła, których nikt nie zapalał. Woźnice jeżdżą tędy tylko za dnia."
+                     : "Wrony siedzą na każdym słupie w równych odstępach, jakby je ktoś rozstawił.");
+    },
+    tereny:[{n:"Wejdź między kurhany", teren:"krucza_teren"}],
+    drogi:[
+      {n:"Do Kruczyna", lok:"kruczyn"},
+      {n:"Z powrotem do Czerwieni Wysokiej", lok:"czerwien_wysoka"}
+    ]
+  },
+
+  kruczyn:{
+    n:"Kruczyn", region:"miasto uczonych i grabarzy",
+    opis:function(){
+      return "Miasto zbudowane wokół cmentarza, nie odwrotnie. Ulice schodzą się do bramy nekropolii, a najwyższym budynkiem jest kostnica z czterema piętrami.<br><br>"
+        + "Tu Ismaal trzyma swoich uczonych ciemności - nie dlatego, że ich ceni, tylko dlatego, że woli mieć ich w jednym miejscu.<br><br>"
+        + (jestNoc() ? "Nocą w oknach kostnicy pali się światło na każdym piętrze i słychać, jak ktoś czyta na głos."
+                     : "W dzień miasto jest ciche jak wieś w żniwa - wszyscy śpią, bo pracują po ciemku.");
+    },
+    postacie:[
+      {n:"Mistrz Cieni Ziemowit", id:"ziemowit", nieznany:"Człowiek w czarnym, bez cienia na ścianie", rola:"mistrz ciemności", scena:"ziemowit", portret:"urzednik"},
+      {n:"Grabarka Otylia", id:"otylia", nieznany:"Kobieta z dwiema łopatami", rola:"grabarka", scena:"otylia", portret:"kobieta"},
+      {n:"Archiwista Racibor Młodszy", id:"racibor_ml", nieznany:"Chłopak zasypany zwojami", rola:"archiwista", scena:"racibor_ml", portret:"urzednik"}
+    ],
+    miejsca:[
+      {n:"Dom gościnny przy kostnicy - nocleg", scena:"dom_kruczyn"},
+      {n:"Kram archiwum - handel", scena:"kram_kruczyn"}
+    ],
+    tereny:[{n:"Wejdź na nekropolię", teren:"kruczyn_teren"}],
+    drogi:[
+      {n:"Drogą Kruczą na południe", lok:"droga_krucza"},
+      {n:"Do Sępnicy", lok:"sepnica"}
+    ]
+  },
+
+  grot:{
+    n:"Twierdza Grot", region:"miasto-garnizon Ismaala",
+    opis:function(){
+      return "Nie miasto z twierdzą, tylko twierdza, w której z czasem zamieszkali ludzie. Jedna brama, jedna studnia, jedna ulica biegnąca spiralą do góry.<br><br>"
+        + "Tu bije się bełty, tu uczy się strzelać i stąd wychodzi każdy kusznik, jakiego Ismaal wystawia w polu.<br><br>"
+        + (jestNoc() ? "Nocą na strzelnicy nadal ktoś ćwiczy - strzelanie po ciemku jest częścią nauki."
+                     : "Ze strzelnicy dobiega klekot cięciw, równy jak zegar.");
+    },
+    postacie:[
+      {n:"Kasztelan Miłobrat", id:"milobrat", nieznany:"Człowiek z ręką na temblaku", rola:"kasztelan twierdzy", scena:"milobrat", portret:"weteran"},
+      {n:"Strzelmistrzyni Bronisława", id:"bronislawa", nieznany:"Kobieta z korbą kuszy u pasa", rola:"strzelmistrzyni", scena:"bronislawa", portret:"kobieta"},
+      {n:"Rycerz Jaksa", id:"jaksa", nieznany:"Człowiek w pełnej zbroi mimo upału", rola:"rycerz nauczający", scena:"jaksa", portret:"weteran"}
+    ],
+    miejsca:[
+      {n:"Izba załogi - nocleg", scena:"izba_grot"},
+      {n:"Bełciarnia - handel", scena:"belciarnia_grot"}
+    ],
+    tereny:[{n:"Wejdź na strzelnicę i wały", teren:"grot_teren"}],
+    drogi:[
+      {n:"Do Czerwieni Wysokiej", lok:"czerwien_wysoka"},
+      {n:"Do Kamionki", lok:"kamionka"}
+    ]
+  },
+
+  wrzosy:{
+    n:"Wrzosy", region:"wieś na wrzosowisku",
+    opis:"Dwadzieścia chałup rozsypanych po wrzosowisku bez ulicy i bez planu. Żyją z owiec, wełny i tego, co spadnie z wozów na gościńcu.",
+    postacie:[
+      {n:"Owczarz Niemir", id:"niemir", nieznany:"Człowiek z psem, który nie szczeka", rola:"owczarz", scena:"niemir", portret:"kowal"}
+    ],
+    miejsca:[{n:"Szałas owczarski - odpocznij", scena:"szalas_wrzosy"}],
+    tereny:[{n:"Wyjdź na wrzosowisko", teren:"wrzosy_teren"}],
+    drogi:[{n:"Na Gościniec Czerwony", lok:"gosciniec_czerwony"}]
+  },
+
+  kamionka:{
+    n:"Kamionka", region:"wieś kamieniarzy",
+    opis:"Wieś przy łomie piaskowca. Wszystko tu jest z kamienia: domy, płoty, koryta, nawet dachy. Drewno idzie na opał, bo szkoda go na budowę.",
+    postacie:[
+      {n:"Kamieniarka Domicela", id:"domicela", nieznany:"Kobieta z dłutem za uchem", rola:"kamieniarka", scena:"domicela", portret:"kobieta"}
+    ],
+    miejsca:[{n:"Izba w łomie - odpocznij", scena:"izba_kamionka"}],
+    tereny:[{n:"Zejdź do łomu", teren:"kamionka_teren"}],
+    drogi:[
+      {n:"Do Żarnowca", lok:"zarnowiec"},
+      {n:"Do twierdzy Grot", lok:"grot"}
+    ]
+  },
+
+  sepnica:{
+    n:"Sępnica", region:"wieś podatkowa",
+    opis:"Wieś, z której Ismaal ściąga daninę dwa razy w roku i o której poza tym nie pamięta. Chałupy stoją w dwóch rzędach wzdłuż suchego rowu.",
+    postacie:[
+      {n:"Wdowa Przybysława", id:"przybyslawa_s", nieznany:"Kobieta stojąca w progu", rola:"gospodyni", scena:"przybyslawa_s", portret:"kobieta"}
+    ],
+    miejsca:[{n:"Izba u wdowy - odpocznij", scena:"izba_sepnica"}],
+    tereny:[{n:"Obejdź suchy rów", teren:"sepnica_teren"}],
+    drogi:[{n:"Do Kruczyna", lok:"kruczyn"}]
+  }
+  };
+  for(var lk in L) if(!LOKACJE[lk]) LOKACJE[lk] = L[lk];
+
+  if(LOKACJE.straznica && LOKACJE.straznica.drogi)
+    LOKACJE.straznica.drogi.unshift({n:"Gościńcem Czerwonym w głąb ziem Ismaala", lok:"gosciniec_czerwony"});
+  if(LOKACJE.jarmark && LOKACJE.jarmark.drogi)
+    LOKACJE.jarmark.drogi.push({n:"Gościńcem Czerwonym, na wschód", lok:"gosciniec_czerwony",
+      warunek:function(){ return !!S.poznane.gosciniec_czerwony; }});
+
+  /* --- tereny --- */
+  var T = {
+  gosciniec_teren:{
+    n:"Wrzosy przy gościńcu", wraca:"gosciniec_czerwony",
+    opis:"Za rowem zaczyna się wrzosowisko, po którym nie chodzą patrole, bo nie ma tam czego pilnować.",
+    punkty:[
+      {id:"gc_ziolo", typ:"zasob", n:"Wrzos i dziewanna", wymaga:"zielarstwo", zbierz:{dziewanna:2},
+       wynik:"Dziewanna rośnie tu wszędzie tam, gdzie ziemia jest za sucha na cokolwiek innego."},
+      {id:"gc_wilk", typ:"mob", n:"Coś idzie za tobą po wrzosie", walka:"wilk_wrzosowy"},
+      {id:"gc_skrzynia", typ:"skrzynia", n:"Juki zrzucone z konia", zloto:80, zbierz:{lak_pieczetny:1},
+       wynik:"Ktoś jechał w pośpiechu i wolał zrzucić bagaż, niż zwolnić."}
+    ]
+  },
+  czerwien_teren:{
+    n:"Dolny taras pod murami", wraca:"czerwien_wysoka",
+    opis:"Pod murem koszary, za koszarami pas ziemi niczyjej, gdzie zrzuca się gruz i tych, którzy nie mają gdzie mieszkać.",
+    punkty:[
+      {id:"cw_dezerter", typ:"mob", n:"Ktoś w czerwonym płaszczu bez chorągwi", walka:"dezerter_chorag"},
+      {id:"cw_skrzynia", typ:"skrzynia", n:"Skrytka w wyłomie muru", zloto:160, zbierz:{mikstura_mocy:1},
+       wynik:"Cegła wychodzi bez oporu, a za nią jest miejsce wygładzone od częstego sięgania."},
+      {id:"cw_zasob", typ:"zasob", n:"Odpadki z ludwisarni", zbierz:{lak_pieczetny:2},
+       wynik:"Zeskrobujesz zastygły lak z rozbitych form."}
+    ]
+  },
+  zarnowiec_teren:{
+    n:"Zgliszcza prochowni", wraca:"zarnowiec",
+    opis:"Miejsce po ulicy, której już nie ma. Ziemia jest szklista i chrzęści pod butami.",
+    punkty:[
+      {id:"zr_proch", typ:"zasob", n:"Nienaruszona beczułka w piwnicy", zbierz:{proch_zarnowiecki:2},
+       wynik:"Piwnica przetrwała, bo wybuch poszedł w górę. Beczułki są suche."},
+      {id:"zr_pogorzelec", typ:"mob", n:"Ktoś mieszka w zgliszczach", walka:"pogorzelec_zarnowca"},
+      {id:"zr_skrzynia", typ:"skrzynia", n:"Kasa ludwisarni pod gruzem", zloto:190,
+       wynik:"Blaszana kasetka wygięta od żaru, ale zamek puścił dopiero teraz."}
+    ]
+  },
+  krucza_teren:{
+    n:"Kurhany przy drodze", wraca:"droga_krucza",
+    opis:"Osiem kopców w rzędzie. Trawa na nich jest krótsza niż wszędzie indziej, choć nikt jej nie kosi.",
+    punkty:[
+      {id:"kr_kruk", typ:"mob", n:"Ktoś kopie w kurhanie", walka:"kruk_kruczyna"},
+      {id:"kr_ziolo", typ:"zasob", n:"Tojad na kopcu", wymaga:"zielarstwo", zbierz:{tojad:2},
+       wynik:"Tojad lubi grunt, który był kiedyś ruszony."},
+      {id:"kr_skrzynia", typ:"skrzynia", n:"Rozkopany wykop przy ósmym kopcu", zloto:130, zbierz:{sygnet_kruczy:1},
+       wynik:"Ktoś kopał tu przed tobą i uciekł, zanim skończył."}
+    ]
+  },
+  kruczyn_teren:{
+    n:"Nekropolia Kruczyna", wraca:"kruczyn",
+    opis:"Cztery tysiące grobów w równych rzędach i jedna alejka, przy której nie ma żadnego.",
+    punkty:[
+      {id:"kn_kruk", typ:"mob", n:"Ktoś czyta na głos nad grobem", walka:"kruk_kruczyna"},
+      {id:"kn_prochno", typ:"zasob", n:"Próchno ze starej trumny", zbierz:{prochno_trumienne:2},
+       wynik:"Deski rozpadają się w rękach, ale próchno jest dokładnie tym, czego szukają alchemicy."},
+      {id:"kn_skrzynia", typ:"skrzynia", n:"Wnęka w ścianie kostnicy", zloto:150, zbierz:{mikst_many:2},
+       wynik:"Ktoś trzymał tu zapas na wypadek długiej nocy."}
+    ]
+  },
+  grot_teren:{
+    n:"Strzelnica i wały", wraca:"grot",
+    opis:"Wały od zewnątrz, strzelnica od środka, a między nimi wąskie przejście, w którym zawsze wieje.",
+    punkty:[
+      {id:"gt_belty", typ:"zasob", n:"Bełty wystrzelone i niezebrane", zbierz:{belty:8},
+       wynik:"Wyciągasz je z wałów po kolei. Połowa nadaje się do ponownego użycia."},
+      {id:"gt_najemny", typ:"mob", n:"Ktoś ćwiczy na wałach nie w barwach twierdzy", walka:"zbrojny_najemny"},
+      {id:"gt_skrzynia", typ:"skrzynia", n:"Zapomniana skrzynia w kazamacie", zloto:170, zbierz:{proch_zarnowiecki:1},
+       wynik:"Kazamata jest zamurowana z trzech stron i widocznie o niej zapomniano."}
+    ]
+  },
+  wrzosy_teren:{
+    n:"Wrzosowisko", wraca:"wrzosy",
+    opis:"Płaskie, rude, bez jednego drzewa. Widać stąd na pięć mil i to jedyna obrona, jaką ma ta wieś.",
+    punkty:[
+      {id:"wz_wilk", typ:"mob", n:"Wilk odbił się od stada", walka:"wilk_wrzosowy"},
+      {id:"wz_ziolo", typ:"zasob", n:"Arcydzięgiel przy źródlisku", wymaga:"zielarstwo", zbierz:{arcydziegiel:2},
+       wynik:"Jedyne wilgotne miejsce na całym wrzosowisku i wszystko rośnie tam naraz."},
+      {id:"wz_skrzynia", typ:"skrzynia", n:"Schowek pod kamieniem granicznym", zloto:70,
+       wynik:"Owczarze chowają tu, czego nie chcą trzymać w chałupie."}
+    ]
+  },
+  kamionka_teren:{
+    n:"Łom piaskowca", wraca:"kamionka",
+    opis:"Wyrobisko schodzące trzema stopniami w dół. Na dnie stoi woda koloru rdzy.",
+    punkty:[
+      {id:"km_ruda", typ:"ruda", n:"Żyła w ścianie łomu", wymaga:"gornictwo", zbierz:{galena:2},
+       wynik:"Piaskowiec przecina cienka warstwa czegoś twardszego."},
+      {id:"km_najemny", typ:"mob", n:"Ktoś pilnuje łomu nie z ramienia wsi", walka:"zbrojny_najemny"},
+      {id:"km_skrzynia", typ:"skrzynia", n:"Narzędziownia na dolnym stopniu", zloto:110,
+       wynik:"Poza narzędziami jest tam też sakwa, której nikt nie zgłosił."}
+    ]
+  },
+  sepnica_teren:{
+    n:"Suchy rów", wraca:"sepnica",
+    opis:"Rów, którym kiedyś płynęła woda. Teraz służy za drogę, śmietnik i kryjówkę naraz.",
+    punkty:[
+      {id:"sp_poborca", typ:"mob", n:"Ktoś ściąga daninę poza terminem", walka:"poborca_sepnicy"},
+      {id:"sp_ziolo", typ:"zasob", n:"Bagno w resztce wilgoci", wymaga:"zielarstwo", zbierz:{bagno:2},
+       wynik:"Tam, gdzie rów jeszcze nie wysechł, trzyma się jedno i to samo ziele."},
+      {id:"sp_skrzynia", typ:"skrzynia", n:"Zakopana skrzynka pod trzecią chałupą", zloto:100,
+       wynik:"Wieś chowa przed poborcą to, czego nie da się zjeść."}
+    ]
+  }
+  };
+  for(var tk in T) if(!TERENY[tk]) TERENY[tk] = T[tk];
+
+  /* --- zadania --- */
+  var Z = {
+  sk_chor1:{t:"Czarna chorągiew: trzy, które nie wróciły", od:"Chorąży Wielki Świętopełk",
+    pelny:"<span class='mowa'>„Nad bramą wiszą trzy czarne chorągwie. Dwie rozumiem - poległy w polu, mam listy strat.<br><br>Trzecia wisi od czterech lat i nikt nie umie mi powiedzieć, gdzie zginęła. Kanclerz Przecław trzyma listy. Niech ci pokaże tę.”</span>",
+    opis:"Jedna z czarnych chorągwi Ismaala nie ma listy strat.",
+    cel:"Wypytaj kanclerza Przecława o trzecią czarną chorągiew.", nagroda:{exp:220, zloto:70, rep:{sk:2}}},
+  sk_chor2:{t:"Czarna chorągiew: brakująca karta", od:"Kanclerz Przecław",
+    pelny:"<span class='mowa'>„Lista istnieje. Tylko wyrwano z niej kartę, a wyrwać można ją było w jednym miejscu: w archiwum w Kruczynie, bo tam ją przepisywano.<br><br>Zapytaj Racibora Młodszego. Chłopak jest uczciwy do bólu i to jest jego jedyna wada.”</span>",
+    opis:"Z listy strat wyrwano kartę.",
+    cel:"Znajdź archiwistę Racibora Młodszego w Kruczynie.", nagroda:{exp:240, zloto:80, rep:{sk:2}}},
+  sk_chor3:{t:"Czarna chorągiew: co widziała grabarka", od:"Archiwista Racibor Młodszy",
+    pelny:"<span class='mowa'>„Kartę wyrwał ktoś, kto miał klucz. Klucz ma trzech ludzi, ale tylko jeden przychodzi tu nocą.<br><br>Nie powiem który. Powiem, że Otylia kopie doły także nocą i widzi więcej niż ja.”</span>",
+    opis:"Ktoś z kluczem do archiwum bywa tam po ciemku.",
+    cel:"Wypytaj grabarkę Otylię w Kruczynie.", nagroda:{exp:260, zloto:90, rep:{sk:2}}},
+  sk_chor4:{t:"Czarna chorągiew: groby bez nazwisk", od:"Grabarka Otylia",
+    pelny:"<span class='mowa'>„Cztery lata temu kazano mi wykopać czterdzieści dołów w jedną noc i nie pytać, kogo w nie kładę.<br><br>Płacił człowiek w czerwonym płaszczu z czarną podszewką. Takich płaszczy jest w Ismaalu pięć. Idź na nekropolię i policz sobie te doły, zanim uwierzysz komukolwiek.”</span>",
+    opis:"Czterdzieści grobów bez nazwisk, wykopanych w jedną noc.",
+    cel:"Zejdź na nekropolię Kruczyna i rozejrzyj się po rzędzie bez nazwisk.", nagroda:{exp:300, zloto:110, rep:{sk:3}}},
+  sk_chor5:{t:"Czarna chorągiew: rozliczenie pod bramą", od:"Grabarka Otylia",
+    pelny:"Trzecia chorągiew nie zginęła w polu. Odmówiła marszu na wieś, która nie zapłaciła daniny, i wycięto ją za to na własnym dziedzińcu - a potem policzono jako poległych z honorem.<br><br>Wracasz do Czerwieni Wysokiej z tą wiedzą i to ty zdecydujesz, komu ją oddasz.",
+    opis:"Wiesz już, jak zginęła trzecia chorągiew.",
+    cel:"Wróć do Czerwieni Wysokiej i zamknij sprawę czarnej chorągwi.",
+    nagroda:{exp:460, zloto:280, rep:{sk:6}, przedmiot:"kord_czerwienski"}},
+
+  sk_rekrut:{t:"Musztra dla obcego", od:"Sierżant Wojsław",
+    pelny:"<span class='mowa'>„Nie obchodzi mnie, czyj jesteś. Obchodzi mnie, czy umiesz stać w szeregu i czy umiesz bić.<br><br>Na dolnym tarasie pod murem łazi dezerter w naszym płaszczu. Przynieś mi ten płaszcz, to pogadamy o twojej nauce.”</span>",
+    opis:"Sierżant chce sprawdzić przybysza, zanim czegokolwiek go nauczy.",
+    cel:"Pokonaj dezertera pod murami Czerwieni Wysokiej.", nagroda:{exp:280, zloto:100, rep:{sk:2}}},
+  sk_proch:{t:"Saletra nie lubi pośpiechu", od:"Prochmistrzyni Racława",
+    pelny:"<span class='mowa'>„Straciłam prochownię i dwunastu ludzi, bo ktoś suszył saletrę przy ogniu. Zapasy mam w zgliszczach, tylko nikt tam nie chce chodzić.<br><br>Przynieś mi cztery beczułki. Nie biegnij z nimi.”</span>",
+    opis:"W zgliszczach prochowni zostały nietknięte zapasy.",
+    cel:"Przynieś Racławie cztery beczułki prochu żarnowieckiego.",
+    nagroda:{exp:260, zloto:120, rep:{sk:2}, przedmiot:"amulet_zarliwy"}},
+  sk_dzwon:{t:"Dzwon, który pękł", od:"Ludwisarz Zbrosław",
+    pelny:"<span class='mowa'>„Spiż był dobry. Forma była dobra. Pękł, bo ktoś dosypał do stopu ołowiu, żeby zaoszczędzić na spiżu - i ten ktoś nadal u mnie pracuje.<br><br>Potrzebuję dowodu, nie podejrzenia. W Kamionce kupują odlewy od kogoś taniej niż ode mnie.”</span>",
+    opis:"Ktoś w ludwisarni okrada stop.",
+    cel:"Wypytaj kamieniarkę Domicelę w Kamionce o tanie odlewy.", nagroda:{exp:240, zloto:100, rep:{sk:2}}},
+  sk_belty:{t:"Bełty z wałów", od:"Strzelmistrzyni Bronisława",
+    pelny:"<span class='mowa'>„Twierdza wystrzeliwuje dwa tysiące bełtów na miesiąc i połowa zostaje w wałach. Rekruci ich nie zbierają, bo to poniżej ich godności.<br><br>Ty godności nie masz, więc idź i zbierz.”</span>",
+    opis:"Wały twierdzy Grot są pełne wystrzelonych bełtów.",
+    cel:"Zbierz szesnaście bełtów z wałów i oddaj Bronisławie.", nagroda:{exp:200, zloto:80, rep:{sk:1}}},
+  sk_najemni:{t:"Ludzie bez barw", od:"Kasztelan Miłobrat",
+    pelny:"<span class='mowa'>„Na wałach ćwiczą ludzie, których nikt nie zaciągnął. Ktoś im płaci i ktoś im otworzył bramę.<br><br>Nie chcę procesu. Chcę, żeby ich tam nie było.”</span>",
+    opis:"W twierdzy Grot ćwiczą najemnicy bez przydziału.",
+    cel:"Rozpraw się ze zbrojnym najemnym na wałach twierdzy Grot.",
+    nagroda:{exp:340, zloto:160, rep:{sk:3}, przedmiot:"tarcza_chorag"}},
+  sk_wilki:{t:"Owce i wilki", od:"Owczarz Niemir",
+    pelny:"<span class='mowa'>„Straciłem czternaście sztuk w trzy noce. Wilk wrzosowy nie boi się ognia, bo na wrzosowisku ognia nie ma się czego bać.<br><br>Nie proszę o litość dla wilka. Proszę o wełnę, która mi jeszcze została.”</span>",
+    opis:"Wilki z wrzosowiska dziesiątkują stado.",
+    cel:"Zabij wilka wrzosowego na wrzosowisku pod Wrzosami.", nagroda:{exp:220, zloto:90, rep:{sk:1}}},
+  sk_danina:{t:"Danina poza terminem", od:"Wdowa Przybysława",
+    pelny:"<span class='mowa'>„Poborca był w wiosnę i będzie w jesień. A ten przychodzi między terminami, z laską i z pieczęcią, której nikt tu nie umie przeczytać.<br><br>Jeśli czytać umiesz, to ją sobie przeczytaj. Jeśli nie umiesz, to przynajmniej go stąd zabierz.”</span>",
+    opis:"Sępnicę odwiedza poborca poza wyznaczonymi terminami.",
+    cel:"Rozpraw się z poborcą w suchym rowie pod Sępnicą.", nagroda:{exp:300, zloto:140, rep:{sk:2}}},
+  sk_ogien:{t:"Traktat o żarze", od:"Arcymag Bogusza",
+    pelny:"<span class='mowa'>„Uczę tylko tych, którzy najpierw przeczytają. Ognia nie da się nauczyć z ręki do ręki, bo ręka spłonie pierwsza.<br><br>Wszerad w Żarnowcu ma mój traktat. Odbierz go i przeczytaj, zanim wrócisz.”</span>",
+    opis:"Arcymag nie uczy nikogo, kto nie zna traktatu.",
+    cel:"Odbierz traktat o żarze od Wszerada w Żarnowcu i wróć do Boguszy.",
+    nagroda:{exp:240, zloto:60, rep:{sk:2}, przedmiot:"ksiega_ognia"}},
+  sk_cienie:{t:"Cień, który został", od:"Mistrz Cieni Ziemowit",
+    pelny:"<span class='mowa'>„Jeden z moich uczniów wyszedł na kurhany i nie wrócił. To znaczy: wrócił, tylko nie cały.<br><br>Znajdziesz go tam, gdzie kopie. Nie mów do niego. Nie warto.”</span>",
+    opis:"Uczeń mistrza ciemności został na kurhanach.",
+    cel:"Rozpraw się z tym, co kopie w kurhanach przy Drodze Kruczej.",
+    nagroda:{exp:320, zloto:130, rep:{sk:2}, przedmiot:"sygnet_kruczy"}},
+  sk_regestr:{t:"Regestr chorągwi", od:"Archiwista Racibor Młodszy",
+    pelny:"<span class='mowa'>„Przepisałem regestr na czysto i nie mam komu go oddać, bo kanclerz nie przyjmuje z rąk chłopaka.<br><br>Z twoich przyjmie. Przeczytaj po drodze, jeśli chcesz - i tak przeczytasz.”</span>",
+    opis:"Regestr chorągwi czeka na odbiorcę w Czerwieni Wysokiej.",
+    cel:"Zanieś regestr kanclerzowi Przecławowi.", nagroda:{exp:200, zloto:70, rep:{sk:1}}}
+  };
+  for(var zk in Z) if(!ZADANIA[zk]) ZADANIA[zk] = Z[zk];
+
+  WROGOWIE.dezerter_chorag.konczy = "sk_rekrut";
+  WROGOWIE.zbrojny_najemny.konczy = "sk_najemni";
+  WROGOWIE.wilk_wrzosowy.konczy = "sk_wilki";
+  WROGOWIE.poborca_sepnicy.konczy = "sk_danina";
+  WROGOWIE.kruk_kruczyna.konczy = "sk_cienie";
+}
+rozszerzIsmaala();
+
+
+
+function scenyIsmaala(){
+
+  function nocleg(id, lok, cena, txt, opisNocy){
+    SCENY[id] = {
+      tekst:txt,
+      opcje:[
+        {l:"Prześpij noc (10 godzin, "+cena+" zł)", warunek:function(){ return S.zloto >= cena; },
+         odpoczynek:{lozko:true, godzin:10, udzial:1, lok:lok, tekst:opisNocy},
+         ef:function(){ S.zloto -= cena; }},
+        {l:"Posiedź i przeczekaj (4 godziny)", odpoczynek:{godzin:4, udzial:0.35, lok:lok,
+          tekst:"Siedzisz w kącie i słuchasz, o czym mówią żołnierze, kiedy nikt ich nie pyta."}},
+        {l:"Zapisz grę", zapis:true},
+        {l:"Wyjdź", idz:"__lok_"+lok}
+      ]
+    };
+  }
+
+  nocleg("zajazd_czerwien","czerwien_wysoka",15,
+    "Zajazd Pod Czarną Chorągwią stoi na środkowym tarasie. Nazwa nie jest żartem: właściciel służył w chorągwi, która nie wróciła, i wrócił tylko on.",
+    "Śpisz przy oknie wychodzącym na mur. Warta zmienia się trzy razy i za każdym razem się budzisz.");
+  nocleg("gospoda_zarnowiec","zarnowiec",12,
+    "Gospoda Pod Pękniętym Dzwonem: izba niska, okiennice okute, świec nie wolno tu wnosić - świeci się wyłącznie lampami w szkle.",
+    "Prochownia pracuje całą noc i przez sen słyszysz miarowy chrzęst żaren.");
+  nocleg("dom_kruczyn","kruczyn",10,
+    "Dom gościnny przy kostnicy. Czysto, cicho, pościel wykrochmalona. Nikt nie tłumaczy, dlaczego pokoje są tak dobrze wietrzone.",
+    "Śpisz twardo i budzisz się z wrażeniem, że ktoś przez tę noc siedział w izbie.");
+  nocleg("izba_grot","grot",7,
+    "Izba załogi: czterdzieści prycz, jeden piec, regulamin przybity do drzwi i przeczytany przez nikogo.",
+    "Wstajesz razem z załogą, o czwartej, bo o czwartej biją w kocioł.");
+  SCENY.szalas_wrzosy = {
+    tekst:"Szałas owczarski stoi po zawietrznej. W środku jest owcza sierść, dym i miejsce dokładnie dla jednego człowieka.",
+    opcje:[
+      {l:"Prześpij noc w szałasie (10 godzin, 3 zł)", warunek:function(){ return S.zloto >= 3; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"wrzosy", tekst:"Śpisz w cieple owiec i po raz pierwszy od dawna nikt cię nie budzi."},
+       ef:function(){ S.zloto -= 3; }},
+      {l:"Przeczekaj przy ogniu (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"wrzosy",
+        tekst:"Owczarz nie odzywa się ani razu i tak jest lepiej dla was obu."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_wrzosy"}
+    ]
+  };
+  SCENY.izba_kamionka = {
+    tekst:"Izba wykuta w ścianie łomu. Chłodno tu latem i chłodno zimą, ale sucho przez cały rok.",
+    opcje:[
+      {l:"Prześpij noc (10 godzin, 4 zł)", warunek:function(){ return S.zloto >= 4; },
+       odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"kamionka", tekst:"Kamień oddaje ciepło aż do rana."},
+       ef:function(){ S.zloto -= 4; }},
+      {l:"Przeczekaj (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"kamionka",
+        tekst:"Siedzisz w chłodzie i słuchasz, jak dłuta stukają w ścianę nad tobą."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_kamionka"}
+    ]
+  };
+  SCENY.izba_sepnica = {
+    tekst:"Wdowa Przybysława odstępuje ci swoją izbę i idzie spać do siostry. Nie chce za to zapłaty i obraża się, kiedy nalegasz.",
+    opcje:[
+      {l:"Prześpij noc (10 godzin)", odpoczynek:{lozko:true, godzin:10, udzial:1, lok:"sepnica",
+        tekst:"Śpisz na jedynym łóżku w tym domu i rano jest ci z tego powodu niewygodnie."}},
+      {l:"Przeczekaj (4 godziny)", odpoczynek:{godzin:4, udzial:0.3, lok:"sepnica",
+        tekst:"Siedzisz w progu i patrzysz na drogę, którą przychodzi poborca."}},
+      {l:"Zapisz grę", zapis:true},
+      {l:"Wyjdź", idz:"__lok_sepnica"}
+    ]
+  };
+
+  SCENY.arsenal_czerwien = {kto:"Arsenał miejski", portret:"weteran", handel:true,
+    oferta:["kord_czerwienski","pancerz_ismaalski","tarcza_chorag","kolczuga","strzaly","belty","chleb_zolnierski","mikst_zycia"],
+    tekst:"Arsenał wydaje broń chorągwiom, a resztę sprzedaje temu, kto zapłaci i da się zapisać w regestrze.",
+    opcje:[{l:"Wyjdź z arsenału", idz:"__lok_czerwien_wysoka"}]};
+  SCENY.swiatynia_czerwien = {kto:"Świątynia ognia", portret:"kobieta", handel:true,
+    oferta:["mikst_many","amulet_zarliwy","ksiega_ognia","dziewanna","arcydziegiel"],
+    tekst:"W świątyni ognia nie ma ołtarza, tylko palenisko, którego nie wolno przykryć. Przy nim sprzedaje się to, czego magowie mają za dużo.",
+    opcje:[{l:"Odejdź od paleniska", idz:"__lok_czerwien_wysoka"}]};
+  SCENY.sklad_zarnowiec = {kto:"Skład prochowy", portret:"kowal", handel:true,
+    oferta:["proch_zarnowiecki","lak_pieczetny","chleb_zolnierski","mikstura_mocy","mikst_zycia","belty"],
+    tekst:"Skład stoi za miastem, na wszelki wypadek. Handlarz siedzi na progu, nie w środku, i też na wszelki wypadek.",
+    opcje:[{l:"Odejdź od składu", idz:"__lok_zarnowiec"}]};
+  SCENY.kram_kruczyn = {kto:"Kram archiwum", portret:"urzednik", handel:true,
+    oferta:["ksiega_chorag","sygnet_kruczy","mikst_many","prochno_trumienne","tojad"],
+    tekst:"Archiwum sprzedaje odpisy, których nikt nie zamówił, i to, co znaleziono przy zmarłych bez rodziny.",
+    opcje:[{l:"Odejdź od kramu", idz:"__lok_kruczyn"}]};
+  SCENY.belciarnia_grot = {kto:"Bełciarnia twierdzy", portret:"kowal", handel:true,
+    oferta:["kusza_grotowa","belty","strzaly","tarcza_chorag","chleb_zolnierski","mikst_zycia"],
+    tekst:"Trzydziestu ludzi bije bełty przez cały dzień. Sprzedają nadwyżkę, bo nadwyżka jest zawsze.",
+    opcje:[{l:"Wyjdź", idz:"__lok_grot"}]};
+
+  /* ---------- CHORĄŻY WIELKI ŚWIĘTOPEŁK ---------- */
+  SCENY.swietopelk = {
+    portret:"weteran", npc:"swietopelk", ktoNieznany:"Człowiek w czerwonym płaszczu z czarną podszewką", kto:"Chorąży Wielki Świętopełk",
+    intro:{
+      tekst:"Stoi na murze i patrzy na chorągwie nad bramą, nie na ciebie.<br><br><span class='mowa'>„Czterdzieści chorągwi. Umiem wymienić każdą z pamięci, razem z tym, ile kosztowała.<br><br>Mów, po co przyszedłeś, bo licząc, tracę rachubę.”</span>",
+      opcje:[
+        {l:"Dlaczego trzy są czarne?", idz:"swietopelk_w1"},
+        {l:"Szukam służby.", idz:"swietopelk", poznaj:"swietopelk"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        sk:"<span class='mowa'>„Nasz. To znaczy: mój. Ismaal nie ma ochotników, ma ludzi, za których ktoś odpowiada. Za ciebie odpowiadam ja.”</span>",
+        nw:"<span class='mowa'>„Nowożytny. Wy liczycie, ile wart jest człowiek, a potem się dziwicie, że nikt za was nie umiera.<br><br>Mimo to wpuszczam cię za bramę. Sam bym się sobie dziwił.”</span>",
+        pl:"<span class='mowa'>„Puszcza. Mój dziad palił wasze uroczyska, twój dziad wieszał jego ludzi na drzewach.<br><br>Zostawmy dziadów. Ja mam kłopot tu i teraz.”</span>",
+        od:"<span class='mowa'>„Odeszli. Ludzie, którzy uciekli od chorągwi i teraz sprzedają się chorągwiom za pieniądze.<br><br>Nie gardzę. Rozumiem. Sam bym tak zrobił, gdyby mi wolno było odejść.”</span>",
+        brak:"<span class='mowa'>„Bez barw. W Ismaalu to nie jest wolność, tylko brak przydziału. I to się da naprawić.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Trzecia czarna chorągiew. Chcę wiedzieć.", warunekZ:{id:"sk_chor1", stan:"brak"}, dajZ:"sk_chor1", idz:"swietopelk"},
+      {l:"Wiem, jak zginęła trzecia chorągiew.", warunekZ:{id:"sk_chor5", stan:"aktywne"}, idz:"swietopelk_koniec"},
+      {l:"Co Ismaal sądzi o wojnie?", idz:"swietopelk_wojna", raz:true},
+      {l:"Odejdź", idz:"__lok_czerwien_wysoka"}
+    ]
+  };
+  SCENY.swietopelk_w1 = {portret:"weteran", kto:"Chorąży Wielki Świętopełk",
+    tekst:"<span class='mowa'>„Bo nie wróciły. Czarną wiesza się wtedy, kiedy z chorągwi nie zostaje nikt, kto mógłby ją zwinąć.<br><br>Dwie wiszą słusznie. O trzeciej nie wiem nic i to jest jedyna rzecz w tym mieście, której nie wiem.”</span>",
+    opcje:[{l:"Może da się dowiedzieć.", idz:"swietopelk", poznaj:"swietopelk",
+            ef:function(){ S.poznane.czarna_chorag = true; }}]};
+  SCENY.swietopelk_wojna = {portret:"weteran", kto:"Chorąży Wielki Świętopełk",
+    tekst:function(){
+      return "<span class='mowa'>„Wojna jest jedyną rzeczą, którą Ismaal umie robić lepiej niż ktokolwiek. To nie duma, to kłopot: kiedy masz w ręku tylko młot, wszystko wygląda na gwóźdź.<br><br>Nowożytni kupią pokój, jak kupują wszystko. My będziemy musieli go wywalczyć i dlatego przegramy, nawet jeśli wygramy.”</span><br><br>"
+        + ocenaFrakcyjna({
+          nw:"<span class='mowa'>„Powtórz to swojemu stołowi. Zapiszą i wyliczą, ile na tym zarobią.”</span>",
+          pl:"<span class='mowa'>„Wy przeczekacie. Zawsze przeczekujecie.”</span>",
+          brak:"<span class='mowa'>„Jeszcze nie masz barw. To znaczy, że jeszcze możesz mieć rację.”</span>"
+        });
+    },
+    opcje:[{l:"Zapamiętam.", idz:"swietopelk", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.ismaal_wojna = true; }}]};
+  SCENY.swietopelk_koniec = {portret:"weteran", kto:"Chorąży Wielki Świętopełk",
+    tekst:"Słucha bez ruchu. Kiedy kończysz, długo patrzy na czarną chorągiew nad bramą.<br><br><span class='mowa'>„Czterdziestu ludzi. Za odmowę marszu na wieś, która nie miała czym zapłacić.<br><br>Powiedz mi jedno: mam to podać do regestru pod ich nazwiskami, czy zostawić ich jako poległych z honorem, jak stoi teraz?”</span>",
+    opcje:[
+      {l:"Podaj prawdę. Niech mają nazwiska.", oddajZ:"sk_chor5", idz:"swietopelk_prawda",
+       ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.chorag_prawda = true; S.rep.od += 3; S.rep.sk -= 1; }},
+      {l:"Zostaw ich jako poległych. Ismaal tego nie udźwignie.", oddajZ:"sk_chor5", idz:"swietopelk_honor",
+       ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.chorag_honor = true; S.rep.sk += 3; S.rep.od -= 2; }}
+    ]};
+  SCENY.swietopelk_prawda = {portret:"weteran", kto:"Chorąży Wielki Świętopełk",
+    tekst:"<span class='mowa'>„Czterdzieści nazwisk do regestru. I jedno nazwisko obok, tego w płaszczu z czarną podszewką - bo takich płaszczy jest pięć, a ja wiem, kto nosi piąty.”</span><br><br>Trzy dni później na dolnym tarasie ścinają człowieka, którego nikt nie wymienia z imienia. Nad bramą wisi już tylko dwie czarne chorągwie - trzecią zdjęto i zwinięto po ludzku.",
+    opcje:[{l:"Tyle mogłem zrobić.", idz:"swietopelk"}]};
+  SCENY.swietopelk_honor = {portret:"weteran", kto:"Chorąży Wielki Świętopełk",
+    tekst:"<span class='mowa'>„Rozsądnie. Nienawidzę tego słowa.”</span><br><br>Chorągiew zostaje czarna, nazwiska w ziemi, a człowiek w płaszczu z czarną podszewką chodzi po mieście dalej. Ismaal nie drgnie - i to jest właśnie ta cena, którą Świętopełk umie policzyć co do grosza.",
+    opcje:[{l:"Tak będzie lepiej dla wszystkich.", idz:"swietopelk"}]};
+
+  /* ---------- KANCLERZ PRZECŁAW ---------- */
+  SCENY.przeclaw = {
+    portret:"urzednik", npc:"przeclaw", ktoNieznany:"Człowiek z pieczęcią na łańcuchu", kto:"Kanclerz Przecław",
+    intro:{
+      tekst:"Pieczęć nosi na łańcuchu na szyi i co chwilę jej dotyka, jakby sprawdzał, czy nadal jest.<br><br><span class='mowa'>„Kanclerz Przecław. Piszę to, co Ismaal potem uzna za prawdę. Wybieraj słowa.”</span>",
+      opcje:[
+        {l:"Nie boisz się takiej władzy?", idz:"przeclaw_w1"},
+        {l:"Mam sprawę.", idz:"przeclaw", poznaj:"przeclaw"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        sk:"<span class='mowa'>„Wpisany, opieczętowany, policzony. W Ismaalu to znaczy: żywy.”</span>",
+        nw:"<span class='mowa'>„Nowożytny w mojej kancelarii. Wy piszecie liczby, my piszemy nazwiska. Obie rzeczy zabijają, tylko wasze wolniej.”</span>",
+        od:"<span class='mowa'>„Odeszli nie mają wpisu i to jest wasza największa siła. Nie umiem was policzyć, więc nie umiem was zniszczyć.”</span>",
+        pl:"<span class='mowa'>„Puszcza nie prowadzi ksiąg. Zazdroszczę i uważam to za dzikość naraz.”</span>",
+        brak:"<span class='mowa'>„Człowiek bez wpisu. Dla mnie nie istniejesz, a mimo to stoisz.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Świętopełk pyta o trzecią czarną chorągiew.", warunekZ:{id:"sk_chor1", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("sk_chor1"); }, idz:"przeclaw_chorag"},
+      {l:"Przynoszę regestr od Racibora Młodszego.", warunekZ:{id:"sk_regestr", stan:"aktywne"},
+       oddajZ:"sk_regestr", idz:"przeclaw_regestr"},
+      {l:"Odejdź", idz:"__lok_czerwien_wysoka"}
+    ]
+  };
+  SCENY.przeclaw_w1 = {portret:"urzednik", kto:"Kanclerz Przecław",
+    tekst:"<span class='mowa'>„Codziennie. Ale bardziej bym się bał, gdyby pisał to ktoś inny.<br><br>W Ismaalu nie ginie się od miecza, tylko od zdania w regestrze. Miecz przychodzi później i już tylko wykonuje.”</span>",
+    opcje:[{l:"Szczere.", idz:"przeclaw", poznaj:"przeclaw"}]};
+  SCENY.przeclaw_chorag = {portret:"urzednik", kto:"Kanclerz Przecław",
+    tekst:"Wyjmuje zszywkę kart i przewraca je bez pośpiechu. Zatrzymuje się w miejscu, gdzie zostały same postrzępione brzegi.<br><br><span class='mowa'>„Widzisz? Wyrwana. Nie zgubiona, nie wyblakła - wyrwana ręką.<br><br>Odpis leży w Kruczynie, bo tam przepisuje się wszystko po dwa razy. Pytaj Racibora Młodszego. I nie mów mu, że ja cię przysłałem, bo chłopak jest uczciwy i zaraz to gdzieś zapisze.”</span>",
+    opcje:[{l:"Jadę do Kruczyna.", dajZ:"sk_chor2", idz:"przeclaw"}]};
+  SCENY.przeclaw_regestr = {portret:"urzednik", kto:"Kanclerz Przecław",
+    tekst:"Przegląda pismo linijka po linijce, wreszcie odkłada.<br><br><span class='mowa'>„Ręka równa, atrament jednolity, żadnej skrobanki. Ten chłopak jest wart więcej niż trzy chorągwie i nigdy się o tym nie dowie.”</span>",
+    opcje:[{l:"Powiem mu.", idz:"przeclaw"}]};
+
+  /* ---------- ARCYMAG BOGUSZA ---------- */
+  SCENY.bogusza = {
+    portret:"kobieta", npc:"bogusza", ktoNieznany:"Kobieta, przy której powietrze drga", kto:"Arcymag Bogusza",
+    intro:{
+      tekst:"Stoi przy palenisku i nie patrzy w ogień, tylko obok - tam, gdzie powietrze się marszczy.<br><br><span class='mowa'>„Nie podchodź bliżej niż na trzy kroki. Nie ze względu na mnie.”</span>",
+      opcje:[
+        {l:"Czym właściwie jest ogień?", idz:"bogusza_w1"},
+        {l:"Chcę się uczyć.", idz:"bogusza", poznaj:"bogusza"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Uczę tego, co można powtórzyć. Reszta to przypadek, a przypadek w ogniu zabija ucznia i mistrza naraz.”</span>",
+    opcje:[
+      {l:"Chcę czytać twój traktat.", warunekZ:{id:"sk_ogien", stan:"brak"}, dajZ:"sk_ogien", idz:"bogusza"},
+      {l:"Przeczytałem traktat.", warunekZ:{id:"sk_ogien", stan:"gotowe"}, oddajZ:"sk_ogien", idz:"bogusza_traktat"},
+      {l:"Nauka", idz:"bogusza_nauka"},
+      {l:"Odejdź", idz:"__lok_czerwien_wysoka"}
+    ]
+  };
+  SCENY.bogusza_w1 = {portret:"kobieta", kto:"Arcymag Bogusza",
+    tekst:"<span class='mowa'>„Zgodą. Materia zgadza się przestać być sobą, a my tylko ją o to prosimy - głośno i w odpowiednim porządku.<br><br>Kto myśli, że ogniem się rozkazuje, ten pali własny dom w trzecim roku nauki.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"bogusza", poznaj:"bogusza", ef:function(){ S.poznane.magia_ognia = true; }}]};
+  SCENY.bogusza_traktat = {portret:"kobieta", kto:"Arcymag Bogusza",
+    tekst:"<span class='mowa'>„Trzy pytania. Odpowiedziałeś na dwa i na jedno skłamałeś, ale skłamałeś rozsądnie.<br><br>Od dziś możesz się u mnie uczyć. Płacisz tak samo jak wszyscy, bo nikt tu nie ma zniżki za odwagę.”</span>",
+    opcje:[{l:"Zaczynajmy.", idz:"bogusza", ef:function(){ S.umie.uczen_ognia = true; }}]};
+
+  /* ---------- SIERŻANT WOJSŁAW ---------- */
+  SCENY.wojslaw = {
+    portret:"weteran", npc:"wojslaw", ktoNieznany:"Człowiek krzyczący na rekrutów", kto:"Sierżant Wojsław",
+    intro:{
+      tekst:"Krzyczy na trzech chłopaków, którzy trzymają tarcze o dwa palce za nisko. Kiedy podchodzisz, nie przerywa.<br><br><span class='mowa'>„Stój i patrz. Za tydzień jeden z nich będzie żył dłużej od pozostałych dwóch i to będzie ten, który mnie posłuchał.”</span>",
+      opcje:[
+        {l:"Uczysz ich umierać czy żyć?", idz:"wojslaw_w1"},
+        {l:"Chcę się uczyć walki.", idz:"wojslaw", poznaj:"wojslaw"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Tarcza wyżej, nogi szerzej, oddech przez nos. To jest cała moja mądrość i wystarcza mi od trzydziestu lat.”</span>",
+    opcje:[
+      {l:"Sprawdź mnie.", warunekZ:{id:"sk_rekrut", stan:"brak"}, dajZ:"sk_rekrut", idz:"wojslaw"},
+      {l:"Mam ten płaszcz.", warunekZ:{id:"sk_rekrut", stan:"gotowe"}, oddajZ:"sk_rekrut", idz:"wojslaw_plaszcz"},
+      {l:"Nauka", idz:"wojslaw_nauka"},
+      {l:"Odejdź", idz:"__lok_czerwien_wysoka"}
+    ]
+  };
+  SCENY.wojslaw_w1 = {portret:"weteran", kto:"Sierżant Wojsław",
+    tekst:"<span class='mowa'>„Żyć. Umierać każdy umie sam, na to nie trzeba sierżanta.<br><br>Tylko że w Ismaalu za naukę życia płaci się z tej samej kasy co za pogrzeby i czasem kasa jest jedna.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"wojslaw", poznaj:"wojslaw"}]};
+  SCENY.wojslaw_plaszcz = {portret:"weteran", kto:"Sierżant Wojsław",
+    tekst:"Ogląda płaszcz pod światło, znajduje ślad po spruciu chorągwi i kiwa głową.<br><br><span class='mowa'>„Nasz był. Teraz już niczyj.<br><br>Umiesz bić. To rzadsze, niż myślisz. Siadaj, pouczę cię czegoś, czego nie uczę rekrutów.”</span>",
+    opcje:[{l:"Słucham.", idz:"wojslaw"}]};
+
+  /* ---------- LUDWISARZ ZBROSŁAW ---------- */
+  SCENY.zbroslaw = {
+    portret:"kowal", npc:"zbroslaw", ktoNieznany:"Człowiek stukający w spiż", kto:"Ludwisarz Zbrosław",
+    intro:{
+      tekst:"Chodzi wokół pękniętego dzwonu i stuka w niego młotkiem w różnych miejscach, jakby dzwon miał mu odpowiedzieć.<br><br><span class='mowa'>„Słyszysz? Tu jest głucho. Tu też. Dobry spiż odzywa się wszędzie tak samo.”</span>",
+      opcje:[
+        {l:"Dlaczego go nie przetopisz?", idz:"zbroslaw_w1"},
+        {l:"Szukam roboty.", idz:"zbroslaw", poznaj:"zbroslaw"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Leję działa dla twierdzy i dzwony dla wsi. Działa wychodzą lepiej i to jest najsmutniejsze zdanie, jakie w życiu powiedziałem.”</span>",
+    opcje:[
+      {l:"Kto ci sypie ołów do stopu?", warunekZ:{id:"sk_dzwon", stan:"brak"}, dajZ:"sk_dzwon", idz:"zbroslaw"},
+      {l:"Mam twojego złodzieja.", warunekZ:{id:"sk_dzwon", stan:"gotowe"}, oddajZ:"sk_dzwon", idz:"zbroslaw_koniec"},
+      {l:"Odejdź", idz:"__lok_zarnowiec"}
+    ]
+  };
+  SCENY.zbroslaw_w1 = {portret:"kowal", kto:"Ludwisarz Zbrosław",
+    tekst:"<span class='mowa'>„Bo póki stoi pęknięty, każdy czeladnik w tym mieście widzi, co się dzieje, kiedy się oszczędza na spiżu.<br><br>Przetopię go w dniu, w którym przestanę mieć na to dowody.”</span>",
+    opcje:[{l:"Rozsądnie.", idz:"zbroslaw", poznaj:"zbroslaw"}]};
+  SCENY.zbroslaw_koniec = {portret:"kowal", kto:"Ludwisarz Zbrosław",
+    tekst:"Słucha o odlewach sprzedawanych w Kamionce po pół ceny i po chwili wie już wszystko.<br><br><span class='mowa'>„Trzeci czeladnik od okna. Nosi taki sam fartuch jak ja i myślałem, że to z szacunku.”</span><br><br>Płaci ci bez targowania i wraca do stukania w dzwon.",
+    opcje:[{l:"Wrócę.", idz:"zbroslaw"}]};
+
+  /* ---------- PROCHMISTRZYNI RACŁAWA ---------- */
+  SCENY.raclawa = {
+    portret:"kobieta", npc:"raclawa", ktoNieznany:"Kobieta w rękawicach po łokcie", kto:"Prochmistrzyni Racława",
+    intro:{
+      tekst:"Przesypuje siwy proszek z misy do misy, powoli, jednym ruchem nadgarstka.<br><br><span class='mowa'>„Nie oddychaj w tę stronę. Nie żartuję ani trochę.”</span>",
+      opcje:[
+        {l:"Jak długo się tym zajmujesz?", idz:"raclawa_w1"},
+        {l:"Potrzebujesz kogoś do roboty?", idz:"raclawa", poznaj:"raclawa"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Proch jest jak człowiek: suchy jest groźny, mokry jest bezużyteczny, a najgorszy jest wtedy, gdy się go zostawi bez nadzoru.”</span>",
+    opcje:[
+      {l:"Przyniosę ci zapasy ze zgliszcz.", warunekZ:{id:"sk_proch", stan:"brak"}, dajZ:"sk_proch", idz:"raclawa"},
+      {l:"Mam cztery beczułki.", warunekZ:{id:"sk_proch", stan:"aktywne"},
+       wymagaPrzedmiotu:"proch_zarnowiecki", ile:4, oddajZ:"sk_proch", idz:"raclawa_koniec"},
+      {l:"Odejdź", idz:"__lok_zarnowiec"}
+    ]
+  };
+  SCENY.raclawa_w1 = {portret:"kobieta", kto:"Prochmistrzyni Racława",
+    tekst:"<span class='mowa'>„Dziewiętnaście lat. Zaczynałam jako ta, która nosi wodę, a zostałam mistrzynią, bo wszyscy przede mną zginęli po kolei.<br><br>To nie jest awans. To jest kolejka.”</span>",
+    opcje:[{l:"Uważaj na siebie.", idz:"raclawa", poznaj:"raclawa"}]};
+  SCENY.raclawa_koniec = {portret:"kobieta", kto:"Prochmistrzyni Racława",
+    tekst:"Otwiera pierwszą beczułkę, wsypuje szczyptę na blachę i przykłada do niej rozżarzony drut. Błysk jest krótki i czysty.<br><br><span class='mowa'>„Suchy. Przetrwał wybuch i cztery lata w piwnicy.<br><br>Weź ten amulet. Nosiła go moja poprzedniczka i nie zdążyła go zdjąć.”</span>",
+    opcje:[{l:"Dziękuję.", idz:"raclawa"}]};
+
+  /* ---------- MISTRZ WSZERAD ---------- */
+  SCENY.wszerad = {
+    portret:"urzednik", npc:"wszerad", ktoNieznany:"Człowiek o brwiach wypalonych do skóry", kto:"Mistrz Wszerad",
+    intro:{
+      tekst:"Nie ma brwi ani rzęs i najwyraźniej dawno przestał się tym przejmować.<br><br><span class='mowa'>„Wszerad. Mag ognia drugiego stopnia i tak już zostanie, bo do trzeciego trzeba mieć albo talent, albo szczęście, a ja zużyłem oba.”</span>",
+      opcje:[
+        {l:"Co się stało z twoją twarzą?", idz:"wszerad_w1"},
+        {l:"Bogusza przysyła mnie po traktat.", idz:"wszerad", poznaj:"wszerad"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Uczę początków. Bogusza uczy końców. Między jednym a drugim jest dziesięć lat i dwie blizny.”</span>",
+    opcje:[
+      {l:"Traktat o żarze.", warunekZ:{id:"sk_ogien", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("sk_ogien"); dodaj("ksiega_ognia", 1); }, idz:"wszerad_traktat"},
+      {l:"Nauka", idz:"wszerad_nauka"},
+      {l:"Odejdź", idz:"__lok_zarnowiec"}
+    ]
+  };
+  SCENY.wszerad_w1 = {portret:"urzednik", kto:"Mistrz Wszerad",
+    tekst:"<span class='mowa'>„Prosiłem ogień o coś, na co jeszcze nie było zgody. Odpowiedział, ale po swojemu.<br><br>Zostałem przy życiu i przy drugim stopniu. Uważam to za sprawiedliwy podział.”</span>",
+    opcje:[{l:"Rozumiem.", idz:"wszerad", poznaj:"wszerad"}]};
+  SCENY.wszerad_traktat = {portret:"urzednik", kto:"Mistrz Wszerad",
+    tekst:"Wyjmuje z kufra oprawny w skórę zeszyt i kładzie ci go na dłoni obiema rękami, jak coś ciężkiego.<br><br><span class='mowa'>„Czytaj dwa razy. Za pierwszym razem zrozumiesz, o czym to jest. Za drugim - że o czymś zupełnie innym.”</span>",
+    opcje:[{l:"Wracam do Boguszy.", idz:"wszerad"}]};
+
+  /* ---------- MISTRZ CIENI ZIEMOWIT ---------- */
+  SCENY.ziemowit = {
+    portret:"urzednik", npc:"ziemowit", ktoNieznany:"Człowiek w czarnym, bez cienia na ścianie", kto:"Mistrz Cieni Ziemowit",
+    intro:{
+      tekst:"Stoi przy oknie i rzeczywiście nie rzuca cienia na ścianę za sobą. Nie tłumaczy tego i nie wygląda, żeby zamierzał.<br><br><span class='mowa'>„Nie każdy, kto tu wchodzi, wychodzi tym samym. Uprzedzam wszystkich i to jest cała moja uczciwość.”</span>",
+      opcje:[
+        {l:"Ismaal was toleruje?", idz:"ziemowit_w1"},
+        {l:"Chcę się uczyć.", idz:"ziemowit", poznaj:"ziemowit"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Ciemność nie jest przeciwieństwem ognia. Ciemność jest tym, co zostaje, kiedy ogień skończy.”</span>",
+    opcje:[
+      {l:"Twój uczeń nie wrócił.", warunekZ:{id:"sk_cienie", stan:"brak"}, dajZ:"sk_cienie", idz:"ziemowit"},
+      {l:"Już nie kopie.", warunekZ:{id:"sk_cienie", stan:"gotowe"}, oddajZ:"sk_cienie", idz:"ziemowit_koniec"},
+      {l:"Nauka", idz:"ziemowit_nauka"},
+      {l:"Odejdź", idz:"__lok_kruczyn"}
+    ]
+  };
+  SCENY.ziemowit_w1 = {portret:"urzednik", kto:"Mistrz Cieni Ziemowit",
+    tekst:"<span class='mowa'>„Toleruje w jednym mieście, przy jednym cmentarzu, pod jednym nazwiskiem - moim.<br><br>To nie jest tolerancja. To jest sposób, w jaki trzyma się coś w garści, udając, że się to szanuje.”</span>",
+    opcje:[{l:"Znam to skądinąd.", idz:"ziemowit", poznaj:"ziemowit", ef:function(){ S.poznane.magia_ciemnosci = true; }}]};
+  SCENY.ziemowit_koniec = {portret:"urzednik", kto:"Mistrz Cieni Ziemowit",
+    tekst:"<span class='mowa'>„Dziękuję. To nie jest słowo, którego często używam, więc je zapamiętaj.<br><br>Miał dwadzieścia dwa lata i chciał odzyskać brata. Powiedziałem mu, że się nie da. Uwierzył mi dopiero na kurhanach.”</span><br><br>Podaje ci sygnet, nie patrząc, co robi.",
+    opcje:[{l:"Przykro mi.", idz:"ziemowit"}]};
+
+  /* ---------- GRABARKA OTYLIA ---------- */
+  SCENY.otylia = {
+    portret:"kobieta", npc:"otylia", ktoNieznany:"Kobieta z dwiema łopatami", kto:"Grabarka Otylia",
+    intro:{
+      tekst:"Nosi dwie łopaty: jedną wąską, drugą szeroką. Na pytanie, po co dwie, odpowiada, zanim je zadasz.<br><br><span class='mowa'>„Wąska do korzeni, szeroka do ziemi. Kto kopie jedną, ten kopie dwa razy dłużej.”</span>",
+      opcje:[
+        {l:"Ile grobów wykopałaś?", idz:"otylia_w1"},
+        {l:"Mam pytanie o archiwum.", idz:"otylia", poznaj:"otylia"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Pytaj. Ja i tak stoję tu do zmroku, a zmrok jeszcze daleko.”</span>",
+    opcje:[
+      {l:"Kto przychodzi do archiwum nocą?", warunekZ:{id:"sk_chor3", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("sk_chor3"); }, oddajZ:"sk_chor3", idz:"otylia_noc"},
+      {l:"Policzyłem doły bez nazwisk.", warunekZ:{id:"sk_chor4", stan:"gotowe"}, oddajZ:"sk_chor4", idz:"otylia_doly"},
+      {l:"Odejdź", idz:"__lok_kruczyn"}
+    ]
+  };
+  SCENY.otylia_w1 = {portret:"kobieta", kto:"Grabarka Otylia",
+    tekst:"<span class='mowa'>„Nie liczę od czterech lat. Wcześniej liczyłam i doszłam do tysiąca dziewięciuset.<br><br>Potem przyszła jedna noc, w którą wykopałam czterdzieści naraz, i przestałam.”</span>",
+    opcje:[{l:"Co to była za noc?", idz:"otylia", poznaj:"otylia"}]};
+  SCENY.otylia_noc = {portret:"kobieta", kto:"Grabarka Otylia",
+    tekst:"Wbija szeroką łopatę w ziemię i opiera się na niej.<br><br><span class='mowa'>„Człowiek w czerwonym płaszczu z czarną podszewką. Przyjeżdża nocą, wchodzi do archiwum, wychodzi przed świtem.<br><br>Cztery lata temu płacił mi za czterdzieści dołów wykopanych w jedną noc. Nie pytaj mnie, kogo w nie kładłam. Idź i sam policz ten rząd - jest ostatni od strony muru i nie ma na nim ani jednego nazwiska.”</span>",
+    opcje:[{l:"Pójdę tam.", dajZ:"sk_chor4", idz:"otylia"}]};
+  SCENY.otylia_doly = {portret:"kobieta", kto:"Grabarka Otylia",
+    tekst:"<span class='mowa'>„Czterdzieści. Wszyscy w mundurach, wszyscy z odpruwaną chorągwią i wszyscy z tej samej strony - od dziedzińca, nie z pola.<br><br>Nikt nie ginie na wojnie z ranami od tyłu i od przodu naraz, chyba że stał w szeregu i nie chciał ruszyć.<br><br>Teraz jedź do Czerwieni i powiedz to komuś, kto ma prawo to zapisać. Ja nie mam.”</span>",
+    opcje:[{l:"Powiem.", dajZ:"sk_chor5", idz:"otylia"}]};
+
+  /* ---------- ARCHIWISTA RACIBOR MŁODSZY ---------- */
+  SCENY.racibor_ml = {
+    portret:"urzednik", npc:"racibor_ml", ktoNieznany:"Chłopak zasypany zwojami", kto:"Racibor Młodszy",
+    intro:{
+      tekst:"Siedzi za stołem, na którym zwojów jest więcej niż blatu. Kiedy wchodzisz, kończy zdanie i dopiero wtedy podnosi wzrok.<br><br><span class='mowa'>„Przepraszam. Gdybym przerwał w środku wersu, przepisywałbym całą stronę od nowa.”</span>",
+      opcje:[
+        {l:"Nie nudzi cię to?", idz:"racibor_ml_w1"},
+        {l:"Szukam pewnej listy strat.", idz:"racibor_ml", poznaj:"racibor_ml"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Wszystko, co w Ismaalu napisano, przechodzi przez ten stół po dwa razy. To znaczy, że wiem dwa razy więcej, niż powinienem.”</span>",
+    opcje:[
+      {l:"Trzecia czarna chorągiew. Odpis listy.", warunekZ:{id:"sk_chor2", stan:"aktywne"},
+       oddajZ:"sk_chor2", idz:"racibor_ml_lista"},
+      {l:"Masz coś, co trzeba zanieść?", warunekZ:{id:"sk_regestr", stan:"brak"}, dajZ:"sk_regestr", idz:"racibor_ml"},
+      {l:"Odejdź", idz:"__lok_kruczyn"}
+    ]
+  };
+  SCENY.racibor_ml_w1 = {portret:"urzednik", kto:"Racibor Młodszy",
+    tekst:"<span class='mowa'>„Nudzi. I to jest najlepsza część tej roboty, bo kiedy przestaje nudzić, to znaczy, że przepisuję coś, czego nie powinienem był zobaczyć.<br><br>Zdarzyło się trzy razy. Wszystkie trzy razy pamiętam.”</span>",
+    opcje:[{l:"Jeden z tych trzech razy mnie interesuje.", idz:"racibor_ml", poznaj:"racibor_ml"}]};
+  SCENY.racibor_ml_lista = {portret:"urzednik", kto:"Racibor Młodszy",
+    tekst:"Blednie, ale wstaje i idzie do skrzyni. Wraca z pustymi rękami.<br><br><span class='mowa'>„Odpisu też nie ma. Wyrwany tak samo, tym samym ruchem - patrzyłem na brzegi.<br><br>Klucz do tej skrzyni mają trzy osoby, a ja o żadnej z nich nie powiem złego słowa, bo nie mam dowodu.<br><br>Ale Otylia kopie doły także nocą. Ona nie ma dowodów i to jej nie przeszkadza mówić.”</span>",
+    opcje:[{l:"Znajdę Otylię.", dajZ:"sk_chor3", idz:"racibor_ml"}]};
+
+  /* ---------- KASZTELAN MIŁOBRAT ---------- */
+  SCENY.milobrat = {
+    portret:"weteran", npc:"milobrat", ktoNieznany:"Człowiek z ręką na temblaku", kto:"Kasztelan Miłobrat",
+    intro:{
+      tekst:"Rękę nosi na temblaku od tak dawna, że temblak jest wytarty do nitki.<br><br><span class='mowa'>„Kasztelan Miłobrat. Twierdza Grot, dwustu ludzi, jedna brama i jedna studnia. Wszystko, co ci potrzebne o mnie wiedzieć.”</span>",
+      opcje:[
+        {l:"Co z ręką?", idz:"milobrat_w1"},
+        {l:"Szukam roboty.", idz:"milobrat", poznaj:"milobrat"}
+      ]
+    },
+    tekst:function(){
+      return ocenaFrakcyjna({
+        sk:"<span class='mowa'>„Swój. Więc mów krótko, bo swoim ufam i nie muszę ich przesłuchiwać.”</span>",
+        nw:"<span class='mowa'>„Nowożytny w twierdzy. Wiem, po co tu jesteś: policzyć bramy i studnie.<br><br>Licz. Jedna brama, jedna studnia. Zaoszczędziłem ci pół dnia.”</span>",
+        od:"<span class='mowa'>„Najemnik. Połowa mojej załogi to dawni najemnicy, więc nie będę udawał wyższości.”</span>",
+        pl:"<span class='mowa'>„Puszcza. Wasi łucznicy zabili mi kiedyś trzydziestu ludzi w jeden poranek. Szanuję to bardziej, niż wypada.”</span>",
+        brak:"<span class='mowa'>„Bez barw i bez przydziału. W twierdzy to znaczy: pod obserwacją.”</span>"
+      });
+    },
+    opcje:[
+      {l:"Kto ćwiczy na twoich wałach?", warunekZ:{id:"sk_najemni", stan:"brak"}, dajZ:"sk_najemni", idz:"milobrat"},
+      {l:"Już ich tam nie ma.", warunekZ:{id:"sk_najemni", stan:"gotowe"}, oddajZ:"sk_najemni", idz:"milobrat_koniec"},
+      {l:"Odejdź", idz:"__lok_grot"}
+    ]
+  };
+  SCENY.milobrat_w1 = {portret:"weteran", kto:"Kasztelan Miłobrat",
+    tekst:"<span class='mowa'>„Bełt. Własny, z naszej strony, wystrzelony przez rekruta, który się przestraszył.<br><br>Nie kazałem go ukarać. Kazałem go uczyć dalej i dziś jest strzelcem lepszym ode mnie.”</span>",
+    opcje:[{l:"Dobra decyzja.", idz:"milobrat", poznaj:"milobrat"}]};
+  SCENY.milobrat_koniec = {portret:"weteran", kto:"Kasztelan Miłobrat",
+    tekst:"<span class='mowa'>„Wiem. Brama się dziś nie otworzyła ani razu poza rozkazem i to jest dla mnie wystarczający raport.<br><br>Weź tarczę. Nie z magazynu - moją. Jednej ręki i tak już do niej nie mam.”</span>",
+    opcje:[{l:"Będę ją nosił.", idz:"milobrat"}]};
+
+  /* ---------- STRZELMISTRZYNI BRONISŁAWA ---------- */
+  SCENY.bronislawa = {
+    portret:"kobieta", npc:"bronislawa", ktoNieznany:"Kobieta z korbą kuszy u pasa", kto:"Strzelmistrzyni Bronisława",
+    intro:{
+      tekst:"Napina kuszę korbą, kładzie bełt, strzela i trafia, nie przerywając rozmowy, której z tobą jeszcze nie zaczęła.<br><br><span class='mowa'>„Kusza jest dla ludzi, którzy nie mają czasu być zdolni. Ja mam czas i jestem zdolna, więc jestem groźna.”</span>",
+      opcje:[
+        {l:"Kusza czy łuk?", idz:"bronislawa_w1"},
+        {l:"Chcę się uczyć strzelać.", idz:"bronislawa", poznaj:"bronislawa"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Uczę korby, nie palców. Palce można wyćwiczyć w rok, korbę w tydzień - i o to właśnie chodzi Ismaalowi.”</span>",
+    opcje:[
+      {l:"Zbiorę te bełty.", warunekZ:{id:"sk_belty", stan:"brak"}, dajZ:"sk_belty", idz:"bronislawa"},
+      {l:"Mam szesnaście bełtów.", warunekZ:{id:"sk_belty", stan:"aktywne"},
+       wymagaPrzedmiotu:"belty", ile:16, oddajZ:"sk_belty", idz:"bronislawa_belty"},
+      {l:"Nauka", idz:"bronislawa_nauka"},
+      {l:"Odejdź", idz:"__lok_grot"}
+    ]
+  };
+  SCENY.bronislawa_w1 = {portret:"kobieta", kto:"Strzelmistrzyni Bronisława",
+    tekst:"<span class='mowa'>„Łuk jest lepszy. Powiedz to głośno w tej twierdzy, a wylecisz przez bramę.<br><br>Łucznika trzeba wychować od dziecka. Kusznika wystawia się po dwóch tygodniach. Ismaal nie ma dzieci na zbyciu, ma tygodnie.”</span>",
+    opcje:[{l:"Zimna kalkulacja.", idz:"bronislawa", poznaj:"bronislawa"}]};
+  SCENY.bronislawa_belty = {portret:"kobieta", kto:"Strzelmistrzyni Bronisława",
+    tekst:"Przegląda bełty jeden po drugim, dziesięć odkłada na bok, sześć łamie o kolano.<br><br><span class='mowa'>„Dziesięć dobrych. Sześć krzywych, a krzywy bełt jest gorszy niż żaden, bo w krzywy człowiek wierzy.”</span>",
+    opcje:[{l:"Zapamiętam.", idz:"bronislawa"}]};
+
+  /* ---------- RYCERZ JAKSA ---------- */
+  SCENY.jaksa = {
+    portret:"weteran", npc:"jaksa", ktoNieznany:"Człowiek w pełnej zbroi mimo upału", kto:"Rycerz Jaksa",
+    intro:{
+      tekst:"Stoi w pełnej zbroi w samo południe i nie wygląda, żeby mu to przeszkadzało.<br><br><span class='mowa'>„Zbroja nie jest po to, żeby w niej było wygodnie. Jest po to, żeby w niej było znośnie przez cały dzień - a to zupełnie co innego.”</span>",
+      opcje:[
+        {l:"Czego uczysz?", idz:"jaksa_w1"},
+        {l:"Chcę się uczyć miecza i tarczy.", idz:"jaksa", poznaj:"jaksa"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Miecz i tarcza. Tarcza jest ważniejsza i to jest pierwsza rzecz, którą tracą wszyscy zdolni uczniowie.”</span>",
+    opcje:[
+      {l:"Nauka", idz:"jaksa_nauka"},
+      {l:"Odejdź", idz:"__lok_grot"}
+    ]
+  };
+  SCENY.jaksa_w1 = {portret:"weteran", kto:"Rycerz Jaksa",
+    tekst:"<span class='mowa'>„Trzech rzeczy: stać, zasłaniać i czekać. Bić uczą wszyscy, czekać nie uczy nikt, a to czekanie wygrywa potyczki.”</span>",
+    opcje:[{l:"Zaczynajmy.", idz:"jaksa", poznaj:"jaksa"}]};
+
+  /* ---------- OWCZARZ NIEMIR ---------- */
+  SCENY.niemir = {
+    portret:"kowal", npc:"niemir", ktoNieznany:"Człowiek z psem, który nie szczeka", kto:"Owczarz Niemir",
+    intro:{
+      tekst:"Pies siedzi mu przy nodze i patrzy na ciebie bez jednego dźwięku.<br><br><span class='mowa'>„Nie szczeka. Wyszczekany pies mówi wilkowi, gdzie są owce.”</span>",
+      opcje:[
+        {l:"Mądry pies.", idz:"niemir", poznaj:"niemir"},
+        {l:"Odejść", idz:"__lok_wrzosy"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Wrzos, owce, wilki i gościniec. Cztery rzeczy i wszystkie cztery zabierają.”</span>",
+    opcje:[
+      {l:"Opowiedz o wilkach.", warunekZ:{id:"sk_wilki", stan:"brak"}, dajZ:"sk_wilki", idz:"niemir"},
+      {l:"Wilka już nie ma.", warunekZ:{id:"sk_wilki", stan:"gotowe"}, oddajZ:"sk_wilki", idz:"niemir"},
+      {l:"Odejdź", idz:"__lok_wrzosy"}
+    ]
+  };
+
+  /* ---------- KAMIENIARKA DOMICELA ---------- */
+  SCENY.domicela = {
+    portret:"kobieta", npc:"domicela", ktoNieznany:"Kobieta z dłutem za uchem", kto:"Kamieniarka Domicela",
+    intro:{
+      tekst:"Dłuto nosi za uchem jak inni pióro. Kiedy mówi, kamienny pył sypie jej się z włosów.<br><br><span class='mowa'>„Kamień nie kłamie. Albo pęka wzdłuż słoja, albo nie pęka wcale. Ludzie tak nie umieją.”</span>",
+      opcje:[
+        {l:"Wolisz kamień od ludzi?", idz:"domicela_w1"},
+        {l:"Mam pytanie o odlewy.", idz:"domicela", poznaj:"domicela"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Pytaj. Ręce i tak pracują same.”</span>",
+    opcje:[
+      {l:"Kto sprzedaje wam tanie odlewy?", warunekZ:{id:"sk_dzwon", stan:"aktywne"},
+       ef:function(){ gotoweZadanie("sk_dzwon"); }, idz:"domicela_odlewy"},
+      {l:"Odejdź", idz:"__lok_kamionka"}
+    ]
+  };
+  SCENY.domicela_w1 = {portret:"kobieta", kto:"Kamieniarka Domicela",
+    tekst:"<span class='mowa'>„Nie wolę. Po prostu wiem, czego się po kamieniu spodziewać.<br><br>Po ludziach też wiem, tylko wtedy jest mi przykro.”</span>",
+    opcje:[{l:"Uczciwie postawione.", idz:"domicela", poznaj:"domicela"}]};
+  SCENY.domicela_odlewy = {portret:"kobieta", kto:"Kamieniarka Domicela",
+    tekst:"<span class='mowa'>„Czeladnik z Żarnowca. Przyjeżdża co dwa tygodnie z wozem i sprzedaje okucia po pół ceny, a spiż w nich jest ciężki jak ołów - bo to jest ołów.<br><br>Powiedz Zbrosławowi, że siedzi trzeci od okna. Poznałam go po fartuchu: takim samym jak jego własny.”</span>",
+    opcje:[{l:"Wracam do Żarnowca.", idz:"domicela"}]};
+
+  /* ---------- WDOWA PRZYBYSŁAWA ---------- */
+  SCENY.przybyslawa_s = {
+    portret:"kobieta", npc:"przybyslawa_s", ktoNieznany:"Kobieta stojąca w progu", kto:"Wdowa Przybysława",
+    intro:{
+      tekst:"Stoi w progu i nie wpuszcza cię do środka, dopóki nie skończy się przyglądać.<br><br><span class='mowa'>„W tej wsi obcy przychodzą po coś. Powiedz po co, a ja powiem, czy wejdziesz.”</span>",
+      opcje:[
+        {l:"Idę tędy i tyle.", idz:"przybyslawa_s", poznaj:"przybyslawa_s"},
+        {l:"Odejść", idz:"__lok_sepnica"}
+      ]
+    },
+    tekst:"<span class='mowa'>„Ismaal pamięta o nas dwa razy do roku i za każdym razem pamięta z laską w ręku.”</span>",
+    opcje:[
+      {l:"Kto przychodzi między terminami?", warunekZ:{id:"sk_danina", stan:"brak"}, dajZ:"sk_danina", idz:"przybyslawa_s"},
+      {l:"Poborca już tu nie wróci.", warunekZ:{id:"sk_danina", stan:"gotowe"}, oddajZ:"sk_danina", idz:"przybyslawa_koniec"},
+      {l:"Odejdź", idz:"__lok_sepnica"}
+    ]
+  };
+  SCENY.przybyslawa_koniec = {portret:"kobieta", kto:"Wdowa Przybysława",
+    tekst:"Ogląda pieczęć, którą przyniosłeś, i podaje ją sąsiadce. Sąsiadka podaje dalej. Nikt w tej wsi nie umie jej przeczytać, ale każdy chce ją potrzymać.<br><br><span class='mowa'>„Fałszywa czy prawdziwa - jedno i drugie znaczyło dla nas to samo. Teraz nie znaczy nic.”</span>",
+    opcje:[{l:"Trzymajcie się.", idz:"przybyslawa_s"}]};
+
+  var TREN = [
+    ["bogusza","czerwien_wysoka","Arcymag Bogusza","kobieta","„Płacisz z góry i uczysz się do skutku. Ognia nie da się zwrócić.”"],
+    ["wojslaw","czerwien_wysoka","Sierżant Wojsław","weteran","„Nie mam ćwiczebnych mieczy dla obcych. Masz swój - to ćwicz swoim.”"],
+    ["wszerad","zarnowiec","Mistrz Wszerad","urzednik","„Uczę początków i uczę ich tanio, bo początki są najtańsze i najgroźniejsze.”"],
+    ["ziemowit","kruczyn","Mistrz Cieni Ziemowit","urzednik","„Nie pytaj, skąd biorę to, czego uczę. Odpowiedź zabrałaby ci sen.”"],
+    ["bronislawa","grot","Strzelmistrzyni Bronisława","kobieta","„Korba, bełt, oddech, spust. W tej kolejności i nigdy inaczej.”"],
+    ["jaksa","grot","Rycerz Jaksa","weteran","„Najpierw stanie, potem zasłona, dopiero na końcu cięcie.”"]
+  ];
+  TREN.forEach(function(t){
+    SCENY[t[0] + "_nauka"] = {wraca:t[0], wracaOpis:"Wróć do rozmowy",
+      portret:t[3], kto:t[2], uczy:t[0], trener:true,
+      tekst:"<span class='mowa'>" + t[4] + "</span>"};
+  });
+
+  /* --- nauka u mistrzów Ismaala --- */
+  var N = [
+    {id:"sk_tarcza", uczy:"wojslaw", grupa:"walka", l:"Walka z tarczą", pn:2, zl:70, raz:true,
+     ef:function(){ S.umie.tarczownik = true; }},
+    {id:"sk_sila_wojslaw", uczy:"wojslaw", grupa:"walka", l:"Siła +1", pn:1, zl:8, ef:function(){ S.sila += 1; }},
+    {id:"sk_kondycja", uczy:"wojslaw", grupa:"walka", l:"Zdrowie +12", pn:1, zl:14,
+     ef:function(){ S.hpMax += 12; S.hp += 12; }},
+    {id:"sk_miecz_tarcza", uczy:"jaksa", grupa:"walka", l:"Rycerska szkoła miecza", pn:3, zl:140, raz:true,
+     wymagaUm:"tarczownik", ef:function(){ S.umie.miecz_tarcza = true; }},
+    {id:"sk_zaslona", uczy:"jaksa", grupa:"walka", l:"Supercios: Zasłona i pchnięcie", pn:5, zl:210, raz:true,
+     wymPoziom:10, wymagaUm:"tarczownik", ef:function(){ S.umie.zaslona_pchniecie = true; }},
+    {id:"sk_kusza", uczy:"bronislawa", grupa:"walka", l:"Kusza", pn:2, zl:80, raz:true,
+     ef:function(){ S.umie.kusza = true; }},
+    {id:"sk_zrecz_bron", uczy:"bronislawa", grupa:"walka", l:"Zręczność +1", pn:1, zl:8, ef:function(){ S.zrecz += 1; }},
+    {id:"sk_strzal_korbowy", uczy:"bronislawa", grupa:"walka", l:"Supercios: Strzał korbowy", pn:5, zl:230, raz:true,
+     wymPoziom:15, wymagaUm:"kusza", ef:function(){ S.umie.strzal_korbowy = true; }},
+    {id:"sk_ogien1", uczy:"wszerad", grupa:"magia", l:"Nowicjusz ognia: Iskra", pn:2, zl:50, raz:true,
+     ef:function(){ S.umie.iskra = true; }},
+    {id:"sk_mana_wszerad", uczy:"wszerad", grupa:"magia", l:"Zasób many +10", pn:2, zl:40,
+     ef:function(){ S.manaMax += 10; S.mana += 10; }},
+    {id:"sk_ogien2", uczy:"bogusza", grupa:"magia", l:"Mag ognia: Popiół", pn:4, zl:190, raz:true,
+     wymagaUm:"iskra", wymPoziom:10, ef:function(){ S.umie.popiol = true; }},
+    {id:"sk_intel_bogusza", uczy:"bogusza", grupa:"magia", l:"Intelekt +1", pn:1, zl:9, ef:function(){ S.intel += 1; }},
+    {id:"sk_ciemnosc1", uczy:"ziemowit", grupa:"magia", l:"Nowicjusz ciemności: Mrok", pn:3, zl:110, raz:true,
+     ef:function(){ S.umie.mrok = true; }},
+    {id:"sk_ciemnosc2", uczy:"ziemowit", grupa:"magia", l:"Nekromanta: Wyssanie", pn:5, zl:240, raz:true,
+     wymagaUm:"mrok", wymPoziom:15, ef:function(){ S.umie.wyssanie = true; }}
+  ];
+  N.forEach(function(w){ if(!NAUKA.some(function(x){ return x.id === w.id; })) NAUKA.push(w); });
+
+  if(!SUPERCIOSY.some(function(c){ return c.id === "zaslona_pchniecie"; }))
+    SUPERCIOSY.push({id:"zaslona_pchniecie", n:"Zasłona i pchnięcie", z:["g","s","s"], o:"×2.3 obrażeń", v:2.3});
+  if(!SUPERCIOSY.some(function(c){ return c.id === "strzal_korbowy"; }))
+    SUPERCIOSY.push({id:"strzal_korbowy", n:"Strzał korbowy", z:["s","d","g","s"], o:"×2.8 obrażeń", v:2.8});
+
+  /* --- nowe zaklęcia Ismaala --- */
+  if(!ZAKLECIA.some(function(z){ return z.id === "mrok"; }))
+    ZAKLECIA.push({id:"mrok", um:"mrok", n:"Mrok", mana:10, baza:9, wsp:1.6, typ:"energia", stun:true,
+      o:"Gasi światło wokół przeciwnika. Trafiony przez chwilę nie wie, gdzie stoisz."});
+  if(!ZAKLECIA.some(function(z){ return z.id === "wyssanie"; }))
+    ZAKLECIA.push({id:"wyssanie", um:"wyssanie", n:"Wyssanie", mana:16, baza:14, wsp:2.0, typ:"energia",
+      o:"Zabiera przeciwnikowi siły. Reszta nie wraca do nikogo."});
+}
+scenyIsmaala();
+
 
 
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
