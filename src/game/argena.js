@@ -10133,7 +10133,7 @@ function rozszerzOdeszlych(){
       {id:"zg_lowca", typ:"mob", n:"Ktoś porównuje twarze z listą", walka:"lowca_glow"},
       {id:"zg_zasob", typ:"zasob", n:"Skrawki rzemienia przy warsztacie", zbierz:{rzemien:3},
        wynik:"Odpady po pasach. Dla rymarza śmieć, dla ciebie towar."},
-      {id:"zg_ruda", typ:"ruda", n:"Żyła w ścianie wyrobiska", wymaga:"gornictwo", zbierz:{ruda_zelaza:2},
+      {id:"zg_ruda", typ:"ruda", n:"Żyła w ścianie wyrobiska", wymaga:"gornictwo", zbierz:{darniowa:2},
        wynik:"Kamieniołom porzucono, kiedy trafiono na żelazo zbyt twarde do wybierania kilofem."},
       {id:"zg_skrzynia", typ:"skrzynia", n:"Skrzynia bez zamka przy ognisku", zloto:130,
        wynik:"Bez zamka, bo nikt tu nie kradnie przy ognisku. Ty właśnie zrobiłeś wyjątek."}
@@ -10177,7 +10177,7 @@ function rozszerzOdeszlych(){
     opis:"Pas ubitej ziemi między płotem a lasem. Tędy wyprowadza się konie, o których nie ma zapisu.",
     punkty:[
       {id:"pk_lowca", typ:"mob", n:"Ktoś obserwuje stajnie zza płotu", walka:"lowca_glow"},
-      {id:"pk_ruda", typ:"ruda", n:"Hałda przy kuźni", wymaga:"gornictwo", zbierz:{ruda_zelaza:2, wegiel_drzewny:1},
+      {id:"pk_ruda", typ:"ruda", n:"Hałda przy kuźni", wymaga:"gornictwo", zbierz:{darniowa:2, wegiel_drzewny:1},
        wynik:"W hałdzie zostaje tyle rudy, że opłaca się ją przebierać drugi raz."},
       {id:"pk_skrzynia", typ:"skrzynia", n:"Skrzynka pod żłobem", zloto:100, zbierz:{rzemien:2},
        wynik:"Uprząż, rzemienie i kilka podków bez znaku warsztatu."}
@@ -10827,7 +10827,7 @@ function scenyOdeszlych(){
     ]
   };
   SCENY.kuznia_podkowa = {kto:"Kuźnia Ksina", portret:"kowal", handel:true,
-    oferta:["szabla_popielna","kord_najemniczy","kaftan_przeszywany","ruda_zelaza","wegiel_drzewny","mikst_zycia"],
+    oferta:["szabla_popielna","kord_najemniczy","kaftan_przeszywany","darniowa","wegiel_drzewny","mikst_zycia"],
     tekst:"Kowadło stoi nisko, narzędzia leżą w zasięgu ręki człowieka siedzącego. Wszystko tu jest ułożone pod jednego kowala.",
     opcje:[{l:"Wyjdź z kuźni", idz:"__lok_podkowa"}]};
   SCENY.izba_popielisko = {
