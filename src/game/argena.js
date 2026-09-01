@@ -97,7 +97,65 @@ znaczniki:[
 {x:60, y:40.6, n:"Kopalnia Żelazna", typ:"punkt", o:"Hałda, kołowrót, dwa kominy i nikt nie podnosi głowy."},
 {x:53, y:46, n:"Przeprawa Wschodnia", typ:"punkt", o:"Most stoi cały i nikt nim nie chodzi."},
 {x:57, y:47, n:"Stary Cmentarz", typ:"punkt", o:"Kamienie bez napisów i zapadnięta płyta."},
-{x:70, y:81, n:"Podobno wyspa", typ:"legenda", o:"Żeglarze mówią o wyspie daleko na południu. Jedni ją widzieli, drudzy widzieli tych, którzy ją widzieli.", odkryj:"Wyspa Cieni"}
+  {x:40.2, y:46.4, n:"Mokradła Pod Wierzbami", typ:"punkt", o:"Woda stoi tu od wiosny i nie ma dokąd spłynąć."},
+  {x:25, y:40.2, n:"Dno Wyrobiska", typ:"punkt", o:"Na dnie kamieniołomu, gdzie kończy się droga dla wozów."},
+  {x:21, y:39.4, n:"Jaskinia Szeptów", typ:"punkt", o:"Szczelina pod murem Ismaala. Echo wraca później, niż powinno."},
+  {x:30, y:46.5, n:"Most Zachodni", typ:"most", o:"Przejście do puszczy. Krata zamknięta od strony południowej."},
+  {x:61, y:39.6, n:"Zalany Chodnik", typ:"punkt", o:"Sztolnia pod kopalnią, po kolana w wodzie."},
+  {x:69, y:46.5, n:"Most Wschodni", typ:"most", o:"Most stoi cały i nikt nim nie chodzi."},
+  {x:57.5, y:48, n:"Katakumby", typ:"punkt", o:"Pod zapadniętą płytą starego cmentarza."},
+  {x:47.5, y:39, n:"Serpentyna", typ:"punkt", o:"Droga wykuta w zboczu, wąska na jeden wóz."},
+  {x:48, y:36.5, n:"Wietrznica", typ:"osada", o:"Osada górnicza pod graniami. Wiatr nie ustaje tu nigdy."},
+  {x:59, y:44, n:"Kontor Nowożytnych", typ:"punkt", o:"Placówka rejestrowa przy trakcie. Wszystko na piśmie."},
+  {x:44, y:48.6, n:"Trzcinowy Trakt", typ:"punkt", o:"Droga nad rzeką, po obu stronach trzcina wyższa od jeźdźca."},
+  {x:42.5, y:50.2, n:"Sokoli Bród", typ:"osada", o:"Wieś rybacka przy brodzie. Łodzie wyciągnięte na piach."},
+  {x:35, y:51, n:"Uroczysko za Kratą", typ:"punkt", o:"Placówka Prastarego Ludu po tej stronie kraty."},
+  {x:63, y:48.5, n:"Aleja Kamienna", typ:"punkt", o:"Rząd kamiennych słupów bez napisów, ciągnący się na wschód."},
+  {x:66, y:50, n:"Spopielone Opactwo", typ:"punkt", o:"Ruina zakonna. Dach spłonął dawno, mury stoją."},
+  {x:67.5, y:45, n:"Kryjówka Odeszłych", typ:"punkt", o:"Wejście, którego nie widać z drogi."},
+  {x:64, y:44.5, n:"Wąwóz Kupiecki", typ:"punkt", o:"Wąskie gardło, przez które przechodzi każdy wóz na wschód."},
+  {x:61.5, y:46, n:"Jarmark Trzech Chorągwi", typ:"osada", o:"Wolne targowisko. Cztery barwy, żadnej władzy."},
+  {x:26, y:44, n:"Strażnica Ismaala", typ:"punkt", o:"Wysunięta placówka w czerwonych barwach."},
+  {x:47, y:43, n:"Droga Poselska", typ:"punkt", o:"Pas rozjemczy. Broni się tu nie dobywa."},
+  {x:49, y:42.2, n:"Stół Rozjemczy", typ:"osada", o:"Cztery stołki i jeden stół. Siedziba rozjemców."},
+  {x:50.5, y:43.2, n:"Obozowisko Chorążych", typ:"osada", o:"Namioty czterech barw ustawione tak, by nie stykały się bokami."},
+  {x:58, y:40.5, n:"Trakt Wagowy", typ:"punkt", o:"Droga w ziemie Nowożytnych. Co milę słup z rachunkiem."},
+  {x:62, y:34, n:"Nowy Ostrów", typ:"stolica", o:"Stolica Nowożytnych. Wchodzi się przez kolejkę, nie przez bramę."},
+  {x:66.5, y:36.5, n:"Miedziana Waga", typ:"miasto", o:"Miasto mennicze. Bije monetę dla obu stron wojny."},
+  {x:70, y:39, n:"Droga Latarnicza", typ:"punkt", o:"Grobla do portu. Po obu stronach woda."},
+  {x:74, y:40.5, n:"Latarnica", typ:"miasto", o:"Port Nowożytnych. Ogień na wieży nie gaśnie."},
+  {x:67, y:31.5, n:"Kuźnice Wodne", typ:"miasto", o:"Miasto hutnicze. Koła wodne pracują dzień i noc."},
+  {x:60.5, y:38, n:"Kobylniki", typ:"osada", o:"Wieś przy trakcie. Żyje z tego, że ktoś tędy jedzie."},
+  {x:64.5, y:29.5, n:"Smolarze", typ:"osada", o:"Wieś w borze. Dym z mielerzy widać z daleka."},
+  {x:30.5, y:41, n:"Gościniec Czerwony", typ:"punkt", o:"Droga w ziemie Ismaala. Ziemia pod butem jest czerwona."},
+  {x:20, y:28.5, n:"Czerwień Wysoka", typ:"stolica", o:"Stolica Ismaala. Twierdza w czerwonych skałach."},
+  {x:24.5, y:33, n:"Żarnowiec", typ:"miasto", o:"Miasto ludwisarzy. Odlewa dzwony i to, co dzwonem nie jest."},
+  {x:22.5, y:25, n:"Droga Krucza", typ:"punkt", o:"Trakt na północ, ku graniom."},
+  {x:24, y:21.5, n:"Kruczyn", typ:"miasto", o:"Miasto uczonych i grabarzy. Jedni piszą, drudzy kopią."},
+  {x:29, y:26.5, n:"Twierdza Grot", typ:"miasto", o:"Miasto-garnizon. Nikt tu nie mieszka, kto nie służy."},
+  {x:17.5, y:34.5, n:"Wrzosy", typ:"osada", o:"Wieś na wrzosowisku. Owce i wiatr."},
+  {x:21.5, y:37.5, n:"Kamionka", typ:"osada", o:"Wieś kamieniarzy pod czerwoną ścianą."},
+  {x:27, y:36, n:"Sępnica", typ:"osada", o:"Wieś podatkowa. Poborca bywa częściej niż ksiądz."},
+  {x:52, y:49.5, n:"Wilczy Przesmyk", typ:"punkt", o:"Droga w puszczę. Wilki chodzą tu za wozami."},
+  {x:48, y:61, n:"Wiecznik", typ:"stolica", o:"Stolica Prastarego Ludu. Miasto na pomostach nad wodą."},
+  {x:42, y:58.5, n:"Borowe Wrota", typ:"miasto", o:"Miasto łuczników. Brama z dwóch żywych dębów."},
+  {x:52, y:58, n:"Ścieżka Mchowa", typ:"punkt", o:"Trakt na północ puszczy. Mech tłumi każdy krok."},
+  {x:56, y:60, n:"Mchowiec", typ:"miasto", o:"Miasto druidów. Domy wrastają w drzewa."},
+  {x:52.5, y:63.5, n:"Jodłogród", typ:"miasto", o:"Miasto zbrojnych leśnych. Ćwiczą przed świtem."},
+  {x:38.5, y:62, n:"Rosica", typ:"miasto", o:"Miasto nad rozlewiskiem. Chodzi się kładkami."},
+  {x:45, y:64.5, n:"Barcie", typ:"osada", o:"Wieś bartników. Miód i dym."},
+  {x:58.5, y:63, n:"Lisia Kępa", typ:"osada", o:"Wieś traperów na wysepce między odnogami."},
+  {x:44.5, y:56.5, n:"Olszyny", typ:"osada", o:"Wieś zielarska. Susz wisi pod każdym okapem."},
+  {x:64, y:41.5, n:"Trakt Popielny", typ:"punkt", o:"Droga w ziemie Odeszłych. Popiół zamiast kurzu."},
+  {x:72, y:24, n:"Zgorzel", typ:"stolica", o:"Stolica Odeszłych, w wyrobisku wśród skał na wodzie."},
+  {x:66, y:26.5, n:"Suchy Bród", typ:"miasto", o:"Miasto najemnicze. Ściana kontraktów zamiast ratusza."},
+  {x:68.5, y:20.5, n:"Wyschłe Koryto", typ:"punkt", o:"Trakt na północ. Rzeka odeszła stąd dawno."},
+  {x:63, y:17, n:"Mgielnik", typ:"miasto", o:"Miasto magów wody. Mgła nie podnosi się nigdy."},
+  {x:75.5, y:28, n:"Podkowa", typ:"miasto", o:"Miasto kuźni i koni. Słychać je, zanim się je zobaczy."},
+  {x:58.5, y:23.5, n:"Popielisko", typ:"osada", o:"Wieś wypalaczy węgla."},
+  {x:61, y:27.5, n:"Wykrot", typ:"osada", o:"Wieś drwali. Pnie leżą tam, gdzie padły."},
+  {x:70, y:31, n:"Krzywe Doły", typ:"osada", o:"Wieś przemytnicza. Każda chata ma drugie wyjście."},
+  {x:70, y:81, n:"Podobno wyspa", typ:"legenda", o:"Żeglarze mówią o wyspie daleko na południu. Jedni ją widzieli, drudzy widzieli tych, którzy ją widzieli.", odkryj:"Wyspa Cieni"}
 ]
 };
 
@@ -156,13 +214,13 @@ var PRZEDMIOTY = {
              o:"Gęste, siwe na grzbiecie, z białymi pasami. Zimą trzyma ciepło lepiej niż wełna."},
   gruda:     {n:"Gruda soli",       kat:"surowiec", typ:"towar", cena:22,
              o:"Szara bryła wielkości pięści, ostra w dotyku. Na Ziemiach Niczyich cenniejsza niż na jednym i drugim dworze razem."},
-  ksiega_ziol:{n:"Zielnik z Kuźnicy", kat:"pismo", typ:"ksiega", intelekt:1, cena:90,
+  ksiega_ziol:{n:"Zielnik z Kuźnicy", kat:"pismo", typ:"ksiega", exp:60, intelekt:1, cena:90,
              o:"Cienka księga w skórzanej oprawie, z rysunkami roślin i podpisami w dwóch językach. Ktoś dopisał na marginesach uwagi, których autor by się nie powstydził."},
-  ksiega_run:{n:"O znakach ognia",  kat:"pismo", typ:"ksiega", intelekt:2, runy:"runy1", cena:160,
+  ksiega_run:{n:"O znakach ognia",  kat:"pismo", typ:"ksiega", exp:80, intelekt:2, runy:"runy1", cena:160,
              o:"Kart jest niewiele, ale każda opisuje jeden znak i to, co się dzieje, gdy nakreśli się go źle. Trzy karty są wydarte."},
-  ksiega_prastara:{n:"Tabliczka z prastarymi rytami", kat:"pismo", typ:"ksiega", intelekt:3, runy:"runy3", cena:0,
+  ksiega_prastara:{n:"Tabliczka z prastarymi rytami", kat:"pismo", typ:"ksiega", exp:140, intelekt:3, runy:"runy3", cena:0,
              o:"Kamienna tabliczka odłupana z płyty nagrobnej. Znaki są kanciaste i głębokie, ryte narzędziem, którego nikt już nie używa."},
-  ksiega_kron:{n:"Kronika Ziem Niczyich", kat:"pismo", typ:"ksiega", intelekt:1, cena:70,
+  ksiega_kron:{n:"Kronika Ziem Niczyich", kat:"pismo", typ:"ksiega", exp:70, intelekt:1, cena:70,
              o:"Spisana ręką kogoś, kto mieszkał tu przed wojną. Ostatni wpis urywa się w połowie zdania."},
   noz_mysl:  {n:"Nóż myśliwski", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[5,8], cena:45, wym:{sila:12},
              o:"Wąskie ostrze z jelcem z rogu. Robione do oprawiania, nie do bicia, ale bije wystarczająco."},
@@ -210,6 +268,14 @@ var PRZEDMIOTY = {
              o:"Czarne z zielonym połyskiem, dłuższe niż przedramię."},
   leb_wilczycy:{n:"Łeb wilczycy", kat:"surowiec", typ:"towar", cena:0,
              o:"Ciężki i już zimny. Sierżant będzie chciał go zobaczyć."},
+  mieso:     {n:"Surowe mięso",      kat:"zywnosc", typ:"jadalne", leczy:4, cena:9,
+             o:"Płat mięsa zdjęty z ubitego zwierza. Surowe daje niewiele - w kotle daje znacznie więcej."},
+  ryba:      {n:"Świeża ryba",       kat:"zywnosc", typ:"jadalne", leczy:6, cena:8,
+             o:"Drobnica z płycizny, jeszcze mokra. Nadaje się do kotła lepiej niż do ręki."},
+  wywar_maly:{n:"Wywar z dziewanny", kat:"napoj", typ:"jadalne", leczy:22, cena:34,
+             o:"Gorzki, mętny i pachnący sianem. Zielarki warzą go z tego, co rośnie po miedzach."},
+  wywar_many:{n:"Napar runiczny",    kat:"napoj", typ:"napoj_many", mana:18, cena:64,
+             o:"Warzony nad znakiem, nie nad ogniem. Chłodzi gardło i rozjaśnia w głowie."},
   list_zap:  {n:"Zapieczętowany list", kat:"pismo", typ:"pismo",                      cena:0,  o:"Pieczęć nietknięta. Lepiej, żeby taka została."}
 };
 
@@ -414,7 +480,7 @@ var ZADANIA = {
   }
 };
 
-function progExp(poziom){ return 100 + (poziom-1)*60; }
+function progExp(poziom){ return 300 + (poziom-1)*200; }
 
 function dodajExp(ile){
   if(!ile) return null;
@@ -459,18 +525,55 @@ function ileAktywnych(){
   return n;
 }
 
+/* jaki atrybut podnosi dana nauka - rozpoznane po etykiecie, żeby każdy trener liczył tak samo */
+function atrybutNauki(w){
+  var l = w.l || "";
+  if(/^Siła/.test(l))        return "sila";
+  if(/^Zręczność/.test(l))   return "zrecz";
+  if(/^Intelekt/.test(l))    return "intelekt";
+  if(/^(Zasób many|Mana)/.test(l)) return "mana";
+  if(/^(Zdrowie|Wytrzymałość)/.test(l)) return "hp";
+  return null;
+}
+/* Ogólni nauczyciele doprowadzą cię do połowy. Wyżej uczą tylko swoi.
+   Sufit dotyczy wyłącznie nauki - przedmioty mogą wynieść cechę ponad niego. */
+var SUFITY_OGOLNE   = {sila:50,  zrecz:50,  intelekt:50,  mana:70,  hp:110};
+var SUFITY_FRAKCYJNE = {sila:100, zrecz:100, intelekt:100, mana:160, hp:240};
+function wartoscAtrybutu(a){
+  if(a === "sila") return S.sila;
+  if(a === "zrecz") return S.zrecz;
+  if(a === "intelekt") return S.intelekt;
+  if(a === "mana") return S.manaMax;
+  if(a === "hp") return S.hpMax;
+  return 0;
+}
+function sufitNauki(w){
+  var a = atrybutNauki(w);
+  if(!a) return null;
+  return (w.frakcyjny ? SUFITY_FRAKCYJNE : SUFITY_OGOLNE)[a];
+}
+function poSufitem(w){
+  var sf = sufitNauki(w);
+  return sf === null || wartoscAtrybutu(atrybutNauki(w)) < sf;
+}
 function kosztPn(w){
-  if(w.id==="sila"||w.id==="sila2")   return S.sila  < 15 ? 1 : (S.sila  < 25 ? 2 : 3);
-  if(w.id==="zrecz"||w.id==="zrecz2") return S.zrecz < 15 ? 1 : (S.zrecz < 25 ? 2 : 3);
-  if(w.id==="mana"||w.id==="mana2")   return S.manaMax < 30 ? 1 : (S.manaMax < 60 ? 2 : 3);
+  var a = atrybutNauki(w);
+  if(a === "sila")     return S.sila  < 15 ? 1 : (S.sila  < 25 ? 2 : 3);
+  if(a === "zrecz")    return S.zrecz < 15 ? 1 : (S.zrecz < 25 ? 2 : 3);
+  if(a === "intelekt") return S.intelekt < 15 ? 1 : (S.intelekt < 25 ? 2 : 3);
+  if(a === "mana")     return S.manaMax < 30 ? 1 : (S.manaMax < 60 ? 2 : 3);
+  if(a === "hp")       return S.hpMax < 80 ? 1 : (S.hpMax < 140 ? 2 : 3);
   return w.pn;
 }
 
 /* jednolity cennik treningów - te same atrybuty kosztują tyle samo u każdego */
 function kosztZl(w){
-  if(w.id==="sila"||w.id==="sila2")   return 4 + Math.max(0, S.sila - 10) * 2;
-  if(w.id==="zrecz"||w.id==="zrecz2") return 4 + Math.max(0, S.zrecz - 10) * 2;
-  if(w.id==="mana"||w.id==="mana2")   return 10 + Math.max(0, S.manaMax - 10);
+  var a = atrybutNauki(w);
+  if(a === "sila")     return 6 + Math.max(0, S.sila  - 10) * 3;
+  if(a === "zrecz")    return 6 + Math.max(0, S.zrecz - 10) * 3;
+  if(a === "intelekt") return 6 + Math.max(0, S.intelekt - 5) * 3;
+  if(a === "mana")     return 12 + Math.max(0, S.manaMax - 10) * 2;
+  if(a === "hp")       return 14 + Math.max(0, S.hpMax - 40);
   return w.zl;
 }
 
@@ -2244,16 +2347,10 @@ ozog_runy:{
   portret:"urzednik", npc:"ozog", ktoNieznany:"Człowiek w spalonym płaszczu", kto:"Brat Ożóg",
   tekst:"<span class='mowa'>„Runy to nie pismo. Pismo zapisuje to, co ktoś powiedział. Runa zapisuje to, co ma się stać - i dlatego źle postawiona robi to i tak.<br><br>Są trzy stopnie. Pierwszego uczę każdego, kto zapłaci. Drugiego tylko tych, którzy przeżyli pierwszy.<br><br>Trzeciego nie uczę wcale i nie dlatego, że nie chcę.”</span>",
   opcje:[
-    {l:"To kto uczy trzeciego?", idz:"ozog_runy3"},
     {l:"Na razie wystarczy.", idz:"ozog"}
   ]
 },
 
-ozog_runy3:{
-  portret:"urzednik", npc:"ozog", ktoNieznany:"Człowiek w spalonym płaszczu", kto:"Brat Ożóg",
-  tekst:"<span class='mowa'>„Prastare runy są starsze od Kuźni, od Ismaala i od tej wojny. My ich nie wymyśliliśmy - my je znaleźliśmy wyryte i nauczyliśmy się kilku.<br><br>Umieją je czytać dwa rodzaje ludzi. Druidzi zza rzeki, którzy nie wpuszczą cię przez kratę. I ci pod ziemią, którzy wpuszczą cię chętnie i to jest w nich najgorsze.<br><br>Wybierz mądrze albo nie wybieraj wcale.”</span>",
-  opcje:[{l:"...", idz:"ozog", ef:function(){ S.poznane.runy3 = true; }}]
-},
 
 ozog_kuznia:{
   portret:"urzednik", kto:"Brat Ożóg",
@@ -2675,7 +2772,7 @@ function ekranTrenera(sc){
   var akcje = [], i = 0, cokolwiek = false;
 
   var kto = sc.uczy || "weteran";
-  var moje = NAUKA.filter(function(w){ return (w.uczy||"weteran") === kto || (kto === "ozog" && w.uczy === "nikt"); });
+  var moje = NAUKA.filter(function(w){ return (w.uczy||"weteran") === kto; });
   var nazwyGrup = {walka:"Rzemiosło wojenne", puszcza:"Życie w puszczy", rzemioslo:"Rzemiosło", magia:"Sztuka ognia"};
   ["walka","puszcza","rzemioslo","magia"].forEach(function(grupa){
     var wGrupie = moje.filter(function(w){return w.grupa===grupa;});
@@ -2685,12 +2782,19 @@ function ekranTrenera(sc){
       var pn = kosztPn(w), cenaN = kosztZl(w);
       var umie = w.raz && S.kupione[w.id];
       var zaNiski = w.wymPoziom && S.poziom < w.wymPoziom;
-      var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm]) && !zaNiski;
+      var limitSC = jestSuperciosem(w) && !umie && znaneSuperciosy() >= limitSuperciosow();
+      var brakFrakcji = (w.wymFrakcja && S.frakcja !== w.wymFrakcja) || (w.wymCzlonek && !S.frakcja);
+      var sufit = !poSufitem(w);
+      var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm])
+                 && !zaNiski && !limitSC && !brakFrakcji && !sufit;
       if(!umie && stac) cokolwiek = true;
       var etykieta = umie ? (w.l.replace(/ \+1$/,"") + " - już to umiesz")
         : (w.uczy === "nikt" ? w.l + " - nikt tu tego nie uczy"
+        : (sufit ? w.l + (w.frakcyjny ? " - wyżej się już nie da" : " - tyle wystarczy; wyżej podciągną cię tylko swoi")
+        : (brakFrakcji ? w.l + (w.wymCzlonek ? " - najpierw musisz nosić czyjeś barwy" : " - tylko dla swoich")
+        : (limitSC ? w.l + " - na tym poziomie znasz już dość superciosów"
         : (zaNiski ? w.l + " - wymaga " + w.wymPoziom + " poziomu"
-        : ((w.wymagaUm && !S.umie[w.wymagaUm]) ? w.l + " - najpierw " + nazwaUmiejetnosci(w.wymagaUm) : w.l)));
+        : ((w.wymagaUm && !S.umie[w.wymagaUm]) ? w.l + " - najpierw " + nazwaUmiejetnosci(w.wymagaUm) : w.l))))));
       html += '<button data-i="'+i+'"'+((umie||!stac)?" disabled":"")+'>'
             + (umie ? "" : '<span class="koszt">'+pn+' pn &middot; '+cenaN+' zł</span>')
             + etykieta + '</button>';
@@ -2699,6 +2803,10 @@ function ekranTrenera(sc){
         if(S.pn < p || S.zloto < c) return;
         if(w.raz && S.kupione[w.id]) return;
         if(w.wymPoziom && S.poziom < w.wymPoziom) return;
+        if(w.wymFrakcja && S.frakcja !== w.wymFrakcja) return;
+        if(w.wymCzlonek && !S.frakcja) return;
+        if(!poSufitem(w)) return;
+        if(jestSuperciosem(w) && znaneSuperciosy() >= limitSuperciosow()) return;
         S.pn -= p; S.zloto -= c;
         if(w.raz) S.kupione[w.id] = true;
         w.ef();
@@ -2821,6 +2929,12 @@ var zegar = null;
 function stopZegar(){ if(zegar){ clearInterval(zegar); zegar = null; } }
 
 function moje(){ return SUPERCIOSY.filter(function(c){ return S.umie[c.id]; }); }
+function limitSuperciosow(){ return 1 + Math.floor(S.poziom / 5); }
+function znaneSuperciosy(){ return moje().length; }
+function jestSuperciosem(w){
+  return /^Supercios:/.test(w.l || "") ||
+    SUPERCIOSY.some(function(c){ return w.ef && String(w.ef).indexOf("S.umie." + c.id) >= 0; });
+}
 function prefiks(a,b){ if(a.length>b.length) return false; for(var i=0;i<a.length;i++) if(a[i]!==b[i]) return false; return true; }
 
 function zapiszDoBestiariusza(id, krok, final){
@@ -3308,6 +3422,14 @@ var KSIEGI = {
   },
   ksiega_run: "Znak pierwszy - iskra. Kreśli się go od dołu do góry, jednym ruchem, bo przerwana kreska wraca w rękę.<br><br>Znak drugi - popiół. Gasi to, co pali się dłużej, niż powinno.<br><br>Znak trzeci - próg. Kładzie się go na wejściu i nikt niezaproszony nie przekroczy go w nocy.<br><br>Trzy karty są wydarte. Na czwartej ktoś dopisał ręcznie: <em>„nie kreśl czwartego znaku, dopóki nie umiesz zetrzeć trzeciego”</em>.",
   ksiega_prastara: "Znaki są kanciaste i głębokie. Zapis nie jest opowieścią, tylko rachunkiem: ile dni, ile ciał, ile kroków od rzeki.<br><br>Ostatni wiersz odczytujesz bez trudu, choć nie wiesz dlaczego: <em>„brama nie została zamknięta. Została zasypana od środka”</em>.",
+  ksiega_frakcji: "Piszę to jako człowiek, który nosił trzy barwy i żadnej nie zdradził bardziej niż inne.<br><br><em>Ismaal</em> pyta, czyim jesteś synem, i całą resztę wywodzi z odpowiedzi. Chorągiew stoi wyżej niż imię, a rozkaz wyżej niż chorągiew. Kto wejdzie tam nisko, nisko umrze.<br><br><em>Nowożytni</em> nie pytają o ojca, tylko o podpis. Wszystko da się u nich kupić, łącznie z wybaczeniem, i wszystko jest gdzieś zapisane. To wygodne, dopóki nie zapiszą czegoś o tobie.<br><br><em>Prastary Lud</em> nie handluje z nikim i nie tłumaczy się nikomu. Trzymają rzekę, kratę i dwa mosty. Mówi się, że starsi z nich potrafią zdjąć z siebie człowieka jak płaszcz i wrócić do lasu tym, czym las ich urodził. Nie widziałem. Rozmawiałem z takim, który widział, i nie był to człowiek skłonny do żartów.<br><br><em>Odeszli</em> to nie frakcja, tylko postanowienie. Odeszli od obu stron i od pytania, kto ma rację. Żyją z tego, że reszta wciąż się o to pyta.<br><br>Ostatnia karta: <em>„czterech ich jest, a przepowiednia mówi o jednym, który nie będzie z żadnej strony”</em>.",
+  ksiega_zlodziei: "Zamek z Kuźnic ma cztery zapadki i jedną fałszywą. Fałszywa jest zawsze druga od góry, bo tak się je odlewa i nikt tego nie zmienił od dwudziestu lat.<br><br>Człowieka okrada się wtedy, kiedy przenosi ciężar z nogi na nogę. Nie wcześniej. Nie w tłumie - w tłumie każdy pilnuje kieszeni, bo się boi tłumu.<br><br>Nie kradnij dwa razy w tym samym mieście w tym samym tygodniu. Nie dlatego, że złapią. Dlatego, że zapamiętają twarz i złapią za trzecim razem, kiedy będziesz pewny siebie.<br><br>Na końcu, innym charakterem pisma: <em>„najlepszy złodziej to ten, po którym nikt nie liczy”</em>.",
+  ksiega_wagowa: "Łut ismaalski to nie łut nowożytny. Różnica wynosi jedną szesnastą i zawsze wypada na korzyść tego, kto trzyma odważnik.<br><br>Korzec zbożowy mierzy się po brzeg. Korzec solny - po kreskę na trzy palce pod brzegiem, bo sól osiada. Kto sprzedaje sól po brzeg, kradnie. Kto kupuje sól po kreskę i sprzedaje po brzeg, kradnie dwa razy i nazywa to handlem.<br><br>Grzywna kontorowa waży tyle, ile mówi stempel, ale stempel bije mennica, a mennica należy do cechu.<br><br>Ostatnia karta jest tabelą przeliczeń, przekreśloną i poprawioną trzykrotnie. Ostatnia poprawka jest niepodpisana.",
+  ksiega_chorag: "Chorągiew pierwsza, czerwona z czarnym pasem: dowódca Milobrat, stan siedemdziesiąt cztery kopie, straty w trzech kampaniach - dziewięć.<br><br>Chorągiew druga, czerwona ze złotem: dowódca Jaksa, stan pięćdziesiąt osiem, straty - cztery.<br><br>Chorągwie czarne: trzy. Stan nie podany. Dowódcy nie podani. Straty nie podane.<br><br>Przy trzeciej czarnej dopisano jedno słowo i zamazano je tak starannie, że papier przetarł się na wylot. Pod światło widać cztery litery.<br><br>Trzydzieści ostatnich stron spisano tym samym atramentem, co pierwsze. Znaczy to, że regestr nie był prowadzony przez lata - został przepisany naraz, przez jednego człowieka, który wiedział, co pomija.",
+  ksiega_ognia: "Ogień nie jest żywiołem. Żywioł jest tym, co trwa; ogień jest tym, co się dzieje. To zgoda materii na rozpad, wyrażona głośno.<br><br>Stąd wniosek pierwszy: nie tworzysz ognia, tylko przekonujesz rzecz, że czas na nią przyszedł. Runa nie pali - runa przekonuje.<br><br>Wniosek drugi, cięższy: rzecz raz przekonana nie da się przekonać z powrotem. Dlatego mag ognia starzeje się szybciej niż druid i wolniej niż nekromanta, i dlatego żaden z nas nie umiera we własnym łóżku.<br><br>Wniosek trzeci autor przekreślił, ale nie dość mocno: <em>„to samo można powiedzieć o człowieku i dlatego nie wolno kreślić run na ludziach”</em>.",
+  ksiega_puszczy: "Nie księga - wiązka desek na rzemieniu. Nacięcia idą od lewej: głębokie to zimy, płytkie to lata, ukośne to lata, których nikt nie chciał liczyć.<br><br>Czytasz palcami i po chwili zaczynasz rozumieć, że to nie rachunek drzew. To rachunek tego, ile puszcza wytrzyma, jeśli nikt jej nie ruszy.<br><br>Na ostatniej desce nacięcia są świeże i gęste, jedno przy drugim, bez odstępu na rok. Ktoś przestał liczyć zimy i zaczął liczyć dni.",
+  ksiega_przepowiednia: "Kilkanaście linijek, wycięte w korze i przepisane na płótno ręką, która się śpieszyła.<br><br><em>„Gdy przyjdzie Ten, Który Dokona Niemożliwego, brama zostanie otwarta i wyleje się na świat morze zła.<br><br>Nie będzie znał swojego imienia ani domu. Nie stanie po żadnej ze stron, bo wszystkie cztery będą jego.<br><br>Kamień barwy krwi leży na wyspie, w świątyni, która upadła. Kto go weźmie, ten otworzy. Kto otworzy, ten musi zamknąć.<br><br>I nie pójdzie sam, bo sam nie wróci.”</em><br><br>Pod spodem, innym atramentem i o wiele później: <em>„czytaliśmy to sto lat jako przestrogę. Sprawdź, czy to nie było polecenie”</em>.",
+  ksiega_wolnych: "Kolumny: imię przybrane, zleceniodawca, stawka, wrócił.<br><br>Kartek jest dziewiętnaście i przez pierwsze siedemnaście ostatnia kolumna jest w większości zapisana słowem <em>tak</em>.<br><br>Na osiemnastej zleceniodawcy przestają mieć nazwy. Zamiast nazw są znaki - ten sam znak przy jedenastu wpisach z rzędu. Stawki są cztery razy wyższe niż zwykle.<br><br>Na dziewiętnastej ostatnia kolumna jest pusta przy wszystkich wpisach poza jednym. Przy tym jednym ktoś napisał: <em>wrócił, ale nie cały</em>.<br><br>Wszystkie te kontrakty prowadziły na wschód.",
   ksiega_kron: "Rok pierwszy po zamknięciu mostu: kupcy jeżdżą jeszcze grobla, sól kosztuje trzy grosze.<br><br>Rok trzeci: Ismaal stawia kopce graniczne. Nowożytni je przewracają i spisują protokół.<br><br>Rok siódmy: Popielnica płonie drugi raz. Nikt się nie przyznaje, obie strony przysyłają zboże.<br><br>Ostatni wpis urywa się w połowie zdania: <em>„jeśli ktoś to czyta, niech nie idzie na przeprawę po zmroku, bo”</em>."
 };
 
@@ -4000,6 +4122,11 @@ function pokaz(id){
         return;
       }
 
+      if(o.recepta){
+        if(znaReceptura(o.recepta) || S.zloto < (o.cenaR||0)) return;
+        S.zloto -= (o.cenaR||0);
+        nauczReceptury(o.recepta);
+      }
       if(o.kradziez){ probaKradziezy(o.kradziez, id); return; }
       if(o.odpoczynek){ odpocznij(o.odpoczynek, id); return; }
       if(o.warsztat){ ekranWytwarzania(o.warsztat, id); return; }
@@ -5851,15 +5978,18 @@ function nazwaProfesji(id){
 }
 function profStan(id){
   if(!S.prof) S.prof = {};
+  if(!S.receptury) S.receptury = {};
   if(!S.prof[id]) S.prof[id] = {p:1, e:0};
   return S.prof[id];
 }
 function profP(id){ return profStan(id).p; }
-function progProf(poz){ return 60 + (poz - 1) * 55; }
+var STOPNIE_PROF = ["", "nowicjusz", "uczony", "mistrz"];
+function stopienProf(p){ return STOPNIE_PROF[p] || "mistrz"; }
+function progProf(poz){ return poz === 1 ? 120 : 320; }
 function dodajProfExp(id, ile){
   var st = profStan(id), awans = false;
   st.e += ile;
-  while(st.p < 10 && st.e >= progProf(st.p)){ st.e -= progProf(st.p); st.p++; awans = true; }
+  while(st.p < 3 && st.e >= progProf(st.p)){ st.e -= progProf(st.p); st.p++; awans = true; }
   return awans;
 }
 
@@ -5903,20 +6033,24 @@ function przesunZaklecie(id, kier){
 
 /* ---------- RECEPTURY ---------- */
 var RECEPTURY = [
-  {id:"sztaba",        prof:"kowalstwo",  lvl:1, n:"Sztaba żelaza",        daje:"sztaba",        ile:1, sklad:{ruda_darniowa:2}, exp:18},
-  {id:"grot",          prof:"kowalstwo",  lvl:2, n:"Tuzin grotów",         daje:"strzaly",       ile:12, sklad:{sztaba:1}, exp:20},
-  {id:"noz_kuty",      prof:"kowalstwo",  lvl:3, n:"Nóż kuty",             daje:"noz_kuty",      ile:1, sklad:{sztaba:2}, exp:34},
-  {id:"stal",          prof:"kowalstwo",  lvl:5, n:"Stal wietrzna",        daje:"stal_wietrzna", ile:1, sklad:{sztaba:2, ruda_wietrzna:1}, exp:48},
-  {id:"kord_kuty",     prof:"kowalstwo",  lvl:7, n:"Kord z wietrznej stali", daje:"kord_kuty",   ile:1, sklad:{stal_wietrzna:2, skora:2}, exp:80},
+  {id:"sztaba",        prof:"kowalstwo",  lvl:1, n:"Sztaba żelaza",        daje:"sztaba",        ile:1, sklad:{darniowa:2}, exp:18},
+  {id:"grot",          prof:"kowalstwo",  lvl:1, n:"Tuzin grotów",         daje:"strzaly",       ile:12, sklad:{sztaba:1}, exp:20},
+  {id:"belt_kuty",     prof:"kowalstwo",  lvl:2, n:"Tuzin bełtów",         daje:"belty",         ile:12, sklad:{sztaba:2}, exp:26},
+  {id:"noz_kuty",      prof:"kowalstwo",  lvl:2, n:"Nóż kuty",             daje:"noz_kuty",      ile:1, sklad:{sztaba:2}, exp:34},
+  {id:"stal",          prof:"kowalstwo",  lvl:3, n:"Stal wietrzna",        daje:"stal_wietrzna", ile:1, sklad:{sztaba:2, ruda_wietrzna:1}, exp:48},
+  {id:"kord_kuty",     prof:"kowalstwo",  lvl:3, n:"Kord z wietrznej stali", daje:"kord_kuty",   ile:1, sklad:{stal_wietrzna:2, skora:2}, exp:80},
   {id:"wywar_maly",    prof:"alchemia",   lvl:1, n:"Wywar z dziewanny",    daje:"wywar_maly",    ile:1, sklad:{dziewanna:2}, exp:16},
-  {id:"wywar_many",    prof:"alchemia",   lvl:3, n:"Napar runiczny",       daje:"wywar_many",    ile:1, sklad:{arcydziegiel:2, bagno:1}, exp:30},
-  {id:"jad_tojad",     prof:"alchemia",   lvl:4, n:"Jad z tojadu",         daje:"jad_tojad",     ile:1, sklad:{tojad:2}, exp:36},
-  {id:"wywar_duzy",    prof:"alchemia",   lvl:6, n:"Wywar mocny",          daje:"wywar_duzy",    ile:1, sklad:{dziewanna:3, arcydziegiel:2}, exp:60},
+  {id:"wywar_many",    prof:"alchemia",   lvl:2, n:"Napar runiczny",       daje:"wywar_many",    ile:1, sklad:{arcydziegiel:2, bagno:1}, exp:30},
+  {id:"jad_tojad",     prof:"alchemia",   lvl:2, n:"Jad z tojadu",         daje:"jad_tojad",     ile:1, sklad:{tojad:2}, exp:36},
+  {id:"wywar_duzy",    prof:"alchemia",   lvl:3, n:"Wywar mocny",          daje:"wywar_duzy",    ile:1, sklad:{dziewanna:3, arcydziegiel:2}, exp:60},
   {id:"ryba_pieczona", prof:"gotowanie",  lvl:1, n:"Ryba pieczona",        daje:"ryba_pieczona", ile:1, sklad:{ryba:1}, exp:14},
-  {id:"polewka",       prof:"gotowanie",  lvl:2, n:"Polewka z kotła",      daje:"polewka",       ile:1, sklad:{ryba:1, chleb:1}, exp:22},
-  {id:"pieczen",       prof:"gotowanie",  lvl:4, n:"Pieczeń myśliwska",    daje:"pieczen",       ile:1, sklad:{mieso:2, dziewanna:1}, exp:40},
-  {id:"uczta",         prof:"gotowanie",  lvl:6, n:"Uczta w kotle",        daje:"uczta",         ile:1, sklad:{mieso:2, ryba:2, chleb:1}, exp:64}
+  {id:"polewka",       prof:"gotowanie",  lvl:1, n:"Polewka z kotła",      daje:"polewka",       ile:1, sklad:{ryba:1, chleb:1}, exp:22},
+  {id:"pieczen",       prof:"gotowanie",  lvl:2, n:"Pieczeń myśliwska",    daje:"pieczen",       ile:1, sklad:{mieso:2, dziewanna:1}, exp:40},
+  {id:"uczta",         prof:"gotowanie",  lvl:3, n:"Uczta w kotle",        daje:"uczta",         ile:1, sklad:{mieso:2, ryba:2, chleb:1}, exp:64}
 ];
+function znaReceptura(id){ return !!(S.receptury && S.receptury[id]); }
+function nauczReceptury(id){ S.receptury = S.receptury || {}; S.receptury[id] = true; }
+function recepturaPo(id){ for(var i=0;i<RECEPTURY.length;i++) if(RECEPTURY[i].id === id) return RECEPTURY[i]; return null; }
 function skladnikiOpis(r){
   var t = [];
   for(var k in r.sklad) t.push((PRZEDMIOTY[k] ? PRZEDMIOTY[k].n : k) + " ×" + r.sklad[k]);
@@ -5930,9 +6064,10 @@ function maSkladniki(r){
 function ekranWytwarzania(profId, wraca){
   uzupelnijStan();
   var st = profStan(profId);
-  var lista = RECEPTURY.filter(function(r){ return r.prof === profId; });
-  var h = '<p class="tekst"><em>'+nazwaProfesji(profId)+' - poziom '+st.p+'/10 ('+st.e+'/'+progProf(st.p)+' wprawy).</em><br>'
-    + 'Robota idzie tak, jak umiesz. Czego nie umiesz jeszcze, tego nie tkniesz.</p>';
+  var lista = RECEPTURY.filter(function(r){ return r.prof === profId && znaReceptura(r.id); });
+  var h = '<p class="tekst"><em>'+nazwaProfesji(profId)+' - '+stopienProf(st.p)
+    + (st.p < 3 ? ' ('+st.e+'/'+progProf(st.p)+' wprawy do następnego stopnia)' : ' - wyżej się nie da')+'.</em><br>'
+    + 'Robisz tylko to, czego cię nauczono. Reszty receptur trzeba się dopiero dowiedzieć.</p>';
   var opcje = [], akcje = [];
   lista.forEach(function(r){
     var mozna = st.p >= r.lvl && maSkladniki(r);
@@ -5949,12 +6084,15 @@ function ekranWytwarzania(profId, wraca){
       var awG = dodajExp(expG);
       g.innerHTML = '<p class="tekst">Robota skończona: <em>'+(PRZEDMIOTY[r.daje] ? PRZEDMIOTY[r.daje].n : r.daje)+'</em>'
         + (r.ile > 1 ? " ×"+r.ile : "") + '.<br><br>Wprawa +'+r.exp+', doświadczenie +'+expG+'.'
-        + (aw ? '<br><em>'+nazwaProfesji(profId)+' - poziom '+profP(profId)+'.</em>' : '')
+        + (aw ? '<br><em>'+nazwaProfesji(profId)+' - stopień: '+stopienProf(profP(profId))+'.</em>' : '')
         + (awG ? '<br><em>Awans na poziom '+S.poziom+'.</em>' : '') + '</p>'
         + przyciski([{l:"Rób dalej"},{l:"Odejdź od warsztatu"}]);
       podepnij([function(){ ekranWytwarzania(profId, wraca); }, function(){ pokaz(wraca); }]);
     });
   });
+  if(!lista.length){
+    h += '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Nie znasz jeszcze żadnej receptury w tym rzemiośle. Ktoś musi cię jej nauczyć albo sprzedać ci zapis.</p>';
+  }
   opcje.push({l:"Odejdź od warsztatu"});
   akcje.push(function(){ pokaz(wraca); });
   g.innerHTML = h + przyciski(opcje);
@@ -6016,18 +6154,18 @@ function dopracujGre(){
     kord_kuty:{n:"Kord z wietrznej stali", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[15,21], cena:340, wym:{sila:24},
       o:"Klinga trzyma ostrze przez cały dzień rąbania.",
       dz:"Obrażenia cięte 15-21."},
-    jad_tojad:{n:"Jad z tojadu", kat:"napoj", typ:"jadalne", jad:true, cena:60,
+    jad_tojad:{n:"Jad z tojadu", kat:"napoj", typ:"jadalne", jad:4, cena:60,
       o:"Gęsty, o barwie starego miodu. Trzymaj z dala od ust.",
       dz:"Natarte ostrze zatruwa wroga na kilka tur."},
-    wywar_duzy:{n:"Wywar mocny", kat:"napoj", typ:"jadalne", hp:45, cena:90,
+    wywar_duzy:{n:"Wywar mocny", kat:"napoj", typ:"jadalne", leczy:45, cena:90,
       o:"Warzony długo, gorzki tak, że łzy idą.", dz:"Przywraca 45 życia."},
-    ryba_pieczona:{n:"Ryba pieczona", kat:"zywnosc", typ:"jadalne", hp:14, cena:12,
+    ryba_pieczona:{n:"Ryba pieczona", kat:"zywnosc", typ:"jadalne", leczy:14, cena:12,
       o:"Skóra chrupie, ość wychodzi jednym ruchem.", dz:"Przywraca 14 życia."},
-    polewka:{n:"Polewka z kotła", kat:"zywnosc", typ:"jadalne", hp:24, cena:20,
+    polewka:{n:"Polewka z kotła", kat:"zywnosc", typ:"jadalne", leczy:24, cena:20,
       o:"Gorąca, tłusta, z pływającym okiem tłuszczu.", dz:"Przywraca 24 życia."},
-    pieczen:{n:"Pieczeń myśliwska", kat:"zywnosc", typ:"jadalne", hp:38, cena:38,
+    pieczen:{n:"Pieczeń myśliwska", kat:"zywnosc", typ:"jadalne", leczy:38, cena:38,
       o:"Przypiekana na rożnie, z ziołami wetkniętymi pod skórę.", dz:"Przywraca 38 życia."},
-    uczta:{n:"Uczta w kotle", kat:"zywnosc", typ:"jadalne", hp:60, cena:70,
+    uczta:{n:"Uczta w kotle", kat:"zywnosc", typ:"jadalne", leczy:60, cena:70,
       o:"Tyle jedzenia, że wstyd zjeść samemu.", dz:"Przywraca 60 życia."}
   };
   for(var k in nowe) if(!PRZEDMIOTY[k]) PRZEDMIOTY[k] = nowe[k];
@@ -6848,7 +6986,7 @@ function rozszerzNowozytnych(){
     postacie:[
       {n:"Kapitan portu Trojan", id:"trojan", nieznany:"Człowiek z lunetą na sznurku", rola:"kapitan portu", scena:"trojan", portret:"weteran"},
       {n:"Latarniczka Świętosława", id:"swietoslawa", nieznany:"Kobieta niosąca dzban oleju", rola:"latarniczka", scena:"swietoslawa", portret:"kobieta"},
-      {n:"Szkutnik Wit", id:"wit", nieznany:"Człowiek strugający wręgę", rola:"szkutnik", scena:"wit", portret:"kowal"}
+      {n:"Szkutnik Wit", id:"nw_wit", nieznany:"Człowiek strugający wręgę", rola:"szkutnik", scena:"nw_wit", portret:"kowal"}
     ],
     miejsca:[
       {n:"Szynk Pod Kotwicą - nocleg", scena:"szynk_latarnica"},
@@ -6915,7 +7053,7 @@ function rozszerzNowozytnych(){
       {n:"Warzelnik Sulisław", id:"sulislaw", nieznany:"Człowiek zgarniający sól z panwi", rola:"warzelnik", scena:"sulislaw", portret:"kowal"}
     ],
     miejsca:[{n:"Chałupa warzelników - nocleg", scena:"chalupa_grobla"}],
-    tereny:[{n:"Zejdź na stawy solne", teren:"grobla_teren"}],
+    tereny:[{n:"Zejdź na stawy solne", teren:"grobla_nw_teren"}],
     drogi:[{n:"Ścieżką rybacką do Latarnicy", lok:"latarnica"}]
   }
   };
@@ -7020,13 +7158,13 @@ function rozszerzNowozytnych(){
       {id:"sm_mob", typ:"mob", n:"Ktoś obserwuje cię zza kopca", walka:"kanalarz"}
     ]
   },
-  grobla_teren:{
+  grobla_nw_teren:{
     n:"Stawy solne", wraca:"grobla_nw",
     opis:"Kwadraty płytkiej wody odgrodzone wałami. Sól wychodzi z niej sama, trzeba tylko czekać.",
     punkty:[
       {id:"gr_sol", typ:"zasob", n:"Panwie z odparowaną solą", zbierz:{sol_kamienna:2},
        wynik:"Zgarniasz sól z brzegu panwi, tak jak robią to warzelnicy."},
-      {id:"gr_ryba", typ:"ryba", n:"Przypływ zostawił rybę w rowie", wymaga:"wedkarstwo", zbierz:{sledz_solony:3},
+      {id:"grnw_ryba", typ:"ryba", n:"Przypływ zostawił rybę w rowie", wymaga:"wedkarstwo", zbierz:{sledz_solony:3},
        wynik:"Śledzie zostają w rowach po każdym przypływie."},
       {id:"gr_mob", typ:"mob", n:"Ktoś kradnie sól z panwi", walka:"zlodziej_soli"}
     ]
@@ -7453,26 +7591,26 @@ function scenyNowozytnych(){
     opcje:[{l:"Dziękuję.", idz:"swietoslawa"}]};
 
   /* ---------- SZKUTNIK WIT ---------- */
-  SCENY.wit = {
-    portret:"kowal", npc:"wit", ktoNieznany:"Człowiek strugający wręgę", kto:"Szkutnik Wit",
+  SCENY.nw_wit = {
+    portret:"kowal", npc:"nw_wit", ktoNieznany:"Człowiek strugający wręgę", kto:"Szkutnik Wit",
     intro:{
       tekst:"Struga wręgę i co chwilę przykłada ją do sznurka rozpiętego nad pochylnią. Sznurek jest prosty, wręga jeszcze nie.<br><br><span class='mowa'>„Nie stawaj na sznurku.”</span>",
       opcje:[
-        {l:"Dla kogo ta łódź?", idz:"wit_w1"},
-        {l:"Zejść ze sznurka", idz:"wit", poznaj:"wit"}
+        {l:"Dla kogo ta łódź?", idz:"nw_wit_w1"},
+        {l:"Zejść ze sznurka", idz:"nw_wit", poznaj:"nw_wit"}
       ]
     },
     tekst:"<span class='mowa'>„Drewna mam dosyć. Żelaza nie.”</span>",
     opcje:[
-      {l:"Czego ci brakuje?", warunekZ:{id:"nw_wreg", stan:"brak"}, dajZ:"nw_wreg", idz:"wit"},
+      {l:"Czego ci brakuje?", warunekZ:{id:"nw_wreg", stan:"brak"}, dajZ:"nw_wreg", idz:"nw_wit"},
       {l:"Mam rudę z Kuźnic.", warunekZ:{id:"nw_wreg", stan:"aktywne"}, wymagaPrzedmiotu:"ruda_kuznicka", ile:5,
-       oddajZ:"nw_wreg", idz:"wit"},
+       oddajZ:"nw_wreg", idz:"nw_wit"},
       {l:"Odejdź", idz:"__lok_latarnica"}
     ]
   };
-  SCENY.wit_w1 = {portret:"kowal", kto:"Szkutnik Wit",
+  SCENY.nw_wit_w1 = {portret:"kowal", kto:"Szkutnik Wit",
     tekst:"<span class='mowa'>„Dla Giełdy, ale nie do handlu. Kazali kadłub płytki i szybki, taki, co wejdzie na piach.<br><br>Nikt nie buduje takich łodzi, żeby wozić sól.”</span>",
-    opcje:[{l:"Czyli po co?", idz:"wit", poznaj:"wit",
+    opcje:[{l:"Czyli po co?", idz:"nw_wit", poznaj:"nw_wit",
             ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.lodz_plytka = true; }}]};
 
   /* ---------- HUTMISTRZ NINOGNIEW ---------- */
@@ -7730,7 +7868,7 @@ function rozszerzIsmaala(){
       {n:"Chorąży Wielki Świętopełk", id:"swietopelk", nieznany:"Człowiek w czerwonym płaszczu z czarną podszewką", rola:"chorąży wielki", scena:"swietopelk", portret:"weteran"},
       {n:"Kanclerz Przecław", id:"przeclaw", nieznany:"Człowiek z pieczęcią na łańcuchu", rola:"kanclerz", scena:"przeclaw", portret:"urzednik"},
       {n:"Arcymag Bogusza", id:"bogusza", nieznany:"Kobieta, przy której powietrze drga", rola:"arcymag ognia", scena:"bogusza", portret:"kobieta"},
-      {n:"Sierżant Wojsław", id:"wojslaw", nieznany:"Człowiek krzyczący na rekrutów", rola:"sierżant szkolny", scena:"wojslaw", portret:"weteran"}
+      {n:"Sierżant Wojsław", id:"sk_wojslaw", nieznany:"Człowiek krzyczący na rekrutów", rola:"sierżant szkolny", scena:"sk_wojslaw", portret:"weteran"}
     ],
     miejsca:[
       {n:"Zajazd Pod Czarną Chorągwią - nocleg", scena:"zajazd_czerwien"},
@@ -8223,7 +8361,7 @@ function scenyIsmaala(){
     },
     opcje:[
       {l:"Świętopełk pyta o trzecią czarną chorągiew.", warunekZ:{id:"sk_chor1", stan:"aktywne"},
-       ef:function(){ gotoweZadanie("sk_chor1"); }, idz:"przeclaw_chorag"},
+       ef:function(){ gotoweZadanie("sk_chor1"); oddajZadanie("sk_chor1"); }, idz:"przeclaw_chorag"},
       {l:"Przynoszę regestr od Racibora Młodszego.", warunekZ:{id:"sk_regestr", stan:"aktywne"},
        oddajZ:"sk_regestr", idz:"przeclaw_regestr"},
       {l:"Odejdź", idz:"__lok_czerwien_wysoka"}
@@ -8265,29 +8403,29 @@ function scenyIsmaala(){
     opcje:[{l:"Zaczynajmy.", idz:"bogusza", ef:function(){ S.umie.uczen_ognia = true; }}]};
 
   /* ---------- SIERŻANT WOJSŁAW ---------- */
-  SCENY.wojslaw = {
-    portret:"weteran", npc:"wojslaw", ktoNieznany:"Człowiek krzyczący na rekrutów", kto:"Sierżant Wojsław",
+  SCENY.sk_wojslaw = {
+    portret:"weteran", npc:"sk_wojslaw", ktoNieznany:"Człowiek krzyczący na rekrutów", kto:"Sierżant Wojsław",
     intro:{
       tekst:"Krzyczy na trzech chłopaków, którzy trzymają tarcze o dwa palce za nisko. Kiedy podchodzisz, nie przerywa.<br><br><span class='mowa'>„Stój i patrz. Za tydzień jeden z nich będzie żył dłużej od pozostałych dwóch i to będzie ten, który mnie posłuchał.”</span>",
       opcje:[
-        {l:"Uczysz ich umierać czy żyć?", idz:"wojslaw_w1"},
-        {l:"Chcę się uczyć walki.", idz:"wojslaw", poznaj:"wojslaw"}
+        {l:"Uczysz ich umierać czy żyć?", idz:"sk_wojslaw_w1"},
+        {l:"Chcę się uczyć walki.", idz:"sk_wojslaw", poznaj:"sk_wojslaw"}
       ]
     },
     tekst:"<span class='mowa'>„Tarcza wyżej, nogi szerzej, oddech przez nos. To jest cała moja mądrość i wystarcza mi od trzydziestu lat.”</span>",
     opcje:[
-      {l:"Sprawdź mnie.", warunekZ:{id:"sk_rekrut", stan:"brak"}, dajZ:"sk_rekrut", idz:"wojslaw"},
-      {l:"Mam ten płaszcz.", warunekZ:{id:"sk_rekrut", stan:"gotowe"}, oddajZ:"sk_rekrut", idz:"wojslaw_plaszcz"},
-      {l:"Nauka", idz:"wojslaw_nauka"},
+      {l:"Sprawdź mnie.", warunekZ:{id:"sk_rekrut", stan:"brak"}, dajZ:"sk_rekrut", idz:"sk_wojslaw"},
+      {l:"Mam ten płaszcz.", warunekZ:{id:"sk_rekrut", stan:"gotowe"}, oddajZ:"sk_rekrut", idz:"sk_wojslaw_plaszcz"},
+      {l:"Nauka", idz:"sk_wojslaw_nauka"},
       {l:"Odejdź", idz:"__lok_czerwien_wysoka"}
     ]
   };
-  SCENY.wojslaw_w1 = {portret:"weteran", kto:"Sierżant Wojsław",
+  SCENY.sk_wojslaw_w1 = {portret:"weteran", kto:"Sierżant Wojsław",
     tekst:"<span class='mowa'>„Żyć. Umierać każdy umie sam, na to nie trzeba sierżanta.<br><br>Tylko że w Ismaalu za naukę życia płaci się z tej samej kasy co za pogrzeby i czasem kasa jest jedna.”</span>",
-    opcje:[{l:"Rozumiem.", idz:"wojslaw", poznaj:"wojslaw"}]};
-  SCENY.wojslaw_plaszcz = {portret:"weteran", kto:"Sierżant Wojsław",
+    opcje:[{l:"Rozumiem.", idz:"sk_wojslaw", poznaj:"sk_wojslaw"}]};
+  SCENY.sk_wojslaw_plaszcz = {portret:"weteran", kto:"Sierżant Wojsław",
     tekst:"Ogląda płaszcz pod światło, znajduje ślad po spruciu chorągwi i kiwa głową.<br><br><span class='mowa'>„Nasz był. Teraz już niczyj.<br><br>Umiesz bić. To rzadsze, niż myślisz. Siadaj, pouczę cię czegoś, czego nie uczę rekrutów.”</span>",
-    opcje:[{l:"Słucham.", idz:"wojslaw"}]};
+    opcje:[{l:"Słucham.", idz:"sk_wojslaw"}]};
 
   /* ---------- LUDWISARZ ZBROSŁAW ---------- */
   SCENY.zbroslaw = {
@@ -8584,7 +8722,7 @@ function scenyIsmaala(){
 
   var TREN = [
     ["bogusza","czerwien_wysoka","Arcymag Bogusza","kobieta","„Płacisz z góry i uczysz się do skutku. Ognia nie da się zwrócić.”"],
-    ["wojslaw","czerwien_wysoka","Sierżant Wojsław","weteran","„Nie mam ćwiczebnych mieczy dla obcych. Masz swój - to ćwicz swoim.”"],
+    ["sk_wojslaw","czerwien_wysoka","Sierżant Wojsław","weteran","„Nie mam ćwiczebnych mieczy dla obcych. Masz swój - to ćwicz swoim.”"],
     ["wszerad","zarnowiec","Mistrz Wszerad","urzednik","„Uczę początków i uczę ich tanio, bo początki są najtańsze i najgroźniejsze.”"],
     ["ziemowit","kruczyn","Mistrz Cieni Ziemowit","urzednik","„Nie pytaj, skąd biorę to, czego uczę. Odpowiedź zabrałaby ci sen.”"],
     ["bronislawa","grot","Strzelmistrzyni Bronisława","kobieta","„Korba, bełt, oddech, spust. W tej kolejności i nigdy inaczej.”"],
@@ -8598,10 +8736,10 @@ function scenyIsmaala(){
 
   /* --- nauka u mistrzów Ismaala --- */
   var N = [
-    {id:"sk_tarcza", uczy:"wojslaw", grupa:"walka", l:"Walka z tarczą", pn:2, zl:70, raz:true,
+    {id:"sk_tarcza", uczy:"sk_wojslaw", grupa:"walka", l:"Walka z tarczą", pn:2, zl:70, raz:true,
      ef:function(){ S.umie.tarczownik = true; }},
-    {id:"sk_sila_wojslaw", uczy:"wojslaw", grupa:"walka", l:"Siła +1", pn:1, zl:8, ef:function(){ S.sila += 1; }},
-    {id:"sk_kondycja", uczy:"wojslaw", grupa:"walka", l:"Zdrowie +12", pn:1, zl:14,
+    {id:"sk_sila_wojslaw", uczy:"sk_wojslaw", grupa:"walka", l:"Siła +1", pn:1, zl:8, ef:function(){ S.sila += 1; }},
+    {id:"sk_kondycja", uczy:"sk_wojslaw", grupa:"walka", l:"Zdrowie +12", pn:1, zl:14,
      ef:function(){ S.hpMax += 12; S.hp += 12; }},
     {id:"sk_miecz_tarcza", uczy:"jaksa", grupa:"walka", l:"Rycerska szkoła miecza", pn:3, zl:140, raz:true,
      wymagaUm:"tarczownik", ef:function(){ S.umie.miecz_tarcza = true; }},
@@ -8747,8 +8885,8 @@ function rozszerzPrastarych(){
                      : "Nad głowami cały czas ktoś chodzi. Deski skrzypią w rytmie, którego po dniu przestajesz słyszeć.");
     },
     postacie:[
-      {n:"Starsza Jarogniewa", id:"jarogniewa_w", nieznany:"Kobieta siedząca przy kamieniu z deszczówką", rola:"starszyzna", scena:"jarogniewa_w", portret:"kobieta"},
-      {n:"Wielki Łowczy Świętobor", id:"swietobor", nieznany:"Człowiek z łukiem, którego nie zdejmuje z pleców", rola:"wielki łowczy", scena:"swietobor", portret:"weteran"},
+      {n:"Starsza Jarogniewa", id:"pl_starsza", nieznany:"Kobieta siedząca przy kamieniu z deszczówką", rola:"starszyzna", scena:"pl_starsza", portret:"kobieta"},
+      {n:"Wielki Łowczy Świętobor", id:"pl_swietobor", nieznany:"Człowiek z łukiem, którego nie zdejmuje z pleców", rola:"wielki łowczy", scena:"pl_swietobor", portret:"weteran"},
       {n:"Arcydruidka Wiosna", id:"wiosna", nieznany:"Kobieta z rękami umazanymi ziemią", rola:"arcydruidka", scena:"wiosna", portret:"kobieta"},
       {n:"Goniec Wyszebor", id:"wyszebor", nieznany:"Chłopak, który nie umie ustać w miejscu", rola:"goniec leśny", scena:"wyszebor", portret:"urzednik"}
     ],
@@ -8776,7 +8914,7 @@ function rozszerzPrastarych(){
     },
     postacie:[
       {n:"Strażnik Leśny Miłorad", id:"milorad", nieznany:"Człowiek z zielonym znakiem na piersi", rola:"strażnik leśny", scena:"milorad", portret:"weteran"},
-      {n:"Cieśla Radomiła", id:"radomila", nieznany:"Kobieta strugająca drzewce", rola:"łucznica-cieśla", scena:"radomila", portret:"kobieta"},
+      {n:"Cieśla Radomiła", id:"pl_radomila", nieznany:"Kobieta strugająca drzewce", rola:"łucznica-cieśla", scena:"pl_radomila", portret:"kobieta"},
       {n:"Bartnik Zbylut", id:"zbylut", nieznany:"Człowiek pachnący dymem i miodem", rola:"bartnik", scena:"zbylut", portret:"kowal"}
     ],
     miejsca:[
@@ -8817,7 +8955,7 @@ function rozszerzPrastarych(){
     postacie:[
       {n:"Druid Ostromir", id:"ostromir", nieznany:"Człowiek rozmawiający z pniem", rola:"druid", scena:"ostromir", portret:"weteran"},
       {n:"Szeptucha Milina", id:"milina", nieznany:"Kobieta z workiem suszu", rola:"szeptucha", scena:"milina", portret:"kobieta"},
-      {n:"Nowicjusz Wit", id:"wit", nieznany:"Chłopak z poparzonymi rękami", rola:"nowicjusz natury", scena:"wit", portret:"urzednik"}
+      {n:"Nowicjusz Wit", id:"pl_wit", nieznany:"Chłopak z poparzonymi rękami", rola:"nowicjusz natury", scena:"pl_wit", portret:"urzednik"}
     ],
     miejsca:[
       {n:"Ziemianka gościnna - nocleg", scena:"ziemianka_mchowiec"},
@@ -8839,8 +8977,8 @@ function rozszerzPrastarych(){
                      : "Powietrze pachnie żywicą, potem i mokrym kamieniem do ostrzenia.");
     },
     postacie:[
-      {n:"Tancerka Śmierci Ludmiła", id:"ludmila", nieznany:"Kobieta z dwoma krótkimi ostrzami", rola:"mistrzyni dwóch ostrzy", scena:"ludmila", portret:"kobieta"},
-      {n:"Zbrojny Leśny Sulisław", id:"sulislaw", nieznany:"Człowiek z blizną przez obie dłonie", rola:"zbrojny leśny", scena:"sulislaw", portret:"weteran"},
+      {n:"Tancerka Śmierci Ludmiła", id:"pl_ludmila", nieznany:"Kobieta z dwoma krótkimi ostrzami", rola:"mistrzyni dwóch ostrzy", scena:"pl_ludmila", portret:"kobieta"},
+      {n:"Zbrojny Leśny Sulisław", id:"pl_sulislaw", nieznany:"Człowiek z blizną przez obie dłonie", rola:"zbrojny leśny", scena:"pl_sulislaw", portret:"weteran"},
       {n:"Płatnerz Dobromir", id:"dobromir", nieznany:"Człowiek zszywający filc", rola:"płatnerz", scena:"dobromir", portret:"kowal"}
     ],
     miejsca:[
@@ -8863,7 +9001,7 @@ function rozszerzPrastarych(){
                      : "Pod kładkami przepływają cienie ryb wielkości psa.");
     },
     postacie:[
-      {n:"Przewoźniczka Kalina Mokra", id:"kalina_m", nieznany:"Kobieta z tyczką i mokrymi nogawkami", rola:"przewoźniczka", scena:"kalina_m", portret:"kobieta"},
+      {n:"Przewoźniczka Kalina Mokra", id:"pl_kalina", nieznany:"Kobieta z tyczką i mokrymi nogawkami", rola:"przewoźniczka", scena:"pl_kalina", portret:"kobieta"},
       {n:"Rybak Wszebor", id:"wszebor", nieznany:"Człowiek naprawiający więcierz", rola:"rybak", scena:"wszebor", portret:"kowal"}
     ],
     miejsca:[
@@ -8881,7 +9019,7 @@ function rozszerzPrastarych(){
     n:"Barcie", region:"wieś bartników",
     opis:"Dwanaście chałup i sto barci wyciętych w żywych sosnach wokół. Wieś nie ma płotu, bo pszczoły są lepsze niż płot i wszyscy w okolicy o tym wiedzą.",
     postacie:[
-      {n:"Bartniczka Świętosława", id:"swietoslawa", nieznany:"Kobieta w siatce na twarzy", rola:"bartniczka", scena:"swietoslawa", portret:"kobieta"}
+      {n:"Bartniczka Świętosława", id:"pl_swietoslawa", nieznany:"Kobieta w siatce na twarzy", rola:"bartniczka", scena:"pl_swietoslawa", portret:"kobieta"}
     ],
     miejsca:[{n:"Izba przy dymarce - odpocznij", scena:"izba_barcie"}],
     tereny:[{n:"Obejdź barcie w starym borze", teren:"barcie_teren"}],
@@ -9144,14 +9282,14 @@ rozszerzPrastarych();
 function scenyPrastarych(){
 
   /* ---------- STARSZA JAROGNIEWA ---------- */
-  SCENY.jarogniewa_w = {
-    portret:"kobieta", npc:"jarogniewa_w", ktoNieznany:"Kobieta siedząca przy kamieniu z deszczówką", kto:"Starsza Jarogniewa",
+  SCENY.pl_starsza = {
+    portret:"kobieta", npc:"pl_starsza", ktoNieznany:"Kobieta siedząca przy kamieniu z deszczówką", kto:"Starsza Jarogniewa",
     intro:{
       tekst:"Siedzi na ziemi przy kamieniu, w którym stoi deszczówka, i patrzy w nią, nie w ciebie.<br><br><span class='mowa'>„Widziałam cię w wodzie, zanim weszłeś w krąg. To nie czary, tylko odbicie - ale zapamiętaj, że tu wszystko widać dwa razy.”</span>",
       opcje:[
-        {l:"Dlaczego wasze miasto jest nad ziemią?", idz:"jarogniewa_w1"},
-        {l:"Kto tu rządzi?", idz:"jarogniewa_w2"},
-        {l:"Przyszedłem z nizin.", idz:"jarogniewa_w", poznaj:"jarogniewa_w"}
+        {l:"Dlaczego wasze miasto jest nad ziemią?", idz:"pl_starsza1"},
+        {l:"Kto tu rządzi?", idz:"pl_starsza2"},
+        {l:"Przyszedłem z nizin.", idz:"pl_starsza", poznaj:"pl_starsza"}
       ]
     },
     tekst:function(){
@@ -9172,17 +9310,17 @@ function scenyPrastarych(){
        oddajZ:"pl_szept", idz:"jarogniewa_rubin"},
       {l:"Mam sakwę z pieczęcią, znalezioną przy odmieńcu.", warunekZ:{id:"pl_bor5", stan:"aktywne"},
        oddajZ:"pl_bor5", idz:"jarogniewa_pieczec"},
-      {l:"Co Prastary Lud sądzi o wojnie na nizinach?", idz:"jarogniewa_wojna"},
+      {l:"Co Prastary Lud sądzi o wojnie na nizinach?", idz:"pl_starszaojna"},
       {l:"Odejdź", idz:"__lok_wiecznik"}
     ]
   };
-  SCENY.jarogniewa_w1 = {portret:"kobieta", kto:"Starsza Jarogniewa",
+  SCENY.pl_starsza1 = {portret:"kobieta", kto:"Starsza Jarogniewa",
     tekst:"<span class='mowa'>„Bo ziemia w puszczy jest już zajęta. Przez korzenie, grzyby, zwierzęta i tych, których w niej pochowano.<br><br>Postawiliśmy się nad tym wszystkim, żeby nie musieć niczego usuwać. To cała nasza mądrość i cała nasza słabość: nie umiemy niczego usuwać.”</span>",
-    opcje:[{l:"Rozumiem.", idz:"jarogniewa_w", poznaj:"jarogniewa_w"}]};
-  SCENY.jarogniewa_w2 = {portret:"kobieta", kto:"Starsza Jarogniewa",
+    opcje:[{l:"Rozumiem.", idz:"pl_starsza", poznaj:"pl_starsza"}]};
+  SCENY.pl_starsza2 = {portret:"kobieta", kto:"Starsza Jarogniewa",
     tekst:"<span class='mowa'>„Nikt. Zbiera się nas przy kamieniu, mówi się po kolei, a potem robi to, co i tak było oczywiste.<br><br>Obcy myślą, że to słabość. Ismaal miał trzech wodzów w ciągu jednego pokolenia i wszyscy trzej zginęli z rąk własnych ludzi. My mamy jeden kamień i deszczówkę.”</span>",
-    opcje:[{l:"Sprytne.", idz:"jarogniewa_w", poznaj:"jarogniewa_w", ef:function(){ S.poznane.wiecznik_wiec = true; }}]};
-  SCENY.jarogniewa_wojna = {portret:"kobieta", kto:"Starsza Jarogniewa",
+    opcje:[{l:"Sprytne.", idz:"pl_starsza", poznaj:"pl_starsza", ef:function(){ S.poznane.wiecznik_wiec = true; }}]};
+  SCENY.pl_starszaojna = {portret:"kobieta", kto:"Starsza Jarogniewa",
     tekst:function(){
       return "<span class='mowa'>„Że przeminie. Wszystko na nizinach przemija: chorągwie, cła, mosty, imiona.<br><br>Puszcza nie wygrywa wojen. Puszcza czeka, aż wojna sama się skończy, i wchodzi na to, co zostało.”</span><br><br>"
         + ocenaFrakcyjna({
@@ -9191,38 +9329,38 @@ function scenyPrastarych(){
           brak:"<span class='mowa'>„Ty jeszcze możesz poczekać razem z nami. Potem już nie będziesz mógł.”</span>"
         });
     },
-    opcje:[{l:"Zapamiętam.", idz:"jarogniewa_w", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.pl_wojna = true; }}]};
+    opcje:[{l:"Zapamiętam.", idz:"pl_starsza", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.pl_wojna = true; }}]};
   SCENY.jarogniewa_szept = {portret:"kobieta", kto:"Starsza Jarogniewa",
     tekst:"Rozwija płótno na kamieniu, przyciska rogi czterema kamykami i cofa rękę.<br><br><span class='mowa'>„Czytaj u siebie, nie tutaj. Słowa, które są czytane przy kamieniu, stają się postanowieniem, a ja nie wiem jeszcze, czy chcę je postanawiać.”</span>",
-    opcje:[{l:"Wezmę je ze sobą.", idz:"jarogniewa_w"}]};
+    opcje:[{l:"Wezmę je ze sobą.", idz:"pl_starsza"}]};
   SCENY.jarogniewa_rubin = {portret:"kobieta", kto:"Starsza Jarogniewa",
     tekst:"<span class='mowa'>„Kamień barwy krwi, wyspa, brama, której nikt nie stawiał, i ci, którzy przez nią wyjdą.<br><br>Sto lat powtarzamy to dzieciom jak bajkę o wilku. Teraz na północy giną gońcy, a na wschodzie coś przechodzi przez Ziemie Niczyje.<br><br>Zapamiętaj te słowa. Przyjdzie dzień, kiedy ktoś cię o nie zapyta i nie będzie miał czasu na wyjaśnienia.”</span>",
-    opcje:[{l:"Zapamiętam.", idz:"jarogniewa_w", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.rubin = true; S.poznane.przepowiednia = true; }}]};
+    opcje:[{l:"Zapamiętam.", idz:"pl_starsza", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.rubin = true; S.poznane.przepowiednia = true; }}]};
   SCENY.jarogniewa_pieczec = {portret:"kobieta", kto:"Starsza Jarogniewa",
     tekst:"Obraca sakwę w palcach, przygląda się pieczęci pod światło i kładzie ją na kamieniu, w wodzie.<br><br><span class='mowa'>„Nie znam tego znaku i to jest najgorsza wiadomość, jaką mogłeś przynieść. Znam wszystkie znaki z nizin.<br><br>Ktoś płacił za to, żeby północ puszczy zamilkła. Nie po to, żeby nas okraść - po to, żebyśmy nie zobaczyli, co idzie z tamtej strony.”</span><br><br>Wyjmuje sakwę z wody i podaje ci łuk zdjęty z dębowego kołka.<br><br><span class='mowa'>„Bierz. Nie w nagrodę. Na to, co przyjdzie.”</span>",
-    opcje:[{l:"Będę gotów.", idz:"jarogniewa_w", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.pl_pieczec = true; }}]};
+    opcje:[{l:"Będę gotów.", idz:"pl_starsza", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.pl_pieczec = true; }}]};
 
   /* ---------- WIELKI ŁOWCZY ŚWIĘTOBOR ---------- */
-  SCENY.swietobor = {
-    portret:"weteran", npc:"swietobor", ktoNieznany:"Człowiek z łukiem, którego nie zdejmuje z pleców", kto:"Wielki Łowczy Świętobor",
+  SCENY.pl_swietobor = {
+    portret:"weteran", npc:"pl_swietobor", ktoNieznany:"Człowiek z łukiem, którego nie zdejmuje z pleców", kto:"Wielki Łowczy Świętobor",
     intro:{
       tekst:"Stoi na pomoście i patrzy w dół, na ciebie. Łuk ma na plecach, ale ręka leży na cięciwie tak, jakby to nic nie kosztowało.<br><br><span class='mowa'>„Trzy razy dziś ktoś wszedł w krąg. Ciebie usłyszałem najwcześniej.”</span>",
       opcje:[
-        {l:"To źle czy dobrze?", idz:"swietobor_w1"},
-        {l:"Chcę się nauczyć strzelać.", idz:"swietobor", poznaj:"swietobor"}
+        {l:"To źle czy dobrze?", idz:"pl_swietobor_w1"},
+        {l:"Chcę się nauczyć strzelać.", idz:"pl_swietobor", poznaj:"pl_swietobor"}
       ]
     },
     tekst:"<span class='mowa'>„Łuk to nie broń, tylko cierpliwość napięta na drzewcu. Kto strzela ze złości, ten trafia w drzewo obok.”</span>",
     opcje:[
-      {l:"Nauka", idz:"swietobor_nauka"},
-      {l:"Kim jest Wielki Łowczy?", idz:"swietobor_w2"},
+      {l:"Nauka", idz:"pl_swietobor_nauka"},
+      {l:"Kim jest Wielki Łowczy?", idz:"pl_swietobor_w2"},
       {l:"Odejdź", idz:"__lok_wiecznik"}
     ]
   };
-  SCENY.swietobor_w1 = {portret:"weteran", kto:"Wielki Łowczy Świętobor",
+  SCENY.pl_swietobor_w1 = {portret:"weteran", kto:"Wielki Łowczy Świętobor",
     tekst:"<span class='mowa'>„Dobrze dla mnie. Źle dla ciebie.<br><br>W puszczy przeżywa nie ten, kto szybciej strzela, tylko ten, kogo słychać później. Reszta to już tylko odległość i wiatr.”</span>",
-    opcje:[{l:"Naucz mnie.", idz:"swietobor", poznaj:"swietobor"}]};
-  SCENY.swietobor_w2 = {portret:"weteran", kto:"Wielki Łowczy Świętobor",
+    opcje:[{l:"Naucz mnie.", idz:"pl_swietobor", poznaj:"pl_swietobor"}]};
+  SCENY.pl_swietobor_w2 = {portret:"weteran", kto:"Wielki Łowczy Świętobor",
     tekst:function(){
       return "<span class='mowa'>„Ostatni stopień ścieżki łuczniczej. Zaczyna się od gońca, potem strażnik leśny, a na końcu ten, kto odpowiada za to, żeby puszcza nie została bez oczu.<br><br>Nie mianuje mnie nikt. Po prostu przestaje być ktoś inny.”</span><br><br>"
         + ocenaFrakcyjna({
@@ -9230,7 +9368,7 @@ function scenyPrastarych(){
           brak:"<span class='mowa'>„Obcy tej ścieżki nie przejdzie. Chyba że przestanie być obcy.”</span>"
         });
     },
-    opcje:[{l:"Zapamiętam.", idz:"swietobor", ef:function(){ S.poznane.sciezka_lowcza = true; }}]};
+    opcje:[{l:"Zapamiętam.", idz:"pl_swietobor", ef:function(){ S.poznane.sciezka_lowcza = true; }}]};
 
   /* ---------- ARCYDRUIDKA WIOSNA ---------- */
   SCENY.wiosna = {
@@ -9313,7 +9451,7 @@ function scenyPrastarych(){
     },
     opcje:[
       {l:"Wyszebor mówi, że gońcy przestali docierać.", warunekZ:{id:"pl_bor1", stan:"aktywne"},
-       ef:function(){ gotoweZadanie("pl_bor1"); }, idz:"milorad_gonce"},
+       ef:function(){ gotoweZadanie("pl_bor1"); oddajZadanie("pl_bor1"); }, idz:"milorad_gonce"},
       {l:"Kłusownik nie żyje.", warunekZ:{id:"pl_bor2", stan:"gotowe"}, oddajZ:"pl_bor2", idz:"milorad_susz"},
       {l:"Co z rysiem nad ścieżką?", warunekZ:{id:"pl_rys", stan:"brak"}, dajZ:"pl_rys", idz:"milorad"},
       {l:"Ryś nie skoczy już na nikogo.", warunekZ:{id:"pl_rys", stan:"gotowe"}, oddajZ:"pl_rys", idz:"milorad"},
@@ -9332,30 +9470,30 @@ function scenyPrastarych(){
     opcje:[{l:"Jadę do Mchowca.", dajZ:"pl_bor3", idz:"milorad"}]};
 
   /* ---------- CIEŚLA RADOMIŁA ---------- */
-  SCENY.radomila = {
-    portret:"kobieta", npc:"radomila", ktoNieznany:"Kobieta strugająca drzewce", kto:"Cieśla Radomiła",
+  SCENY.pl_radomila = {
+    portret:"kobieta", npc:"pl_radomila", ktoNieznany:"Kobieta strugająca drzewce", kto:"Cieśla Radomiła",
     intro:{
       tekst:"Struga drzewce cienkimi pociągnięciami i co kilka ruchów przykłada je do oka, sprawdzając skręt.<br><br><span class='mowa'>„Nie stawaj mi w świetle. Wszystko inne mi wolno przerwać, tylko nie to.”</span>",
       opcje:[
-        {l:"Ile trwa zrobienie łuku?", idz:"radomila_w1"},
-        {l:"Odsunę się.", idz:"radomila", poznaj:"radomila"}
+        {l:"Ile trwa zrobienie łuku?", idz:"pl_radomila_w1"},
+        {l:"Odsunę się.", idz:"pl_radomila", poznaj:"pl_radomila"}
       ]
     },
     tekst:"<span class='mowa'>„Sprzedaję łuki tym, którzy potrafią z nich strzelać, i drzewce tym, którzy potrafią je zepsuć. Wybieraj.”</span>",
     opcje:[
-      {l:"Potrzebujesz żywicy?", warunekZ:{id:"pl_ciecia", stan:"brak"}, dajZ:"pl_ciecia", idz:"radomila"},
+      {l:"Potrzebujesz żywicy?", warunekZ:{id:"pl_ciecia", stan:"brak"}, dajZ:"pl_ciecia", idz:"pl_radomila"},
       {l:"Mam sześć bryłek żywicy.", warunekZ:{id:"pl_ciecia", stan:"aktywne"}, wymagaPrzedmiotu:"zywica_borowa", ile:6,
-       oddajZ:"pl_ciecia", idz:"radomila_zywica"},
+       oddajZ:"pl_ciecia", idz:"pl_radomila_zywica"},
       {l:"Handel", idz:"warsztat_wrota"},
       {l:"Odejdź", idz:"__lok_borowe_wrota"}
     ]
   };
-  SCENY.radomila_w1 = {portret:"kobieta", kto:"Cieśla Radomiła",
+  SCENY.pl_radomila_w1 = {portret:"kobieta", kto:"Cieśla Radomiła",
     tekst:"<span class='mowa'>„Sto pięć lat. Sto na wyrośnięcie cisu, pięć na wysuszenie drzewca, tydzień na resztę.<br><br>Dlatego kiedy widzę połamany łuk, widzę zmarnowane sto lat, a nie zmarnowany tydzień.”</span>",
-    opcje:[{l:"Będę o tym pamiętał.", idz:"radomila", poznaj:"radomila"}]};
-  SCENY.radomila_zywica = {portret:"kobieta", kto:"Cieśla Radomiła",
+    opcje:[{l:"Będę o tym pamiętał.", idz:"pl_radomila", poznaj:"pl_radomila"}]};
+  SCENY.pl_radomila_zywica = {portret:"kobieta", kto:"Cieśla Radomiła",
     tekst:"Wącha każdą bryłkę, zanim wrzuci ją do garnka.<br><br><span class='mowa'>„Czysta, bez igliwia. Chłopcy przynosili mi taką ze śmieciem i mówili, że tak rośnie.<br><br>Będzie z tego dziesięć cięciw i jeden łuk dla ciebie, jeśli kiedyś nauczysz się strzelać.”</span>",
-    opcje:[{l:"Nauczę się.", idz:"radomila"}]};
+    opcje:[{l:"Nauczę się.", idz:"pl_radomila"}]};
 
   /* ---------- BARTNIK ZBYLUT ---------- */
   SCENY.zbylut = {
@@ -9440,79 +9578,79 @@ function scenyPrastarych(){
     opcje:[{l:"Zapamiętam.", idz:"ostromir", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.magia_sporne = true; }}]};
 
   /* ---------- NOWICJUSZ WIT ---------- */
-  SCENY.wit = {
-    portret:"urzednik", npc:"wit", ktoNieznany:"Chłopak z poparzonymi rękami", kto:"Nowicjusz Wit",
+  SCENY.pl_wit = {
+    portret:"urzednik", npc:"pl_wit", ktoNieznany:"Chłopak z poparzonymi rękami", kto:"Nowicjusz Wit",
     intro:{
       tekst:"Ręce ma obwiązane płótnem aż po łokcie i trzyma je z dala od siebie, jakby nie były jego.<br><br><span class='mowa'>„Nie pytaj. Wszyscy pytają.”</span>",
       opcje:[
-        {l:"Pytam.", idz:"wit_w1"},
-        {l:"Nie pytam.", idz:"wit", poznaj:"wit"}
+        {l:"Pytam.", idz:"pl_wit_w1"},
+        {l:"Nie pytam.", idz:"pl_wit", poznaj:"pl_wit"}
       ]
     },
     tekst:"<span class='mowa'>„Uczę się od nowa. Tym razem wolniej.”</span>",
     opcje:[
-      {l:"Czego uczą nowicjuszy natury?", idz:"wit_w2"},
+      {l:"Czego uczą nowicjuszy natury?", idz:"pl_wit_w2"},
       {l:"Odejdź", idz:"__lok_mchowiec"}
     ]
   };
-  SCENY.wit_w1 = {portret:"urzednik", kto:"Nowicjusz Wit",
+  SCENY.pl_wit_w1 = {portret:"urzednik", kto:"Nowicjusz Wit",
     tekst:"<span class='mowa'>„Poszedłem uczyć się ognia do Żarnowca, bo tam płacą uczniom, a u nas uczeń płaci.<br><br>Wróciłem po pół roku bez skóry na rękach i Ostromir przyjął mnie z powrotem bez jednego słowa. To było gorsze, niż gdyby krzyczał.”</span>",
-    opcje:[{l:"Wrócisz do formy.", idz:"wit", poznaj:"wit"}]};
-  SCENY.wit_w2 = {portret:"urzednik", kto:"Nowicjusz Wit",
+    opcje:[{l:"Wrócisz do formy.", idz:"pl_wit", poznaj:"pl_wit"}]};
+  SCENY.pl_wit_w2 = {portret:"urzednik", kto:"Nowicjusz Wit",
     tekst:"<span class='mowa'>„Najpierw roku bez dotykania niczego żywego. Potem zioła. Potem rozmowa - z drzewami, z chorymi, z sobą.<br><br>Dopiero po tym wolno spleść pierwszy korzeń. U ognia pierwsze zaklęcie rzuca się w drugim tygodniu i to jest cała różnica między nami.”</span>",
-    opcje:[{l:"Wolę wasze tempo.", idz:"wit"}]};
+    opcje:[{l:"Wolę wasze tempo.", idz:"pl_wit"}]};
 
   /* ---------- TANCERKA ŚMIERCI LUDMIŁA ---------- */
-  SCENY.ludmila = {
-    portret:"kobieta", npc:"ludmila", ktoNieznany:"Kobieta z dwoma krótkimi ostrzami", kto:"Tancerka Śmierci Ludmiła",
+  SCENY.pl_ludmila = {
+    portret:"kobieta", npc:"pl_ludmila", ktoNieznany:"Kobieta z dwoma krótkimi ostrzami", kto:"Tancerka Śmierci Ludmiła",
     intro:{
       tekst:"Ćwiczy na klepisku sama, bardzo wolno, jakby woda stawiała jej opór. Dopiero po chwili orientujesz się, że to nie jest wolno - że to ty nie nadążasz wzrokiem.<br><br><span class='mowa'>„Stój tam, gdzie stoisz. Bliżej nie umiem jeszcze hamować.”</span>",
       opcje:[
-        {l:"Dlaczego dwa ostrza, a nie miecz i tarcza?", idz:"ludmila_w1"},
-        {l:"Chcę się uczyć.", idz:"ludmila", poznaj:"ludmila"}
+        {l:"Dlaczego dwa ostrza, a nie miecz i tarcza?", idz:"pl_ludmila_w1"},
+        {l:"Chcę się uczyć.", idz:"pl_ludmila", poznaj:"pl_ludmila"}
       ]
     },
     tekst:"<span class='mowa'>„Kto bierze dwa ostrza, ten godzi się, że każdy cios przeciwnika trafi. Cała nauka polega na tym, żeby przeciwnik nie zdążył wyprowadzić drugiego.”</span>",
     opcje:[
-      {l:"Nauka", idz:"ludmila_nauka"},
-      {l:"Skąd wzięła się nazwa Tancerz Śmierci?", idz:"ludmila_w2"},
+      {l:"Nauka", idz:"pl_ludmila_nauka"},
+      {l:"Skąd wzięła się nazwa Tancerz Śmierci?", idz:"pl_ludmila_w2"},
       {l:"Odejdź", idz:"__lok_jodlogrod"}
     ]
   };
-  SCENY.ludmila_w1 = {portret:"kobieta", kto:"Tancerka Śmierci Ludmiła",
+  SCENY.pl_ludmila_w1 = {portret:"kobieta", kto:"Tancerka Śmierci Ludmiła",
     tekst:"<span class='mowa'>„Bo tarcza jest po to, żeby przeżyć starcie, którego nie umiesz wygrać. My nie stajemy do takich starć.<br><br>W puszczy nie ma szyku. Jest jeden przeciwnik, dwa oddechy i drzewo, o które można go oprzeć.”</span>",
-    opcje:[{l:"Ucz mnie.", idz:"ludmila", poznaj:"ludmila"}]};
-  SCENY.ludmila_w2 = {portret:"kobieta", kto:"Tancerka Śmierci Ludmiła",
+    opcje:[{l:"Ucz mnie.", idz:"pl_ludmila", poznaj:"pl_ludmila"}]};
+  SCENY.pl_ludmila_w2 = {portret:"kobieta", kto:"Tancerka Śmierci Ludmiła",
     tekst:"<span class='mowa'>„Wymyślili ją Ismaalczycy, po tym jak trzech naszych rozbiło im straż przednią pod Wilczym Przesmykiem.<br><br>Nam się to nazwanie nie podoba. Taniec zakłada, że jest muzyka i że ktoś patrzy. My robimy to po ciemku i najlepiej, żeby nikt nie patrzył.”</span>",
-    opcje:[{l:"Zapamiętam.", idz:"ludmila", ef:function(){ S.poznane.tancerz_smierci = true; }}]};
+    opcje:[{l:"Zapamiętam.", idz:"pl_ludmila", ef:function(){ S.poznane.tancerz_smierci = true; }}]};
 
   /* ---------- ZBROJNY LEŚNY SULISŁAW ---------- */
-  SCENY.sulislaw = {
-    portret:"weteran", npc:"sulislaw", ktoNieznany:"Człowiek z blizną przez obie dłonie", kto:"Zbrojny Leśny Sulisław",
+  SCENY.pl_sulislaw = {
+    portret:"weteran", npc:"pl_sulislaw", ktoNieznany:"Człowiek z blizną przez obie dłonie", kto:"Zbrojny Leśny Sulisław",
     intro:{
       tekst:"Pokazuje ci dłonie, zanim zdążysz zapytać: obie przecięte w poprzek tą samą blizną.<br><br><span class='mowa'>„Złapałem ostrze. Dwa razy. To jest nauka, za którą się nie płaci pieniędzmi.”</span>",
       opcje:[
-        {l:"Warto było?", idz:"sulislaw_w1"},
-        {l:"Mam sprawę.", idz:"sulislaw", poznaj:"sulislaw"}
+        {l:"Warto było?", idz:"pl_sulislaw_w1"},
+        {l:"Mam sprawę.", idz:"pl_sulislaw", poznaj:"pl_sulislaw"}
       ]
     },
     tekst:"<span class='mowa'>„Klepisko jest otwarte dla każdego, kto wytrzyma na nim godzinę. Nikt jeszcze nie wytrzymał za pierwszym razem.”</span>",
     opcje:[
-      {l:"Opowiedz o tym, który ćwiczy sam.", warunekZ:{id:"pl_odszczep", stan:"brak"}, dajZ:"pl_odszczep", idz:"sulislaw_odszczep"},
-      {l:"Nie ćwiczy już nad strumieniem.", warunekZ:{id:"pl_odszczep", stan:"gotowe"}, oddajZ:"pl_odszczep", idz:"sulislaw_koniec"},
-      {l:"Nauka", idz:"sulislaw_nauka"},
+      {l:"Opowiedz o tym, który ćwiczy sam.", warunekZ:{id:"pl_odszczep", stan:"brak"}, dajZ:"pl_odszczep", idz:"pl_sulislaw_odszczep"},
+      {l:"Nie ćwiczy już nad strumieniem.", warunekZ:{id:"pl_odszczep", stan:"gotowe"}, oddajZ:"pl_odszczep", idz:"pl_sulislaw_koniec"},
+      {l:"Nauka", idz:"pl_sulislaw_nauka"},
       {l:"Odejdź", idz:"__lok_jodlogrod"}
     ]
   };
-  SCENY.sulislaw_w1 = {portret:"weteran", kto:"Zbrojny Leśny Sulisław",
+  SCENY.pl_sulislaw_w1 = {portret:"weteran", kto:"Zbrojny Leśny Sulisław",
     tekst:"<span class='mowa'>„Za pierwszym razem nie. Za drugim tak, bo za drugim razem trzymałem ostrze, które szło w gardło mojego brata.<br><br>Dłonie się goją. To druga rzecz, której uczę.”</span>",
-    opcje:[{l:"Rozumiem.", idz:"sulislaw", poznaj:"sulislaw"}]};
-  SCENY.sulislaw_odszczep = {portret:"weteran", kto:"Zbrojny Leśny Sulisław",
+    opcje:[{l:"Rozumiem.", idz:"pl_sulislaw", poznaj:"pl_sulislaw"}]};
+  SCENY.pl_sulislaw_odszczep = {portret:"weteran", kto:"Zbrojny Leśny Sulisław",
     tekst:"<span class='mowa'>„Nazywał się Miłosz i był lepszy ode mnie w trzecim roku nauki. To się zdarza raz na pokolenie i zwykle źle się kończy.<br><br>Ludmiła odmówiła mu nauki - powiedziała, że tnie ze złości. Wyszedł z klepiska i już nie wrócił. Teraz ćwiczy nad strumieniem, po nocach, i tnie każdego, kto podejdzie się napić.”</span>",
-    opcje:[{l:"Zajmę się tym.", idz:"sulislaw"}]};
-  SCENY.sulislaw_koniec = {portret:"weteran", kto:"Zbrojny Leśny Sulisław",
+    opcje:[{l:"Zajmę się tym.", idz:"pl_sulislaw"}]};
+  SCENY.pl_sulislaw_koniec = {portret:"weteran", kto:"Zbrojny Leśny Sulisław",
     tekst:"Bierze od ciebie ostrza, wyciera je o rękaw i kładzie na progu zbrojowni, jedno obok drugiego.<br><br><span class='mowa'>„Ludmiła miała rację i to jest najgorsze. Gdyby go przyjęła, tnąłby ze złości dalej, tylko w naszym szyku.<br><br>Weź te ostrza. Nie noś ich ze złością.”</span>",
-    opcje:[{l:"Nie będę.", idz:"sulislaw"}]};
+    opcje:[{l:"Nie będę.", idz:"pl_sulislaw"}]};
 
   /* ---------- PŁATNERZ DOBROMIR ---------- */
   SCENY.dobromir = {
@@ -9535,13 +9673,13 @@ function scenyPrastarych(){
     opcje:[{l:"Uczciwie.", idz:"dobromir", poznaj:"dobromir"}]};
 
   /* ---------- PRZEWOŹNICZKA KALINA MOKRA ---------- */
-  SCENY.kalina_m = {
-    portret:"kobieta", npc:"kalina_m", ktoNieznany:"Kobieta z tyczką i mokrymi nogawkami", kto:"Przewoźniczka Kalina Mokra",
+  SCENY.pl_kalina = {
+    portret:"kobieta", npc:"pl_kalina", ktoNieznany:"Kobieta z tyczką i mokrymi nogawkami", kto:"Przewoźniczka Kalina Mokra",
     intro:{
       tekst:"Stoi na kładce z tyczką opartą o dno i patrzy na ciebie z góry, choć jest niższa.<br><br><span class='mowa'>„Bez przewodnika przejdziesz trzy kładki. Czwarta kończy się w wodzie i nie jest to przypadek.”</span>",
       opcje:[
-        {l:"Po co komu pułapka we własnym mieście?", idz:"kalina_w1"},
-        {l:"Prowadź.", idz:"kalina_m", poznaj:"kalina_m"}
+        {l:"Po co komu pułapka we własnym mieście?", idz:"pl_kalina_w1"},
+        {l:"Prowadź.", idz:"pl_kalina", poznaj:"pl_kalina"}
       ]
     },
     tekst:"<span class='mowa'>„Rosica stoi na wodzie i na tym, że nikt obcy nie umie po niej chodzić. Jak nauczysz się chodzić, przestaniesz być obcy.”</span>",
@@ -9551,15 +9689,15 @@ function scenyPrastarych(){
       {l:"Odejdź", idz:"__lok_rosica"}
     ]
   };
-  SCENY.kalina_w1 = {portret:"kobieta", kto:"Przewoźniczka Kalina Mokra",
+  SCENY.pl_kalina_w1 = {portret:"kobieta", kto:"Przewoźniczka Kalina Mokra",
     tekst:"<span class='mowa'>„Bo miasto na wodzie nie ma murów, a musi mieć coś.<br><br>Ismaal przysłał tu kiedyś czterdziestu ludzi w blachach. Wróciło dziewięciu i żaden nie umiał powiedzieć, co ich zabiło. Nic ich nie zabiło. Po prostu poszli czwartą kładką.”</span>",
-    opcje:[{l:"Zapamiętam.", idz:"kalina_m", poznaj:"kalina_m"}]};
+    opcje:[{l:"Zapamiętam.", idz:"pl_kalina", poznaj:"pl_kalina"}]};
   SCENY.kalina_topielec = {portret:"kobieta", kto:"Przewoźniczka Kalina Mokra",
     tekst:"<span class='mowa'>„Nie wiem i to mnie wykańcza bardziej niż strach. Rozłączamy kładki na noc, a ono i tak bierze po jednym co dziesięć dni.<br><br>Rozlewisko jest za ostatnią kładką. Idź za dnia. W nocy nawet ja tam nie wchodzę.”</span>",
-    opcje:[{l:"Idę.", idz:"kalina_m"}]};
+    opcje:[{l:"Idę.", idz:"pl_kalina"}]};
   SCENY.kalina_koniec = {portret:"kobieta", kto:"Przewoźniczka Kalina Mokra",
     tekst:"Słucha do końca, potem zdejmuje z ramion płaszcz farbowany mchem i podaje ci go bez ceremonii.<br><br><span class='mowa'>„To nie było zwierzę i obie strony o tym wiemy.<br><br>Weź. W tym płaszczu woda nie wie, gdzie kończysz się ty, a zaczyna wiklina. Może ci to kiedyś uratować życie tak, jak nie uratowało jemu.”</span>",
-    opcje:[{l:"Dziękuję.", idz:"kalina_m"}]};
+    opcje:[{l:"Dziękuję.", idz:"pl_kalina"}]};
 
   /* ---------- RYBAK WSZEBOR ---------- */
   SCENY.wszebor = {
@@ -9588,28 +9726,28 @@ function scenyPrastarych(){
     opcje:[{l:"Słusznie.", idz:"wszebor"}]};
 
   /* ---------- BARTNICZKA ŚWIĘTOSŁAWA ---------- */
-  SCENY.swietoslawa = {
-    portret:"kobieta", npc:"swietoslawa", ktoNieznany:"Kobieta w siatce na twarzy", kto:"Bartniczka Świętosława",
+  SCENY.pl_swietoslawa = {
+    portret:"kobieta", npc:"pl_swietoslawa", ktoNieznany:"Kobieta w siatce na twarzy", kto:"Bartniczka Świętosława",
     intro:{
       tekst:"Podnosi siatkę dopiero, gdy odejdziecie od barci na dwadzieścia kroków.<br><br><span class='mowa'>„Teraz można. Przy nich się nie rozmawia, bo pszczoła nie znosi, jak się mówi o niej przy niej.”</span>",
       opcje:[
-        {l:"Wierzysz w to?", idz:"swietoslawa_w1"},
-        {l:"Mam sprawę.", idz:"swietoslawa", poznaj:"swietoslawa"}
+        {l:"Wierzysz w to?", idz:"pl_swietoslawa_w1"},
+        {l:"Mam sprawę.", idz:"pl_swietoslawa", poznaj:"pl_swietoslawa"}
       ]
     },
     tekst:"<span class='mowa'>„Cztery barcie rozdarte i żadna nie wyjedzona. To nie jest głód, to jest złość.”</span>",
     opcje:[
-      {l:"Zajmę się niedźwiedziem.", warunekZ:{id:"pl_barc", stan:"brak"}, dajZ:"pl_barc", idz:"swietoslawa"},
-      {l:"Niedźwiedź nie wróci.", warunekZ:{id:"pl_barc", stan:"gotowe"}, oddajZ:"pl_barc", idz:"swietoslawa_koniec"},
+      {l:"Zajmę się niedźwiedziem.", warunekZ:{id:"pl_barc", stan:"brak"}, dajZ:"pl_barc", idz:"pl_swietoslawa"},
+      {l:"Niedźwiedź nie wróci.", warunekZ:{id:"pl_barc", stan:"gotowe"}, oddajZ:"pl_barc", idz:"pl_swietoslawa_koniec"},
       {l:"Odejdź", idz:"__lok_barcie"}
     ]
   };
-  SCENY.swietoslawa_w1 = {portret:"kobieta", kto:"Bartniczka Świętosława",
+  SCENY.pl_swietoslawa_w1 = {portret:"kobieta", kto:"Bartniczka Świętosława",
     tekst:"<span class='mowa'>„Wierzę w to, że mnie żądlą, kiedy mówię głośno przy barci, i nie żądlą, kiedy milczę. Reszta mnie nie interesuje.<br><br>W puszczy tak się rozstrzyga spory: sprawdza się dwa razy i przestaje się gadać.”</span>",
-    opcje:[{l:"Trudno się kłócić.", idz:"swietoslawa", poznaj:"swietoslawa"}]};
-  SCENY.swietoslawa_koniec = {portret:"kobieta", kto:"Bartniczka Świętosława",
+    opcje:[{l:"Trudno się kłócić.", idz:"pl_swietoslawa", poznaj:"pl_swietoslawa"}]};
+  SCENY.pl_swietoslawa_koniec = {portret:"kobieta", kto:"Bartniczka Świętosława",
     tekst:"Idzie z tobą obejrzeć rozdarte barcie, kładzie dłoń na pniu i stoi tak chwilę.<br><br><span class='mowa'>„Dwie odbudujemy przed zimą, dwie nie. To znaczy dwa roje mniej i o jedną chałupę w tej wsi mniej za dziesięć lat.<br><br>Weź ten kaftan. Filc przeszywałam sama, między jednym rojem a drugim.”</span>",
-    opcje:[{l:"Będę go nosił.", idz:"swietoslawa"}]};
+    opcje:[{l:"Będę go nosił.", idz:"pl_swietoslawa"}]};
 
   /* ---------- TRAPER GODZIMIR ---------- */
   SCENY.godzimir = {
@@ -9786,13 +9924,13 @@ function scenyPrastarych(){
 
   /* ---------- SCENY NAUKI ---------- */
   var TREN = [
-    ["swietobor","wiecznik","Wielki Łowczy Świętobor","weteran","„Płacisz raz i strzelasz, aż przestaniesz się wstydzić. Wtedy zaczyna się właściwa nauka.”"],
+    ["pl_swietobor","wiecznik","Wielki Łowczy Świętobor","weteran","„Płacisz raz i strzelasz, aż przestaniesz się wstydzić. Wtedy zaczyna się właściwa nauka.”"],
     ["wyszebor","wiecznik","Goniec Wyszebor","urzednik","„Cichy chód to nie sztuczka. To sposób stawiania stopy, którego uczysz się przez rok.”"],
     ["wiosna","wiecznik","Arcydruidka Wiosna","kobieta","„Nie liczę godzin nauki. Liczę, ile razy zapytasz o to samo - i przy trzecim razie przestaję odpowiadać.”"],
     ["milorad","borowe_wrota","Strażnik Leśny Miłorad","weteran","„Uczę tego, co przyda się w lesie. Reszty naucz się w mieście, od kogo innego.”"],
     ["ostromir","mchowiec","Druid Ostromir","weteran","„Powoli. Wszystko, czego uczę, rośnie, a rosnąć trzeba umieć.”"],
-    ["ludmila","jodlogrod","Tancerka Śmierci Ludmiła","kobieta","„Dwa ostrza albo żadne. Nie uczę połowicznie, bo połowicznie się od tego umiera.”"],
-    ["sulislaw","jodlogrod","Zbrojny Leśny Sulisław","weteran","„Godzina na klepisku kosztuje tyle samo co godzina u felczera. Zwykle bierzesz obie.”"],
+    ["pl_ludmila","jodlogrod","Tancerka Śmierci Ludmiła","kobieta","„Dwa ostrza albo żadne. Nie uczę połowicznie, bo połowicznie się od tego umiera.”"],
+    ["pl_sulislaw","jodlogrod","Zbrojny Leśny Sulisław","weteran","„Godzina na klepisku kosztuje tyle samo co godzina u felczera. Zwykle bierzesz obie.”"],
     ["chwalislawa","olszyny","Zielarka Chwalisława","kobieta","„Za wiedzę nie biorę. Biorę za czas, w którym mogłabym suszyć.”"]
   ];
   TREN.forEach(function(t){
@@ -9810,18 +9948,18 @@ function scenyPrastarych(){
      ef:function(){ S.umie.lucznictwo = true; }},
     {id:"pl_tropienie", uczy:"milorad", grupa:"umiejetnosci", l:"Tropienie", pn:2, zl:70, raz:true,
      ef:function(){ S.umie.tropienie = true; }},
-    {id:"pl_luk_mistrz", uczy:"swietobor", grupa:"walka", l:"Szkoła Wielkiego Łowczego", pn:3, zl:150, raz:true,
+    {id:"pl_luk_mistrz", uczy:"pl_swietobor", grupa:"walka", l:"Szkoła Wielkiego Łowczego", pn:3, zl:150, raz:true,
      wymagaUm:"lucznictwo", wymPoziom:10, ef:function(){ S.umie.luk_mistrz = true; }},
-    {id:"pl_strzal_ram", uczy:"swietobor", grupa:"walka", l:"Supercios: Strzał znad ramienia", pn:5, zl:220, raz:true,
+    {id:"pl_strzal_ram", uczy:"pl_swietobor", grupa:"walka", l:"Supercios: Strzał znad ramienia", pn:5, zl:220, raz:true,
      wymagaUm:"lucznictwo", wymPoziom:15, ef:function(){ S.umie.strzal_znad_ramienia = true; }},
-    {id:"pl_zrecz_swietobor", uczy:"swietobor", grupa:"walka", l:"Zręczność +1", pn:1, zl:9, ef:function(){ S.zrecz += 1; }},
-    {id:"pl_dwa_ostrza", uczy:"ludmila", grupa:"walka", l:"Walka dwoma ostrzami", pn:3, zl:130, raz:true,
+    {id:"pl_zrecz_swietobor", uczy:"pl_swietobor", grupa:"walka", l:"Zręczność +1", pn:1, zl:9, ef:function(){ S.zrecz += 1; }},
+    {id:"pl_dwa_ostrza", uczy:"pl_ludmila", grupa:"walka", l:"Walka dwoma ostrzami", pn:3, zl:130, raz:true,
      ef:function(){ S.umie.dwa_ostrza = true; }},
-    {id:"pl_taniec", uczy:"ludmila", grupa:"walka", l:"Supercios: Taniec ostrzy", pn:5, zl:240, raz:true,
+    {id:"pl_taniec", uczy:"pl_ludmila", grupa:"walka", l:"Supercios: Taniec ostrzy", pn:5, zl:240, raz:true,
      wymagaUm:"dwa_ostrza", wymPoziom:15, ef:function(){ S.umie.taniec_ostrzy = true; }},
-    {id:"pl_zbrojny", uczy:"sulislaw", grupa:"walka", l:"Szkoła zbrojnego leśnego", pn:2, zl:90, raz:true,
+    {id:"pl_zbrojny", uczy:"pl_sulislaw", grupa:"walka", l:"Szkoła zbrojnego leśnego", pn:2, zl:90, raz:true,
      ef:function(){ S.umie.zbrojny_lesny = true; }},
-    {id:"pl_sila_sulislaw", uczy:"sulislaw", grupa:"walka", l:"Zdrowie +12", pn:1, zl:14,
+    {id:"pl_sila_sulislaw", uczy:"pl_sulislaw", grupa:"walka", l:"Zdrowie +12", pn:1, zl:14,
      ef:function(){ S.hpMax += 12; S.hp += 12; }},
     {id:"pl_natura1", uczy:"ostromir", grupa:"magia", l:"Nowicjusz natury: Cierń", pn:2, zl:90, raz:true,
      ef:function(){ S.umie.ciern = true; }},
@@ -9988,7 +10126,7 @@ function rozszerzOdeszlych(){
       {n:"Karczma Pod Suchą Wodą - nocleg", scena:"karczma_brod"},
       {n:"Kramy kontraktowe - handel", scena:"kramy_brod"}
     ],
-    tereny:[{n:"Wyjdź na wyschłe koryto brodu", teren:"brod_teren"}],
+    tereny:[{n:"Wyjdź na wyschłe koryto brodu", teren:"suchy_brod_teren"}],
     drogi:[
       {n:"Do Zgorzeli", lok:"zgorzel"},
       {n:"Do Podkowy", lok:"podkowa"},
@@ -10045,7 +10183,7 @@ function rozszerzOdeszlych(){
     },
     postacie:[
       {n:"Kulawy Ksin", id:"ksin", nieznany:"Kowal, który kuje na siedząco", rola:"płatnerz", scena:"ksin", portret:"kowal"},
-      {n:"Bosa Wanda", id:"wanda", nieznany:"Kobieta prowadząca trzy konie naraz", rola:"koniuszka", scena:"wanda", portret:"kobieta"}
+      {n:"Bosa Wanda", id:"od_wanda", nieznany:"Kobieta prowadząca trzy konie naraz", rola:"koniuszka", scena:"od_wanda", portret:"kobieta"}
     ],
     miejsca:[
       {n:"Poddasze nad stajnią - nocleg", scena:"poddasze_podkowa"},
@@ -10139,7 +10277,7 @@ function rozszerzOdeszlych(){
        wynik:"Bez zamka, bo nikt tu nie kradnie przy ognisku. Ty właśnie zrobiłeś wyjątek."}
     ]
   },
-  brod_teren:{
+  suchy_brod_teren:{
     n:"Wyschłe koryto brodu", wraca:"suchy_brod",
     opis:"Kamieniste dno dawnej rzeki tuż za miastem. Ćwiczą tu ci, którzy nie chcą, żeby ich widziano przy ćwiczeniu.",
     punkty:[
@@ -10403,7 +10541,7 @@ function scenyOdeszlych(){
       {l:"Mam cztery worki węgla.", warunekZ:{id:"od_swiezak", stan:"aktywne"}, wymagaPrzedmiotu:"wegiel_drzewny", ile:4,
        oddajZ:"od_swiezak", idz:"grzebien_kreska"},
       {l:"Chcę robić coś, czego nikt nie chce.", warunekZ:{id:"od_lan1", stan:"brak"},
-       warunek:function(){ return !!(S.zadania && S.zadania.od_swiezak && S.zadania.od_swiezak.stan === "zrobione"); },
+       warunek:function(){ return stanZadania("od_swiezak") === "oddane"; },
        dajZ:"od_lan1", idz:"grzebien_nabor"},
       {l:"Pokaż mi rejestr.", warunekZ:{id:"od_rejestr", stan:"brak"}, dajZ:"od_rejestr", idz:"grzebien_rejestr",
        ef:function(){ dodaj("ksiega_wolnych", 1); }},
@@ -10421,7 +10559,7 @@ function scenyOdeszlych(){
     opcje:[{l:"Będzie ich więcej.", idz:"grzebien"}]};
   SCENY.grzebien_nabor = {portret:"urzednik", kto:"Grzebień",
     tekst:"<span class='mowa'>„Coś, czego nikt nie chce. Dobrze.<br><br>Idź do Suchego Brodu, do Szpona, i powiedz, że przysyła cię Grzebień. On ma sprawę, o której nie chce mówić na głos, a to u niego znaczy, że sprawa jest zła.”</span>",
-    opcje:[{l:"Idę do Suchego Brodu.", idz:"grzebien"}]};
+    opcje:[{l:"Idę do Suchego Brodu.", ef:function(){ gotoweZadanie("od_lan1"); oddajZadanie("od_lan1"); }, idz:"grzebien"}]};
   SCENY.grzebien_rejestr = {portret:"urzednik", kto:"Grzebień",
     tekst:"Podaje ci gruby zwój przewiązany rzemieniem, trzymając go dłużej, niż trzeba.<br><br><span class='mowa'>„Czytaj do końca. Ludzie zawsze czytają pierwsze strony, gdzie są kwoty, i nigdy ostatniej, gdzie są daty.”</span>",
     opcje:[{l:"Przeczytam.", idz:"grzebien"}]};
@@ -10648,24 +10786,24 @@ function scenyOdeszlych(){
     opcje:[{l:"Pokaż towar.", idz:"ksin", poznaj:"ksin"}]};
 
   /* ---------- BOSA WANDA ---------- */
-  SCENY.wanda = {
-    portret:"kobieta", npc:"wanda", ktoNieznany:"Kobieta prowadząca trzy konie naraz", kto:"Bosa Wanda",
+  SCENY.od_wanda = {
+    portret:"kobieta", npc:"od_wanda", ktoNieznany:"Kobieta prowadząca trzy konie naraz", kto:"Bosa Wanda",
     intro:{
       tekst:"Idzie boso po ubitej ziemi wybiegu, trzymając trzy konie za uzdy w jednej ręce.<br><br><span class='mowa'>„Boso, bo koń słyszy but i nie słyszy stopy. Trzydzieści lat i ani razu żaden mnie nie kopnął.”</span>",
       opcje:[
-        {l:"Skąd macie tyle koni?", idz:"wanda_w1"},
-        {l:"Nie przeszkadzam.", idz:"wanda", poznaj:"wanda"}
+        {l:"Skąd macie tyle koni?", idz:"od_wanda_w1"},
+        {l:"Nie przeszkadzam.", idz:"od_wanda", poznaj:"od_wanda"}
       ]
     },
     tekst:"<span class='mowa'>„Konia się nie kupuje na oko. Konia się kupuje na słuch: jak oddycha po biegu.”</span>",
     opcje:[
-      {l:"Potrzebujesz rzemieni?", warunekZ:{id:"od_rzemien", stan:"brak"}, dajZ:"od_rzemien", idz:"wanda"},
+      {l:"Potrzebujesz rzemieni?", warunekZ:{id:"od_rzemien", stan:"brak"}, dajZ:"od_rzemien", idz:"od_wanda"},
       {l:"Mam sześć rzemieni.", warunekZ:{id:"od_rzemien", stan:"aktywne"}, wymagaPrzedmiotu:"rzemien", ile:6,
-       oddajZ:"od_rzemien", idz:"wanda_rzemien"},
+       oddajZ:"od_rzemien", idz:"od_wanda_rzemien"},
       {l:"Odejdź", idz:"__lok_podkowa"}
     ]
   };
-  SCENY.wanda_w1 = {portret:"kobieta", kto:"Bosa Wanda",
+  SCENY.od_wanda_w1 = {portret:"kobieta", kto:"Bosa Wanda",
     tekst:function(){
       return "<span class='mowa'>„Kupujemy od wszystkich czterech. Ismaal sprzedaje wybrakowane, Nowożytni sprzedaje drogie i zdrowe, Prastary Lud w ogóle nie sprzedaje, więc kupujemy od tych, którzy od nich kradną.<br><br>A potem wszyscy czterej przyjeżdżają tu po konie, których u siebie nie mają. Nie widzę w tym sprzeczności. Widzę zarobek.”</span><br><br>"
         + ocenaFrakcyjna({
@@ -10674,10 +10812,10 @@ function scenyOdeszlych(){
           brak:"<span class='mowa'>„Ty nie masz barw, więc zapłacisz od razu. Tak to działa.”</span>"
         });
     },
-    opcje:[{l:"Uczciwie.", idz:"wanda", poznaj:"wanda"}]};
-  SCENY.wanda_rzemien = {portret:"kobieta", kto:"Bosa Wanda",
+    opcje:[{l:"Uczciwie.", idz:"od_wanda", poznaj:"od_wanda"}]};
+  SCENY.od_wanda_rzemien = {portret:"kobieta", kto:"Bosa Wanda",
     tekst:"Rozciąga każdy pas między rękami, sprawdzając, czy nie pęka na zgięciu.<br><br><span class='mowa'>„Dobre. Nie moczone na siłę, tylko suszone powoli.<br><br>Będzie z tego uprząż na trzy konie i jeden pas dla ciebie, jak kiedyś będziesz musiał kogoś związać. Nie pytaj, skąd wiem, że będziesz musiał.”</span>",
-    opcje:[{l:"Nie pytam.", idz:"wanda"}]};
+    opcje:[{l:"Nie pytam.", idz:"od_wanda"}]};
 
   /* ---------- ZGAGA ---------- */
   SCENY.zgaga = {
@@ -10951,6 +11089,254 @@ if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJ
   PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,
   RECEPTURY:RECEPTURY, ZAKLECIA:ZAKLECIA, PROFESJE:PROFESJE, ekranWytwarzania:ekranWytwarzania,
   odpocznij:odpocznij, zacznijWalke:zacznijWalke, odswiezPanel:odswiezPanel, dodaj:dodaj};
+
+/* --- wątek przepowiedni: rozmowy, które muszą paść przed rozdziałem III --- */
+(function(){
+  /* Jarogniewa nazywa przepowiednię po imieniu */
+  if(SCENY.jarogniewa_rubin){
+    SCENY.jarogniewa_rubin.tekst = "<span class='mowa'>„Kamień barwy krwi, wyspa, brama, której nikt nie stawiał, i ci, którzy przez nią wyjdą.<br><br>Sto lat powtarzamy to dzieciom jak bajkę o wilku. Teraz na północy giną gońcy, a na wschodzie coś przechodzi przez Ziemie Niczyje.”</span>"
+      + "<br><br>Milknie i patrzy na ciebie dłużej, niż wypada patrzeć na obcego."
+      + "<br><br><span class='mowa'>„W tej bajce jest jeszcze jeden. Nazywamy go <em>Tym, Który Dokona Niemożliwego</em>. Nie ma imienia, nie ma domu i nie stoi po żadnej ze stron.<br><br>Powiedziano mi, żebym nie mówiła tego głośno, dopóki nie będę pewna. Nie jestem pewna. Ale zapamiętaj te słowa - przyjdzie dzień, kiedy ktoś cię o nie zapyta i nie będzie miał czasu na wyjaśnienia.”</span>";
+  }
+
+  /* Ożóg widzi w bezimienności coś więcej niż niepamięć */
+  if(SCENY.ozog && SCENY.ozog.opcje){
+    SCENY.ozog_imie = {portret:"weteran", kto:"Brat Ożóg",
+      tekst:"Odkłada patyk, którym rozgarniał węgle, i po raz pierwszy patrzy ci prosto w twarz."
+        + "<br><br><span class='mowa'>„Nie pamiętasz imienia. Wiem, bo pytałem o ciebie w Popielnicy.<br><br>Człowiek, który stracił pamięć, plącze się w tym, co mówi. Ty się nie plączesz. Ty po prostu nie masz imienia - to nie to samo.<br><br>W księgach, których nie wolno mi trzymać, pisano o kimś takim. Że przyjdzie bez imienia i bez domu, i że po tym się go pozna.”</span>"
+        + "<br><br><span class='mowa'>„Nie mów, że ci to powiedziałem. Jeżeli mam rację, to jesteś najgorszą wiadomością, jaka spotkała te strony od stu lat.”</span>",
+      opcje:[{l:"A jeżeli nie masz racji?", idz:"ozog", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.bezimienny = true; S.poznane.przepowiednia = true; }}]};
+    SCENY.ozog.opcje.splice(SCENY.ozog.opcje.length - 1, 0,
+      {l:"Nie pamiętam własnego imienia. Ty coś o tym wiesz.", idz:"ozog_imie", raz:true,
+       warunek:function(){ return poznany("ozog"); }});
+  }
+
+  /* Druid Ostromir: skąd wzięli się Prastarzy i czym byli, zanim wyszli z puszczy */
+  if(SCENY.ostromir && SCENY.ostromir.opcje){
+    SCENY.ostromir_krew = {portret:"kobieta", kto:"Druid Ostromir",
+      tekst:"<span class='mowa'>„Pytasz o to, o czym my nie mówimy przy ogniu, tylko przy wodzie.<br><br>Arcydruid zdejmuje z siebie człowieka jak płaszcz i wraca do lasu tym, czym las go urodził. Ryś, wilk, sokół - zależy od krwi, nie od woli. Ja tego nie umiem i pewnie nie będę umiał.”</span>"
+        + "<br><br>Wbija palec w mech i przez chwilę milczy."
+        + "<br><br><span class='mowa'>„A skoro już pytasz: Ismaal też był stąd. Nie z czerwonych skał - stąd, spod tych drzew. Odszedł, bo chciał królestwa i własnej wiary, a jednego i drugiego nie da się mieć w puszczy.<br><br>Nie powtarzaj tego w Czerwieni Wysokiej. Tam za to ścinają, i nie dlatego, że to kłamstwo.”</span>",
+      opcje:[{l:"Zapamiętam.", idz:"ostromir", ef:function(){ S.wiedza = S.wiedza || {}; S.wiedza.ismaal_puszcza = true; }}]};
+    SCENY.ostromir.opcje.splice(SCENY.ostromir.opcje.length - 1, 0,
+      {l:"Mówią, że starsi z was zmieniają się w zwierzęta.", idz:"ostromir_krew", raz:true});
+  }
+})();
+
+/* --- kto uczy w barwach frakcji, a kto na ziemi niczyjej --- */
+(function(){
+  var ZIEMIE_FRAKCJI = {};
+  [["nw", ["nowy_ostrow","miedziana_waga","latarnica","kuznice_wodne","kobylniki","smolarze",
+           "grobla_nw","droga_latarnicza","trakt_wagowy","kontor","rogatka","kopalnia","chodnik"]],
+   ["sk", ["czerwien_wysoka","zarnowiec","kruczyn","grot","wrzosy","kamionka","sepnica",
+           "droga_krucza","gosciniec_czerwony","bramy_ismaala","pod_murem","straznica","jaskinia_szeptow"]],
+   ["pl", ["wiecznik","borowe_wrota","mchowiec","jodlogrod","rosica","barcie","lisia_kepa","olszyny",
+           "sciezka_mchowa","droga_wilcza","uroczysko","most_zachodni","most_wschodni"]],
+   ["od", ["zgorzel","suchy_brod","mgielnik","podkowa","popielisko","wykrot","krzywe_doly",
+           "wyschle_koryto","trakt_popielny","kryjowka"]]
+  ].forEach(function(par){ par[1].forEach(function(l){ ZIEMIE_FRAKCJI[l] = par[0]; }); });
+
+  var lokTrenera = {};
+  for(var l in LOKACJE)
+    (LOKACJE[l].postacie||[]).forEach(function(p){
+      lokTrenera[p.scena] = l;
+      if(p.id) lokTrenera[p.id] = l;
+    });
+
+  NAUKA.forEach(function(w){
+    var f = ZIEMIE_FRAKCJI[lokTrenera[w.uczy || "weteran"]];
+    if(f) w.frakcyjny = f;
+  });
+})();
+
+/* --- wycena nauki: cechy tanio, umiejętności drogo --- */
+(function(){
+  var SKOK_PN = {1:5, 2:7, 3:10, 4:14, 5:18, 6:22};
+  NAUKA.forEach(function(w){
+    if(atrybutNauki(w)) return;              /* cechy liczy kosztPn - zostają po 1 pn na starcie */
+    w.pn = SKOK_PN[w.pn] || Math.max(5, w.pn * 4);
+    w.zl = Math.round((w.zl || 0) * 1.4 / 5) * 5;
+  });
+})();
+
+/* --- dziennik: spis nauczycieli i kupców uzupełnia się sam --- */
+(function(){
+  var gdzie = {}, imie = {}, portret = {};
+  for(var l in LOKACJE)
+    (LOKACJE[l].postacie||[]).forEach(function(p){
+      gdzie[p.scena] = LOKACJE[l].n; imie[p.scena] = p.n;
+      if(p.id && p.id !== p.scena){ gdzie[p.id] = LOKACJE[l].n; imie[p.id] = p.n; }
+    });
+  function dopisz(id, rola, opis){
+    if(!imie[id]) return;
+    if(LUDZIE.some(function(x){ return x.id === id; })) return;
+    LUDZIE.push({id:id, n:imie[id], gdzie:gdzie[id] || "gdzieś na trakcie", rola:rola, o:opis});
+  }
+  /* nauczyciele - z tego, czego naprawdę uczą */
+  var wg = {};
+  NAUKA.forEach(function(w){
+    var k = w.uczy || "weteran";
+    if(k === "__nikt" || k === "nikt") return;
+    (wg[k] = wg[k] || []).push(w.l.replace(/^Supercios: /, "").replace(/ \+\d+$/, ""));
+  });
+  for(var k in wg){
+    var lista = wg[k].filter(function(x, i, a){ return a.indexOf(x) === i; });
+    dopisz(k, "nauczyciel", "Uczy: " + lista.join(", ") + ".");
+  }
+  /* kupcy - z tego, co mają na półce */
+  for(var sc in SCENY){
+    var S2 = SCENY[sc];
+    if(!S2 || (!S2.oferta && !S2.handel)) continue;
+    var wl = S2.wraca || sc;
+    var cel = imie[wl] ? wl : (imie[sc] ? sc : null);
+    if(!cel) continue;
+    var ile = (S2.oferta||[]).length;
+    dopisz(cel, "kupiec", ile ? ("Handluje. Na półce " + ile + " rodzajów towaru.") : "Skupuje to, co przyniesiesz.");
+  }
+})();
+
+/* --- dziennik: opis świata dopisuje się po odwiedzeniu ziem --- */
+(function(){
+  var ZIEMIE = [
+    ["nw", "Ziemie Nowożytnych", ["nowy_ostrow","miedziana_waga","latarnica","kuznice_wodne"],
+     "Kominy, rejestry i umowy. Nikt tu nie pyta, czyim jesteś synem - pytają, pod czym się podpisałeś. Stolicą jest Nowy Ostrów, gdzie do miasta wchodzi się przez kolejkę, nie przez bramę."],
+    ["sk", "Królestwo Ismaala", ["czerwien_wysoka","zarnowiec","kruczyn","grot"],
+     "Mury starsze niż rachuba lat, wykute w czerwonej skale. Urodzenie decyduje o całym życiu, a chorągiew znaczy więcej niż imię. Stolica, Czerwień Wysoka, nie otwierała bram od dwóch pokoleń."],
+    ["pl", "Prastary Lud", ["wiecznik","borowe_wrota","mchowiec","jodlogrod","rosica"],
+     "Puszcza za rzeką, oddzielona kratą i dwoma mostami. Strażnicy leśni biją się łukiem i zręcznością, druidzi magią natury. Wiecznik stoi na pomostach nad wodą i nie ma w nim ani jednej ulicy."],
+    ["od", "Odeszli", ["zgorzel","suchy_brod","mgielnik","podkowa"],
+     "Pas między dwiema graniami na północy. Odeszli od obu stron wojny i żyją z handlu, przemytu i kontraktów. Zgorzel leży w wyrobisku wśród skał - trudno tam wejść i trudno stamtąd wyjść."]
+  ];
+  WIEDZA.push({id:"przepowiednia", t:"Ten, Który Dokona Niemożliwego", grupa:"Świat",
+    w:function(){ return !!(S.poznane && S.poznane.przepowiednia) || !!(S.przeczytane && S.przeczytane.ksiega_przepowiednia); },
+    o:"Przyjdzie bez imienia i bez domu, nie stanie po żadnej ze stron. Otworzy bramę, przez którą wyleje się morze zła - i on jeden będzie musiał ją zamknąć. Sto lat powtarzano to dzieciom jako przestrogę. Ktoś dopisał na marginesie pytanie, czy to nie było polecenie."});
+  WIEDZA.push({id:"rubin", t:"Krwawy Rubin", grupa:"Świat",
+    w:function(){ return !!(S.wiedza && S.wiedza.rubin) || !!(S.przeczytane && S.przeczytane.ksiega_przepowiednia); },
+    o:"Kamień barwy krwi. Leży na wyspie daleko na południu, w świątyni, która upadła. Kto go weźmie, ten otworzy bramę; kto otworzy, ten musi zamknąć. Nikt nie wie, jak wygląda ani co dokładnie robi."});
+  WIEDZA.push({id:"ziemie_nieznane", t:"Ziemie Nieznane", grupa:"Świat",
+    w:function(){ return !!(S.wiedza && (S.wiedza.rubin || S.wiedza.pl_wojna)) || stanZadania("posel5") !== "brak"; },
+    o:"Za północną granią, poza ziemiami Odeszłych. Nikt stamtąd nie wraca z opowieścią, która się zgadza. Ostatnio wraca się stamtąd coraz rzadziej, a kontrakty prowadzące na wschód mają w rejestrze pustą ostatnią kolumnę."});
+  WIEDZA.push({id:"ismaal_krew", t:"Skąd wziął się Ismaal", grupa:"Frakcje",
+    w:function(){ return !!(S.wiedza && S.wiedza.ismaal_puszcza); },
+    o:"Druidzi twierdzą, że Ismaal pochodził spod ich drzew, a nie z czerwonych skał. Odszedł, bo chciał własnego królestwa i własnej wiary. W Czerwieni Wysokiej za powtórzenie tego ścina się głowy - i nie dlatego, że to kłamstwo."});
+  WIEDZA.push({id:"bezimienny", t:"Człowiek bez imienia", grupa:"Świat",
+    w:function(){ return !!(S.wiedza && S.wiedza.bezimienny); },
+    o:"Nie zapomniałeś imienia. Ty go nie masz - Ożóg twierdzi, że to nie to samo, i że w księgach, których nie wolno mu trzymać, pisano o kimś takim."});
+
+  ZIEMIE.forEach(function(z){
+    WIEDZA.push({id:"ziemie_"+z[0], t:z[1], grupa:"Frakcje",
+      w:(function(lok){ return function(){
+        for(var i=0;i<lok.length;i++) if(S.odwiedzone && S.odwiedzone[lok[i]]) return true;
+        return false;
+      }; })(z[2]),
+      o:z[3]});
+  });
+})();
+
+/* --- znacznik na mapie wskazuje lokację zleceniodawcy, nie Popielnicę --- */
+(function(){
+  var indeksLokacji = {};
+  MAPA.znaczniki.forEach(function(z, i){ indeksLokacji[z.n] = i; });
+  var lokacjaNpc = {};
+  for(var l in LOKACJE)
+    (LOKACJE[l].postacie||[]).forEach(function(p){ lokacjaNpc[p.n] = LOKACJE[l].n; });
+  for(var q in ZADANIA){
+    var z = ZADANIA[q];
+    var lok = lokacjaNpc[z.od];
+    if(lok && indeksLokacji[lok] !== undefined) z.miejsce = indeksLokacji[lok];
+  }
+})();
+
+/* --- żaden przedmiot nie może być nieosiągalny --- */
+(function(){
+  var GDZIE = {
+    iwo_sklep:        ["topor_ciesl"],
+    huta:             ["miecz_stary"],
+    arsenal_czerwien: ["bulawa", "zbroja_straznicza"],
+    zbrojownia_kuznice: ["dwurecz", "kaftan_kontoru"],
+    belciarnia_grot:  ["kusza_kontoru"]
+  };
+  for(var sc in GDZIE){
+    if(!SCENY[sc] || !SCENY[sc].oferta) continue;
+    GDZIE[sc].forEach(function(k){
+      if(PRZEDMIOTY[k] && SCENY[sc].oferta.indexOf(k) < 0) SCENY[sc].oferta.push(k);
+    });
+  }
+})();
+
+/* --- superciosy powyżej 15 poziomu są zamknięte we frakcjach --- */
+(function(){
+  var FRAK = {sk_strzal_korbowy:"sk", nw_rozlupanie:"nw", pl_strzal_ramie:"pl",
+              pl_taniec:"pl", od_cios_plaszcz:"od"};
+  NAUKA.forEach(function(w){
+    if(FRAK[w.id]) w.wymFrakcja = FRAK[w.id];
+    /* niezależnie od nazwy id: każdy supercios od 15 poziomu wymaga barw */
+    if(!w.wymFrakcja && w.wymPoziom >= 15 && /^Supercios:/.test(w.l || "")){
+      var poNpc = {smil:"od", "pl_ludmila":"pl", "pl_swietobor":"pl", szpon:"od",
+                   domaslaw:"nw", ciborek:"nw", bronislawa:"sk", jaksa:"sk", ryza:"od", racibor:null};
+      if(poNpc[w.uczy]) w.wymFrakcja = poNpc[w.uczy];
+    }
+  });
+  /* Runy wyższe - dopiero gdy nosisz czyjeś barwy; prastarych nie uczy nikt */
+  NAUKA.forEach(function(w){
+    if(w.id === "runy2") w.wymCzlonek = true;
+    if(w.id === "runy3") w.uczy = "__nikt";
+    if(w.id === "runy1") w.uczy = "ozog";
+  });
+})();
+
+/* --- receptur trzeba się nauczyć: rzemieślnicy sprzedają zapisy --- */
+(function(){
+  var KTO = {
+    kowalstwo: ["kowal","przybyslaw","bolko","hutnik","zelislaw","domicela","niemir"],
+    alchemia:  ["bogna","zbyslawa","znachorka","milocha","chwalislawa","nawka","wiosna"],
+    gotowanie: ["bodzieta","ludmila","karczma","miedza","wszebor"]
+  };
+  var CENY = {sztaba:30, grot:40, belt_kuty:60, noz_kuty:80, stal:160, kord_kuty:260,
+              wywar_maly:35, wywar_many:90, jad_tojad:110, wywar_duzy:200,
+              ryba_pieczona:20, polewka:35, pieczen:80, uczta:160};
+  function dostepni(prof){ return (KTO[prof]||[]).filter(function(id){ var sc = SCENY[id]; return sc && sc.opcje; }); }
+  RECEPTURY.forEach(function(r){
+    var lista = dostepni(r.prof);
+    if(!lista.length) return;
+    /* recepturę wyższego stopnia sprzedaje dalszy rzemieślnik, jeśli taki jest */
+    var idx = Math.min(lista.length - 1, r.lvl - 1);
+    var sc = SCENY[lista[idx]];
+    var cena = CENY[r.id] || 50;
+    sc.opcje.splice(Math.max(0, sc.opcje.length - 1), 0, {
+      l: "Naucz mnie: " + r.n,
+      recepta: r.id, cenaR: cena, idz: lista[idx],
+      warunek: (function(rid, c){ return function(){ return !znaReceptura(rid) && S.zloto >= c; }; })(r.id, cena)
+    });
+  });
+})();
+
+/* --- mięso ze zwierzyny, drobna ryba z łowisk --- */
+(function(){
+  for(var w in WROGOWIE){
+    var e = WROGOWIE[w];
+    if(e.lup && e.lup.skora && !e.lup.mieso) e.lup.mieso = 1 + (e.lup.skora > 1 ? 1 : 0);
+  }
+  for(var t in TERENY){
+    (TERENY[t].punkty||[]).forEach(function(pk){
+      if(pk.typ === "ryba" && pk.zbierz && !pk.zbierz.ryba) pk.zbierz.ryba = 2;
+    });
+  }
+})();
+
+/* --- każda droga ma powrót --- */
+(function(){
+  var klucze = Object.keys(LOKACJE);
+  klucze.forEach(function(a){
+    (LOKACJE[a].drogi||[]).forEach(function(d){
+      if(!d.lok || !LOKACJE[d.lok]) return;
+      var b = LOKACJE[d.lok];
+      b.drogi = b.drogi || [];
+      if(!b.drogi.some(function(x){ return x.lok === a; }))
+        b.drogi.push({n:"Z powrotem: " + LOKACJE[a].n, lok:a});
+    });
+  });
+})();
 
 rysujPasek();
 pokaz("start");
