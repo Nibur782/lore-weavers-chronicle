@@ -4068,6 +4068,14 @@ function pokaz(id){
 
   var wstep = (sc.npc && !poznany(sc.npc) && sc.intro) ? sc.intro : null;
   if(wstep) dostepne = wstep.opcje.filter(function(o){ return !o.warunek || o.warunek(); });
+
+  /* siatka bezpieczeństwa: żadna scena nie może zostać bez jednego wyjścia.
+     Zdarza się, gdy gracz sprzeda albo zgubi przedmiot wymagany przez jedyną opcję. */
+  if(!dostepne.length && !sc.trener && !sc.sklep && !sc.handel && !sc.brama
+     && !sc.dziennik && !sc.bestie && !sc.ekwipunek && !sc.potem){
+    var ratunek = sc.wraca || sc.__wraca;
+    dostepne = [ratunek ? {l:"Odejdź.", idz:ratunek} : {l:"Odejdź.", wyjdzDoLokacji:true}];
+  }
   var tresc = wstep ? wstep.tekst : (typeof sc.tekst === "function" ? sc.tekst() : sc.tekst);
 
   var glowa = glowaRozmowy(sc);
@@ -4110,6 +4118,7 @@ function pokaz(id){
         var celLok = mapa[o.idz] || o.idz.slice(6);
         S.widok = "lokacja"; ekranLokacji(celLok); return;
       }
+      if(o.wyjdzDoLokacji){ S.widok = "lokacja"; ekranLokacji(lokacjaSceny(id) || S.lokacja || "popielnica"); return; }
       if(o.idz === "__kruczy"){ S.widok="lokacja"; ekranLokacji("kruczy_dol"); return; }
       if(o.wczytaj){ S.trybZapisu=false; panel="zapisy"; var dw=document.getElementById("panel"); dw.hidden=false; odswiezPanel(); rysujPasek(); return; }
 
@@ -11089,6 +11098,187 @@ if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJ
   PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,
   RECEPTURY:RECEPTURY, ZAKLECIA:ZAKLECIA, PROFESJE:PROFESJE, ekranWytwarzania:ekranWytwarzania,
   odpocznij:odpocznij, zacznijWalke:zacznijWalke, odswiezPanel:odswiezPanel, dodaj:dodaj};
+
+/* --- mapa: która scena należy do której lokacji (dla wyjścia awaryjnego) --- */
+var LOKACJA_SCENY = {};
+function lokacjaSceny(id){ return LOKACJA_SCENY[id] || null; }
+(function(){
+  for(var l in LOKACJE){
+    ["postacie","miejsca","akcje","drogi"].forEach(function(p){
+      (LOKACJE[l][p]||[]).forEach(function(o){
+        if(!o.scena) return;
+        var q = [o.scena], vis = {};
+        while(q.length){
+          var c = q.shift();
+          if(!c || vis[c] || !SCENY[c] || c.indexOf("__") === 0) continue;
+          vis[c] = true;
+          if(!LOKACJA_SCENY[c]) LOKACJA_SCENY[c] = l;
+          (SCENY[c].opcje||[]).forEach(function(x){ if(x.idz) q.push(x.idz); });
+        }
+      });
+    });
+  }
+})();
+
+/* --- GŁOS BOHATERA: rozdział I, Popielnica i Kruczy Dół ---
+   Krótko, konkretnie, z przytykiem. Nigdy "Rozumiem." tam, gdzie da się powiedzieć coś,
+   co coś o nim mówi. Wzór: Bezimienny z Gothica - mediana pięciu słów. --- */
+(function(){
+  /* podmiana kwestii bohatera: scena -> stara etykieta -> nowa */
+  var GLOS = {
+    weteran:        {"Nic. Zapomnij.":"Nic. Ostrz dalej."},
+    weteran_wojna:  {"Rozumiem.":"Czyli o nic."},
+    weteran_wies:   {"Widzę.":"Widzę. Wesoło tu."},
+    weteran_kim:    {"Nie bardzo.":"Nie bardzo. Ale słucham.", "Wystarczy.":"Na razie wystarczy."},
+    weteran_kim2:   {"...":"Zapamiętam, że nie chciałeś powiedzieć."},
+    weteran_p1:     {"Więc kim jesteś?":"To kim jesteś, jak nie żołnierzem?"},
+    weteran_p2:     {"Zapamiętam, Domaracie.":"Zapamiętam. Domarat."},
+    weteran_robota: {"Przyjmij zadanie":"Mów, co trzeba zrobić.",
+                     "Oddaj zadanie":"Zrobione. Sprawdź, jeśli chcesz.",
+                     "Wróć do osady":"Wrócę, jak będzie o czym gadać."},
+    kowal:          {"Kupujesz rudę?":"Bierzesz rudę? Mam.",
+                     "Trzy bryły galeny.":"Trzy bryły galeny. Licz."},
+    kowal_p1:       {"A jak przyjdą zbrojni?":"A jak przyjdą zbrojni, to ich czym - podkową?"},
+    kowal_p3:       {"Nie pytam.":"Nie pytam. Kuj swoje."},
+    swierad:        {"Odyniec nie żyje.":"Odyniec nie żyje. Możesz liczyć spokojnie.",
+                     "Odchodzę.":"Licz dalej."},
+    swierad_dzik:   {"Położę go.":"Położę go. Ale nie za darmo."},
+    swierad_p1:     {"Jak się nazywasz?":"Masz imię czy same owce?"},
+    swierad_p2:     {"Może umiem.":"Może i umiem."},
+    kobieta:        {"Zgódź się poszukać ziela":"Powiedz, jak to ziele wygląda.",
+                     "Oddaj krwawnik":"Masz swoje ziele. Rób obrzęd.",
+                     "Odejdź":"Wrócę z zielem."},
+    kobieta_p1:     {"Po kim ta żałoba?":"Po kim ten cebrzyk?"},
+    kobieta_p2:     {"Nie powiem.":"To nie moja sprawa. Ani twoja."},
+    wanda:          {"Czego ci brakuje?":"Czego ci brakuje do tej deski?",
+                     "Mam twój krwawnik.":"Pięć garści. Licz, jeśli chcesz.",
+                     "Potrzebujesz czegoś jeszcze?":"Coś jeszcze, czy tyle?",
+                     "Mam futro.":"Masz swoje futro. Zdjęte z żywego.",
+                     "Nic. Odchodzę.":"Nic. Rób swoje.",
+                     "Odchodzę.":"Rób swoje."},
+    wanda_ziola:    {"Zapamiętam.":"Pięć garści. Zapamiętam."},
+    wanda_futro:    {"Pójdę.":"Pójdę. Borsuk o tym nie wie."},
+    wanda_kim:      {"Wybacz.":"Pytałem raz. Drugi raz nie zapytam."},
+    wanda_w1:       {"Kim jesteś?":"Kto ci pozwolił tu warzyć?"},
+    wanda_w2:       {"Będę.":"Będę pamiętał."},
+    bodzieta:       {"Masz co do kotła?":"Masz coś, co się je?",
+                     "Cztery ryby, jak chciałeś.":"Cztery ryby. Więcej nie wyciągnąłem.",
+                     "Wiem, kto zabił posłańca.":"Wiem, kto zabił tego posłańca.",
+                     "Przy poboczu leży zabity człowiek. Kto to był?":"Pod granicą leży trup. Twój znajomy?",
+                     "Wracam do sali.":"Lej dalej."},
+    bodzieta_koniec:{"To dużo.":"To dużo jak na jedną karczmę."},
+    bodzieta_cialo: {"Zapytam.":"To zapytam kogo innego."},
+    bodzieta_rzady: {"A jak przestaną?":"A jak przestaną płacić?", "Rozumiem.":"Czyli nikt."},
+    bodzieta_ludzie:{"Nie powtórzy się.":"Nie powtórzę tego głośno."},
+    bodzieta_woz:   {"Dzięki.":"Nic nie słyszałem."},
+    bodzieta_w1:    {"A kim jesteś tutaj?":"A ty tu kto? Właściciel czy najemnik?"},
+    bodzieta_w2:    {"Rozejrzę się.":"To się rozejrzę."},
+    bodzieta_przestana:{"...":"Wtedy pogadamy inaczej."},
+    iwo:            {"Pokaż, co masz na sprzedaż.":"Pokaż towar.",
+                     "Zgubiłeś coś ostatnio?":"Zgubiłeś coś? Bo ja znalazłem.",
+                     "Twój amulet.":"Twój amulet. Leżał, gdzie nie powinien.",
+                     "Wracam do sali.":"Licz dalej."},
+    iwo_amulet:     {"Czyje to litery?":"Czyje to litery?", "Rozejrzę się.":"Poszukam. Ale nie za darmo."},
+    iwo_zwrot:      {"Bywaj.":"Bywaj. I nie gub więcej."},
+    iwo_strony:     {"A blisko już do tego?":"Blisko już do tego?", "Ciekawe.":"Wygodnie ci."},
+    iwo_plotki:     {"Dlaczego?":"Dlaczego akurat tam?", "Bywa.":"Bywa i gorzej."},
+    iwo_w1:         {"Jak cię zwą?":"A ty kto?"},
+    iwo_w2:         {"Nic, co by cię zainteresowało.":"Nic, na czym byś zarobił."},
+    iwo_litery:     {"Poszukam.":"Poszukam. Ale zapamiętam, że nie chciałeś powiedzieć."},
+    iwo_blisko:     {"...":"To niedługo zrobi się drogo."},
+    iwo_dlaczego:   {"...":"Czyli nikt nie wie."},
+    lgota:          {"Wóz stoi pod granicą. Twój?":"Pod granicą stoi wóz. Twój?",
+                     "Trzy grudy soli.":"Trzy grudy soli. Tyle było.",
+                     "Ten zabity posłaniec pod granicą. Twoja robota?":"Ten trup pod granicą. Twoja robota?",
+                     "Naucz mnie tego, co robisz.":"Naucz mnie tego, co ty umiesz.",
+                     "Wracam do sali.":"Siedź dalej."},
+    lgota_sol:      {"Przyniosę.":"Przyniosę. Nie pytam skąd ma być."},
+    lgota_poslaniec:{"Nie powiem.":"Nie powiem. Ani tobie, ani nikomu.",
+                     "Powiem, jeśli mi się opłaci.":"Powiem. Jak się opłaci."},
+    lgota_woz:      {"Wolę to drugie.":"Wolę to drugie."},
+    lgota_kaptur:   {"Nie mam.":"Nie mam. Ale ty masz."},
+    lgota_w1:       {"Kim jesteś?":"Na kogo czekasz?"},
+    lgota_w2:       {"Nie zasłonię.":"Nie zasłonię. Ale zapamiętam twarz."},
+    lgota_grozba:   {"...":"Spokojnie. Nikomu na tym nie zależy."},
+    wojslaw:        {"Jesteś z północy, zza grani.":"Jesteś z północy. Zza grani.",
+                     "Co Odeszli myślą o tej wojnie?":"Co wy tam myślicie o tej wojnie?",
+                     "Wracam do sali.":"Siedź twarzą do ściany."},
+    wojslaw_polnoc: {"Wystarczy.":"Tyle mi starczy."},
+    wojslaw_wojna:  {"Dlaczego przeze mnie?":"Czemu akurat przeze mnie?", "Zobaczymy.":"Zobaczymy, kto kogo."},
+    wojslaw_w1:     {"Kim jesteś?":"Czemu siedzisz twarzą do ściany?"},
+    wojslaw_w2:     {"Domyślę się.":"To się domyślę."},
+    wojslaw_dlaczego:{"...":"Nikt mnie nigdzie nie posyła."},
+    wiesniak:       {"Jak się nazywasz?":"Masz imię?",
+                     "Wiesz, kim jestem?":"Wiesz, kim jestem? Bo ja nie.",
+                     "Dawaj to jabłko i już mnie tu nie ma.":"Dawaj to jabłko i mnie tu nie było.",
+                     "(odejść bez słowa)":"(wstań i odejdź bez słowa)"},
+    wiesniak_imie:  {"Nie powiem.":"Nie powiem. Bo nie wiem."},
+    wiesniak_pytanie:{"Weź jabłko i ruszaj":"Wezmę jabłko. Odrobię.",
+                     "Zostaw jabłko":"Zostaw sobie. Nie umieram."},
+    konwoj:         {"Pchajmy. I nie interesuje mnie, co w tych beczkach.":"Pchajmy. Co w beczkach - wasza sprawa."},
+    studnia:        {"Odsuń się. Nabiorę jej tej wody.":"Odsuń się. Nabiorę jej wody."}
+  };
+
+  for(var id in GLOS){
+    var sc = SCENY[id];
+    if(!sc) continue;
+    var mapa = GLOS[id];
+    [sc.opcje, sc.intro && sc.intro.opcje].forEach(function(lista){
+      if(!lista) return;
+      lista.forEach(function(o){ if(mapa[o.l] !== undefined) o.l = mapa[o.l]; });
+    });
+  }
+
+  /* --- opcje bezczelne: NPC to zapamięta --- */
+  function przytyk(scena, etykieta, docelowa, tekstNpc, kogo, przed){
+    var sc = SCENY[scena];
+    if(!sc || !sc.opcje) return;
+    SCENY[docelowa] = {
+      portret:sc.portret, kto:sc.kto, npc:sc.npc,
+      tekst:tekstNpc,
+      opcje:[{l:"Niech ci będzie.", idz:scena,
+        ef:function(){ S.cierpliwosc[kogo] = (S.cierpliwosc[kogo]||0) + 1; }}]
+    };
+    sc.opcje.splice(Math.max(0, sc.opcje.length - 1), 0,
+      {l:etykieta, idz:docelowa, raz:true,
+       warunek:(function(k, p){ return function(){ return (S.cierpliwosc[k]||0) < p; }; })(kogo, przed)});
+  }
+
+  przytyk("weteran", "Siedzisz tu i ostrzysz. Wieś płonie dwa razy, a ty ostrzysz.",
+    "weteran_przytyk",
+    "Po raz pierwszy odkłada osełkę. Patrzy na ciebie tak długo, że zaczynasz liczyć oddechy."
+    + "<br><br><span class='mowa'>„Byłem przy drugim pożarze. Wynosiłem stąd dwóch ludzi, z których jeden był już niepotrzebny.<br><br>"
+    + "Ty przyszedłeś wczoraj i już wiesz, kto tu zawinił. Siadaj i się ucz, albo idź i sprawdź sam.”</span>",
+    "weteran", 3);
+
+  przytyk("bodzieta", "Piwo masz kwaśne, a gęba ci się nie zamyka.",
+    "bodzieta_przytyk",
+    "Nie przestaje wycierać kufla."
+    + "<br><br><span class='mowa'>„Kwaśne, bo takie jest. Innego nie będzie i wiesz o tym.<br><br>"
+    + "Gadam, bo ludzie płacą za gadanie więcej niż za piwo. Ty na razie nie zapłaciłeś za jedno ani drugie.”</span>",
+    "bodzieta", 3);
+
+  przytyk("wanda", "Warzysz na desce przy drodze. To nie wygląda na znachorstwo.",
+    "wanda_przytyk",
+    "Nie odkłada noża."
+    + "<br><br><span class='mowa'>„Warzę tam, gdzie mi pozwolili. Izby nie dostałam, bo izba jest dla tych, co mają za czym stać.<br><br>"
+    + "Jak ci się nie podoba, idź do Nowożytnych. Oni mają izbę, rejestr i nikogo, kto by cię zszył.”</span>",
+    "wanda", 2);
+
+  przytyk("iwo", "Płaszcz z Kuźnicy, a handlujesz w błocie. Wyrzucili cię czy uciekłeś?",
+    "iwo_przytyk",
+    "Uśmiech nie schodzi mu z twarzy, ale przestaje sięgać oczu."
+    + "<br><br><span class='mowa'>„Wyszedłem. To trzecia możliwość i akurat ta prawdziwa.<br><br>"
+    + "Zapytaj mnie o to jeszcze raz za rok. Odpowiem to samo, tylko drożej.”</span>",
+    "iwo", 3);
+
+  przytyk("kowal", "Kujesz podkowy, kiedy dwa kroki stąd biją się o wszystko.",
+    "kowal_przytyk",
+    "Nie przerywa. Uderza jeszcze trzy razy, zanim odpowie."
+    + "<br><br><span class='mowa'>„Podkowa niesie chłopa do miasta. Miecz nie niesie nikogo nigdzie.<br><br>"
+    + "Kułem miecze przez dziewięć lat. Wiem, gdzie wróciły i w czym.”</span>",
+    "kowal", 3);
+})();
 
 /* --- wątek przepowiedni: rozmowy, które muszą paść przed rozdziałem III --- */
 (function(){
