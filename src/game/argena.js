@@ -9849,6 +9849,474 @@ function scenyPrastarych(){
 }
 scenyPrastarych();
 
+/* ================= ZIEMIE ODESZŁYCH ================= */
+function rozszerzOdeszlych(){
+
+  /* --- przedmioty --- */
+  var P = {
+    wegiel_drzewny:{n:"Węgiel drzewny", kat:"surowiec", typ:"towar", cena:12,
+      o:"Wypalany w mielerzach na Popielisku. Lekki, brudzi wszystko i idzie za niego więcej niż za drewno."},
+    rzemien:{n:"Rzemień", kat:"surowiec", typ:"towar", cena:16,
+      o:"Pas surowej skóry, moczony i skręcany. U Odeszłych wiąże się nim wszystko - także ludzi."},
+    polewka_grochowa:{n:"Polewka grochowa", kat:"zywnosc", typ:"jadalne", leczy:16, cena:6,
+      o:"Gęsta, słona i taka sama w każdym obozie od dwudziestu lat. Nikt jej nie lubi i wszyscy jedzą."},
+    suchar_zolnierski:{n:"Suchar żołnierski", kat:"zywnosc", typ:"jadalne", leczy:9, cena:4,
+      o:"Twardy jak dachówka. Moczy się go w czymkolwiek, byle mokrym."},
+    gorzalka_zgorzelska:{n:"Gorzałka zgorzelska", kat:"napoj", typ:"jadalne", leczy:14, mana:14, cena:40,
+      o:"Pędzona z czegokolwiek, co przefermentuje. Rozgrzewa, znieczula i skraca życie w mniej więcej równych proporcjach."},
+    kord_najemniczy:{n:"Kord najemniczy", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[13,20], cena:360,
+      o:"Krótki, ciężki i bez zdobień. Robiony pod rękę, która musi trafiać także po trzech dniach bez snu."},
+    szabla_popielna:{n:"Szabla popielna", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[15,22], cena:470,
+      o:"Klinga hartowana w popiele z mielerzy, przez co ma szary nalot, którego nie da się wypolerować. Odeszli mówią, że dlatego nie błyska w nocy."},
+    kusza_rzemienna:{n:"Kusza rzemienna", kat:"bron", typ:"wyposazenie", slot:"bron", obr:[16,23], dystans:true, cena:430,
+      o:"Łoże z jesionu, cięciwa ze skręconego rzemienia. Naciąga się nogą i strzela raz - drugiego razu zwykle nie ma."},
+    kaftan_przeszywany:{n:"Kaftan przeszywany", kat:"pancerz", typ:"wyposazenie", slot:"pancerz",
+      odp:{obuchowe:9, ciete:6}, daje:{sila:1}, cena:370,
+      o:"Dwadzieścia warstw lnu przeszytych w kratkę. Tani, cichy i wybacza więcej niż blacha."},
+    plaszcz_mglisty:{n:"Płaszcz mglisty", kat:"pancerz", typ:"wyposazenie", slot:"pancerz",
+      odp:{magia:9, energia:5}, daje:{zrecz:1, intelekt:1}, cena:340,
+      o:"Farbowany w wodzie z Mgielnika i nigdy do końca nie wysycha. Nad wodą przestajesz w nim być sylwetką."},
+    kolczyk_najemnika:{n:"Kolczyk najemnika", kat:"bizuteria", typ:"wyposazenie", slot:"amulet",
+      daje:{sila:2}, odp:{ciete:4}, cena:320,
+      o:"Srebrny krążek noszony w uchu. Warty tyle, ile kosztuje pochówek - i dokładnie po to się go nosi."},
+    pierscien_cynowy:{n:"Pierścień cynowy", kat:"bizuteria", typ:"wyposazenie", slot:"pierscien",
+      daje:{zrecz:2, intelekt:1}, cena:300,
+      o:"Tani, matowy i celowo brzydki. Nikt go nie ukradnie, a odcisk w wosku otwiera pół Zgorzeli."},
+    mikst_mglowa:{n:"Wywar mglisty", kat:"napoj", typ:"jadalne", leczy:18, mana:26, cena:75,
+      o:"Chłodny, słonawy i zostawia w ustach smak jeziora. Magowie wody piją go zamiast śniadania."},
+    ksiega_wolnych:{n:"Rejestr wolnych rąk", kat:"pismo", typ:"ksiega", cena:140, exp:130, intelekt:1,
+      o:"Spis kontraktów: kto, dla kogo, za ile i czy wrócił. Ostatnia kolumna jest najciekawsza."},
+    lista_imion:{n:"Lista imion", kat:"pismo", typ:"towar", cena:0,
+      o:"Trzydzieści sześć przezwisk spisanych obcą ręką, a przy jedenastu dopisano kwoty."}
+  };
+  for(var pk in P) if(!PRZEDMIOTY[pk]) PRZEDMIOTY[pk] = P[pk];
+
+  /* --- wrogowie --- */
+  var W = {
+    lowca_glow:{n:"Łowca głów z nizin", hp:122, dmg:[14,19], exp:320, zloto:180, lup:{rzemien:2},
+      sekw:["s","s","g"], finisz:{dmg:[26,34], o:"cios rękojeścią i pchnięcie"}, blokSzansa:20,
+      wyglad:"Czysty płaszcz, brudne buty i lista przy pasie. Sprawdza twoją twarz, zanim wyciągnie broń.",
+      styl:"Dwa razy środkiem, potem górą. Rękojeścią bije zawsze po trzecim ciosie."},
+    zbir_ropuchy:{n:"Zbir spod Krzywych Dołów", hp:98, dmg:[12,17], exp:250, zloto:110, lup:{wegiel_drzewny:2},
+      sekw:["d","s","d"], finisz:{dmg:[23,30], o:"kopniak w kolano i cięcie"}, blokSzansa:10,
+      wyglad:"Bije jak w karczmie, bo nigdzie indziej się nie uczył.",
+      styl:"Nisko, środkiem, znowu nisko. Kopie, kiedy uzna, że nikt nie patrzy."},
+    utopiec_mgielnika:{n:"Utopiec z Mgielnika", hp:112, dmg:[13,19], exp:300, zloto:60, lup:{bagno:2},
+      sekw:["d","d","s"], finisz:{dmg:[25,33], o:"zalanie wodą do płuc"}, blokSzansa:0,
+      wyglad:"Wychodzi z jeziora bokiem, jakby brzeg go bolał.",
+      styl:"Dwa razy nisko, potem środkiem. Uderza wodą dopiero, kiedy stoisz w niej po kolana."},
+    dzik_wykrotu:{n:"Odyniec z Wykrotu", hp:134, dmg:[14,20], exp:330, zloto:0, lup:{skora:2, futro:1}, lupWymaga:"oprawianie",
+      sekw:["d","d","g"], finisz:{dmg:[27,35], o:"szarża na szablach"}, blokSzansa:0,
+      wyglad:"Stary, siwy na karku i całkiem pozbawiony strachu.",
+      styl:"Dwa razy po nogach, potem z dołu w górę. Szarżuje po zaryciu w ziemię."},
+    zdrajca_brodu:{n:"Sprzedany najemnik", hp:128, dmg:[15,21], exp:360, zloto:200, lup:{kord_najemniczy:1},
+      sekw:["g","s","d"], finisz:{dmg:[28,37], o:"cios spod płaszcza"}, blokSzansa:25,
+      wyglad:"Twarz znasz z Suchego Brodu. Sakwa u pasa jest nowa i za ciężka.",
+      styl:"Góra, środek, dół - szkoła najemnicza. Spod płaszcza wychodzi zawsze po trzecim."},
+    pies_zgorzeli:{n:"Pies ze Zgorzeli", hp:86, dmg:[11,16], exp:210, zloto:0, lup:{skora:1}, lupWymaga:"oprawianie",
+      sekw:["d","g"], finisz:{dmg:[21,28], o:"skok do gardła"}, blokSzansa:0,
+      wyglad:"Zdziczały, ale wciąż z obrożą. Ktoś go kiedyś karmił.",
+      styl:"Raz nisko, raz wysoko. Skacze, kiedy się cofniesz."}
+  };
+  for(var wk in W) if(!WROGOWIE[wk]) WROGOWIE[wk] = W[wk];
+  if(typeof TYPY_WROGOW === "object"){
+    TYPY_WROGOW.lowca_glow = "klute"; TYPY_WROGOW.zbir_ropuchy = "obuchowe";
+    TYPY_WROGOW.utopiec_mgielnika = "magia"; TYPY_WROGOW.dzik_wykrotu = "klute";
+    TYPY_WROGOW.zdrajca_brodu = "ciete"; TYPY_WROGOW.pies_zgorzeli = "ciete";
+  }
+
+  /* --- lokacje --- */
+  var L = {
+  trakt_popielny:{
+    n:"Trakt Popielny", region:"droga w ziemie Odeszłych",
+    opis:function(){
+      return "Droga wysypana żużlem i popiołem z mielerzy, przez co jest czarna i nie robi się na niej błoto. Po bokach stoją kopce ziemi, w których coś się jeszcze tli.<br><br>"
+        + "Nikt tu nie pobiera myta i nikt nie pilnuje. Odeszli mówią, że to droga wolna - co znaczy tyle, że jeśli cię na niej obrabują, to twoja sprawa.<br><br>"
+        + (jestNoc() ? "Nocą mielerze świecą od środka czerwonym i widać je z odległości pół dnia marszu."
+                     : "Popiół wchodzi w buty i w gardło. Po godzinie marszu pluje się na szaro.");
+    },
+    tereny:[{n:"Zejdź między mielerze", teren:"popielny_teren"}],
+    drogi:[
+      {n:"Do Zgorzeli", lok:"zgorzel"},
+      {n:"Do Popieliska", lok:"popielisko"},
+      {n:"Z powrotem pod Spopielone Opactwo", lok:"opactwo"}
+    ]
+  },
+
+  zgorzel:{
+    n:"Zgorzel", region:"stolica Odeszłych",
+    opis:function(){
+      return "Miasto wybudowane w wypalonym kamieniołomie: domy stoją na trzech poziomach półek skalnych, jeden nad drugim, a łączą je drabiny i pochylnie. Z góry nie widać go wcale, bo dachy przysypano żużlem.<br><br>"
+        + "Zgorzel nie ma bram, herbu ani spisu mieszkańców. Ma za to trzy wyjścia awaryjne, o których wie każdy, kto tu mieszka dłużej niż miesiąc.<br><br>"
+        + (jestNoc() ? "Nocą na dnie wyrobiska pali się jedno wielkie ognisko i schodzą się do niego ci, którzy nie mają gdzie spać. Nikt nikogo nie pyta o nazwisko, bo nazwisk się tu nie używa."
+                     : "Na każdej półce ktoś handluje, ktoś ostrzy, ktoś się kłóci o zapłatę. Hałas odbija się od ścian i wraca.");
+    },
+    postacie:[
+      {n:"Wilkosz Bezimienny", id:"wilkosz", nieznany:"Człowiek, przy którym wszyscy zniżają głos", rola:"pierwszy wśród Odeszłych", scena:"wilkosz", portret:"weteran"},
+      {n:"Struga", id:"struga", nieznany:"Kobieta z mokrymi rękawami", rola:"maginia wody", scena:"struga", portret:"kobieta"},
+      {n:"Grzebień", id:"grzebien", nieznany:"Chudy człowiek z tabliczką i rylcem", rola:"werbownik", scena:"grzebien", portret:"urzednik"},
+      {n:"Cyna", id:"cyna", nieznany:"Kobieta ważąca coś, co nie jest srebrem", rola:"paserka", scena:"cyna", portret:"kobieta"}
+    ],
+    miejsca:[
+      {n:"Nora gościnna na drugiej półce - nocleg", scena:"nora_zgorzel"},
+      {n:"Kram Cyny - handel", scena:"kram_cyna"},
+      {n:"Zbrojownia wolnych rąk - handel", scena:"zbrojownia_zgorzel"}
+    ],
+    tereny:[{n:"Zejdź na dno wyrobiska", teren:"zgorzel_teren"}],
+    drogi:[
+      {n:"Traktem Popielnym na zachód", lok:"trakt_popielny"},
+      {n:"Do Suchego Brodu", lok:"suchy_brod"},
+      {n:"Wyschłym Korytem na północ", lok:"wyschle_koryto"},
+      {n:"Do Krzywych Dołów", lok:"krzywe_doly"}
+    ]
+  },
+
+  suchy_brod:{
+    n:"Suchy Bród", region:"miasto najemnicze Odeszłych",
+    opis:function(){
+      return "Miasto wyrosło przy brodzie, który wysechł czterdzieści lat temu, i nikt nie widział powodu, żeby się przenosić. Zostały kamienne przyczółki, a między nimi rozpięto płótna i postawiono kramy.<br><br>"
+        + "Tu zawiera się kontrakty. Na jednej ścianie wiszą oferty, na drugiej nazwiska tych, którzy nie wrócili - i obie ściany są tak samo zapisane.<br><br>"
+        + (jestNoc() ? "Nocą na klepisku pod przyczółkiem biją się na pieniądze. Kto przegra, płaci za świeczki."
+                     : "Ktoś stale ćwiczy, ktoś stale się targuje, ktoś stale odchodzi z tobołkiem na plecach.");
+    },
+    postacie:[
+      {n:"Szpon", id:"szpon", nieznany:"Człowiek z ręką w łubkach i drugą na rękojeści", rola:"mistrz najemników", scena:"szpon", portret:"weteran"},
+      {n:"Ryza", id:"ryza", nieznany:"Kobieta naciągająca kuszę nogą", rola:"kusznik", scena:"ryza", portret:"kobieta"},
+      {n:"Miedza", id:"miedza", nieznany:"Karczmarka z rachunkiem w głowie", rola:"karczmarka", scena:"miedza", portret:"kobieta"}
+    ],
+    miejsca:[
+      {n:"Karczma Pod Suchą Wodą - nocleg", scena:"karczma_brod"},
+      {n:"Kramy kontraktowe - handel", scena:"kramy_brod"}
+    ],
+    tereny:[{n:"Wyjdź na wyschłe koryto brodu", teren:"brod_teren"}],
+    drogi:[
+      {n:"Do Zgorzeli", lok:"zgorzel"},
+      {n:"Do Podkowy", lok:"podkowa"},
+      {n:"Do Wykrotu", lok:"wykrot"}
+    ]
+  },
+
+  wyschle_koryto:{
+    n:"Wyschłe Koryto", region:"trakt na północ ziem Odeszłych",
+    opis:function(){
+      return "Idzie się dnem dawnej rzeki, po okrągłych kamieniach, między brzegami wyższymi od człowieka. Z góry nikt cię tu nie zobaczy i ty nikogo też nie.<br><br>"
+        + (jestNoc() ? "Nocą kamienie oddają ciepło i idzie się przyjemnie, tylko że każdy krok słychać na sto kroków w obie strony."
+                     : "Co jakiś czas mija się rozbity wóz, którego nikt nie wyciągnął, bo nie było czym.");
+    },
+    tereny:[{n:"Wejdź w rozmycia pod brzegiem", teren:"koryto_teren"}],
+    drogi:[
+      {n:"Do Mgielnika", lok:"mgielnik"},
+      {n:"Do Zgorzeli", lok:"zgorzel"},
+      {n:"Do Wykrotu", lok:"wykrot"}
+    ]
+  },
+
+  mgielnik:{
+    n:"Mgielnik", region:"miasto magów wody",
+    opis:function(){
+      return "Miasto na brzegu jeziora, którego drugiego brzegu nie widać nigdy - nie dlatego, że jest daleko, tylko dlatego, że nad wodą stoi mgła, która nie schodzi.<br><br>"
+        + "Tu uczą magii wody: najsłabszej z wszystkich znanych szkół i jedynej, której nikt nikomu nie zabronił. Odeszli przyjęli ją, bo nikt inny jej nie chciał.<br><br>"
+        + (jestNoc() ? "Nocą w mgle nad jeziorem widać światła, które nie należą do nikogo z miasta. Mieszkańcy nauczyli się na nie nie patrzeć."
+                     : "Wszystko tu jest wilgotne: chleb, papier, ubranie i głos.");
+    },
+    postacie:[
+      {n:"Ślepa Nawka", id:"nawka", nieznany:"Starucha z bielmem na obu oczach", rola:"arcymagini wody", scena:"nawka", portret:"kobieta"},
+      {n:"Kropla", id:"kropla", nieznany:"Chłopak przemoczony do suchej nitki", rola:"nowicjusz wody", scena:"kropla", portret:"urzednik"},
+      {n:"Przewoźnik Bruzda", id:"bruzda", nieznany:"Człowiek z wiosłem zamiast laski", rola:"przewoźnik", scena:"bruzda", portret:"kowal"}
+    ],
+    miejsca:[
+      {n:"Szopa nad wodą - nocleg", scena:"szopa_mgielnik"},
+      {n:"Kram magów wody - handel", scena:"kram_mgielnik"}
+    ],
+    tereny:[{n:"Wejdź w mgłę nad jeziorem", teren:"mgielnik_teren"}],
+    drogi:[
+      {n:"Wyschłym Korytem na południe", lok:"wyschle_koryto"},
+      {n:"Do Krzywych Dołów", lok:"krzywe_doly"}
+    ]
+  },
+
+  podkowa:{
+    n:"Podkowa", region:"miasto kuźni i koni",
+    opis:function(){
+      return "Miasto zbudowane w łuku, jak podkowa, wokół jednego wielkiego wybiegu. W środku trzymają konie, na obrzeżu kują - i nikt nie pamięta, co było pierwsze.<br><br>"
+        + "Odeszli nie mają jazdy, ale mają najlepsze konie na wschodzie, bo kupują je od wszystkich czterech frakcji naraz i nikomu nie tłumaczą, po co.<br><br>"
+        + (jestNoc() ? "Nocą kuźnie stoją, ale w stajniach pali się światło - konie kradnie się właśnie po ciemku."
+                     : "Stuk młotków słychać z każdej strony i po pół dnia przestaje się go zauważać.");
+    },
+    postacie:[
+      {n:"Kulawy Ksin", id:"ksin", nieznany:"Kowal, który kuje na siedząco", rola:"płatnerz", scena:"ksin", portret:"kowal"},
+      {n:"Bosa Wanda", id:"wanda", nieznany:"Kobieta prowadząca trzy konie naraz", rola:"koniuszka", scena:"wanda", portret:"kobieta"}
+    ],
+    miejsca:[
+      {n:"Poddasze nad stajnią - nocleg", scena:"poddasze_podkowa"},
+      {n:"Kuźnia Ksina - handel", scena:"kuznia_podkowa"}
+    ],
+    tereny:[{n:"Obejdź wybieg od zewnątrz", teren:"podkowa_teren"}],
+    drogi:[
+      {n:"Do Suchego Brodu", lok:"suchy_brod"},
+      {n:"Do Popieliska", lok:"popielisko"}
+    ]
+  },
+
+  popielisko:{
+    n:"Popielisko", region:"wieś wypalaczy węgla",
+    opis:"Dziesięć chałup między mielerzami. Wszystko tu jest szare: ludzie, psy, pranie i chleb.",
+    postacie:[
+      {n:"Zgaga", id:"zgaga", nieznany:"Człowiek z twarzą czarną od sadzy", rola:"wypalacz", scena:"zgaga", portret:"kowal"}
+    ],
+    miejsca:[{n:"Izba przy mielerzu - odpocznij", scena:"izba_popielisko"}],
+    tereny:[{n:"Obejdź mielerze", teren:"popielisko_teren"}],
+    drogi:[
+      {n:"Traktem Popielnym", lok:"trakt_popielny"},
+      {n:"Do Podkowy", lok:"podkowa"}
+    ]
+  },
+
+  wykrot:{
+    n:"Wykrot", region:"wieś drwali",
+    opis:"Wieś stojąca w miejscu, gdzie wiatr położył kiedyś pół lasu. Drewna tu więcej niż ziemi, a domy postawiono z tego, co leżało.",
+    postacie:[
+      {n:"Sęk", id:"sek", nieznany:"Drwal z siekierą wetkniętą za pas", rola:"drwal", scena:"sek", portret:"kowal"}
+    ],
+    miejsca:[{n:"Chałupa z wykrotów - odpocznij", scena:"chalupa_wykrot"}],
+    tereny:[{n:"Wejdź w wywroty", teren:"wykrot_teren"}],
+    drogi:[
+      {n:"Do Suchego Brodu", lok:"suchy_brod"},
+      {n:"Wyschłym Korytem na północ", lok:"wyschle_koryto"}
+    ]
+  },
+
+  krzywe_doly:{
+    n:"Krzywe Doły", region:"wieś przemytnicza",
+    opis:"Kilkanaście ziemianek wkopanych w zbocze, każda z dwoma wyjściami. Wieś, w której nikt nie sprzedaje niczego jawnie i wszyscy sprzedają wszystko.",
+    postacie:[
+      {n:"Ropucha", id:"ropucha", nieznany:"Niska kobieta o bardzo niskim głosie", rola:"przemytniczka", scena:"ropucha", portret:"kobieta"}
+    ],
+    miejsca:[{n:"Ziemianka Ropuchy - odpocznij", scena:"ziemianka_doly"}],
+    tereny:[{n:"Zejdź w doły", teren:"doly_teren"}],
+    drogi:[
+      {n:"Do Zgorzeli", lok:"zgorzel"},
+      {n:"Do Mgielnika", lok:"mgielnik"}
+    ]
+  }
+  };
+  for(var lk in L) if(!LOKACJE[lk]) LOKACJE[lk] = L[lk];
+
+  if(LOKACJE.opactwo && LOKACJE.opactwo.drogi)
+    LOKACJE.opactwo.drogi.push({n:"Traktem Popielnym na wschód", lok:"trakt_popielny"});
+  if(LOKACJE.kryjowka && LOKACJE.kryjowka.drogi)
+    LOKACJE.kryjowka.drogi.push({n:"Przejściem w skale, na Trakt Popielny", lok:"trakt_popielny"});
+  if(LOKACJE.aleja && LOKACJE.aleja.drogi)
+    LOKACJE.aleja.drogi.push({n:"Traktem Popielnym, w ziemie Odeszłych", lok:"trakt_popielny",
+      warunek:function(){ return !!S.poznane.trakt_popielny; }});
+  if(LOKACJE.wawoz && LOKACJE.wawoz.drogi)
+    LOKACJE.wawoz.drogi.push({n:"Bokiem, ścieżką do Krzywych Dołów", lok:"krzywe_doly",
+      warunek:function(){ return !!S.poznane.krzywe_doly; }});
+
+  /* --- tereny --- */
+  var T = {
+  popielny_teren:{
+    n:"Mielerze przy trakcie", wraca:"trakt_popielny",
+    opis:"Kopce ziemi i darni, w których pod spodem tli się drewno. Ziemia jest tu ciepła nawet w nocy.",
+    punkty:[
+      {id:"tp_pies", typ:"mob", n:"Coś warczy zza kopca", walka:"pies_zgorzeli"},
+      {id:"tp_zasob", typ:"zasob", n:"Rozgarnięty mielerz", zbierz:{wegiel_drzewny:3},
+       wynik:"Węgiel jest jeszcze gorący, ale worek to wytrzyma."},
+      {id:"tp_skrzynia", typ:"skrzynia", n:"Skrytka pod darnią", zloto:80, zbierz:{suchar_zolnierski:2},
+       wynik:"Ktoś trzyma tu zapas na wypadek ucieczki. Nie ty pierwszy go znajdujesz."}
+    ]
+  },
+  zgorzel_teren:{
+    n:"Dno wyrobiska", wraca:"zgorzel",
+    opis:"Najniższa półka Zgorzeli: ognisko, kilkanaście posłań i ludzie, którzy nie mają nic poza tym, co na sobie.",
+    punkty:[
+      {id:"zg_lowca", typ:"mob", n:"Ktoś porównuje twarze z listą", walka:"lowca_glow"},
+      {id:"zg_zasob", typ:"zasob", n:"Skrawki rzemienia przy warsztacie", zbierz:{rzemien:3},
+       wynik:"Odpady po pasach. Dla rymarza śmieć, dla ciebie towar."},
+      {id:"zg_ruda", typ:"ruda", n:"Żyła w ścianie wyrobiska", wymaga:"gornictwo", zbierz:{ruda_zelaza:2},
+       wynik:"Kamieniołom porzucono, kiedy trafiono na żelazo zbyt twarde do wybierania kilofem."},
+      {id:"zg_skrzynia", typ:"skrzynia", n:"Skrzynia bez zamka przy ognisku", zloto:130,
+       wynik:"Bez zamka, bo nikt tu nie kradnie przy ognisku. Ty właśnie zrobiłeś wyjątek."}
+    ]
+  },
+  brod_teren:{
+    n:"Wyschłe koryto brodu", wraca:"suchy_brod",
+    opis:"Kamieniste dno dawnej rzeki tuż za miastem. Ćwiczą tu ci, którzy nie chcą, żeby ich widziano przy ćwiczeniu.",
+    punkty:[
+      {id:"sb_zdrajca", typ:"mob", n:"Znajoma twarz z nową sakwą", walka:"zdrajca_brodu"},
+      {id:"sb_zasob", typ:"zasob", n:"Bełty powybijane z tarcz", zbierz:{strzaly:6},
+       wynik:"Połowa złamana, połowa nadaje się na drugi strzał."},
+      {id:"sb_skrzynia", typ:"skrzynia", n:"Zawiniątko pod kamieniem", zloto:140, zbierz:{rzemien:1},
+       wynik:"Zapłata schowana przed wspólnikami, nie przed strażą."}
+    ]
+  },
+  koryto_teren:{
+    n:"Rozmycia pod brzegiem", wraca:"wyschle_koryto",
+    opis:"Wypłukane jamy w brzegu, w których mieści się człowiek. Widać, że nie raz się w nich mieścił.",
+    punkty:[
+      {id:"wk_zbir", typ:"mob", n:"Ktoś czeka w jamie i nie na ciebie", walka:"zbir_ropuchy"},
+      {id:"wk_ziolo", typ:"zasob", n:"Dziewanna na suchym brzegu", wymaga:"zielarstwo", zbierz:{dziewanna:3},
+       wynik:"Suchy, słoneczny brzeg - rośnie tu gęściej niż gdziekolwiek indziej."},
+      {id:"wk_skrzynia", typ:"skrzynia", n:"Beczułka wbita w piach", zloto:110, zbierz:{gorzalka_zgorzelska:1},
+       wynik:"Przemytnicy zakopują towar w koleinach, bo tam nikt nie kopie."}
+    ]
+  },
+  mgielnik_teren:{
+    n:"Mgła nad jeziorem", wraca:"mgielnik",
+    opis:"Trzy kroki od brzegu przestajesz widzieć miasto, a po dziesięciu przestajesz je słyszeć.",
+    punkty:[
+      {id:"mg_utopiec", typ:"mob", n:"Woda rozstępuje się przy brzegu", walka:"utopiec_mgielnika"},
+      {id:"mg_ryba", typ:"ryba", n:"Głęboczek za trzcinami", wymaga:"wedkarstwo", zbierz:{wegorz:2, szczupak:1},
+       wynik:"Węgorze stoją tu w mule i biorą wszystko, co spadnie."},
+      {id:"mg_skrzynia", typ:"skrzynia", n:"Kosz zatopiony przy pomoście", zloto:120, zbierz:{mikst_mglowa:1},
+       wynik:"Uczniowie chowają tu wywary, żeby nie tłumaczyć się z ich ilości."}
+    ]
+  },
+  podkowa_teren:{
+    n:"Za wybiegiem", wraca:"podkowa",
+    opis:"Pas ubitej ziemi między płotem a lasem. Tędy wyprowadza się konie, o których nie ma zapisu.",
+    punkty:[
+      {id:"pk_lowca", typ:"mob", n:"Ktoś obserwuje stajnie zza płotu", walka:"lowca_glow"},
+      {id:"pk_ruda", typ:"ruda", n:"Hałda przy kuźni", wymaga:"gornictwo", zbierz:{ruda_zelaza:2, wegiel_drzewny:1},
+       wynik:"W hałdzie zostaje tyle rudy, że opłaca się ją przebierać drugi raz."},
+      {id:"pk_skrzynia", typ:"skrzynia", n:"Skrzynka pod żłobem", zloto:100, zbierz:{rzemien:2},
+       wynik:"Uprząż, rzemienie i kilka podków bez znaku warsztatu."}
+    ]
+  },
+  popielisko_teren:{
+    n:"Mielerze Popieliska", wraca:"popielisko",
+    opis:"Osiem kopców, przy każdym ktoś czuwa, bo mielerz zostawiony bez dozoru wybucha ogniem.",
+    punkty:[
+      {id:"pp_zasob", typ:"zasob", n:"Świeży wypał", zbierz:{wegiel_drzewny:3},
+       wynik:"Węgiel dźwięczy, kiedy się nim potrząsa. Zgaga mówi, że tylko taki jest dobry."},
+      {id:"pp_pies", typ:"mob", n:"Zdziczały pies przy chałupach", walka:"pies_zgorzeli"},
+      {id:"pp_skrzynia", typ:"skrzynia", n:"Schowek w pustym mielerzu", zloto:70,
+       wynik:"W wystudzonym kopcu ktoś urządził sobie skarbiec. Ciepły i suchy."}
+    ]
+  },
+  wykrot_teren:{
+    n:"Wywroty", wraca:"wykrot",
+    opis:"Las położony pokotem, korzenie sterczą wyżej niż człowiek. Idzie się tędy godzinę na sto kroków.",
+    punkty:[
+      {id:"wy_dzik", typ:"mob", n:"Chrapanie spod wykrotu", walka:"dzik_wykrotu"},
+      {id:"wy_zasob", typ:"zasob", n:"Suche drewno i kora", zbierz:{wegiel_drzewny:2, skora:1},
+       wynik:"Suchary drewna, z których Sęk robi najlepszy węgiel w okolicy."},
+      {id:"wy_skrzynia", typ:"skrzynia", n:"Skrytka pod korzeniem", zloto:90, zbierz:{rzemien:1},
+       wynik:"Drwale chowają tu narzędzia, żeby nie nosić ich codziennie."}
+    ]
+  },
+  doly_teren:{
+    n:"Krzywe Doły od spodu", wraca:"krzywe_doly",
+    opis:"Wąskie przekopy między ziemiankami, w których mija się bokiem. Każdy zakręt jest tu zrobiony po to, żeby czegoś nie było widać.",
+    punkty:[
+      {id:"kd_zbir", typ:"mob", n:"Ktoś zastępuje ci przekop", walka:"zbir_ropuchy"},
+      {id:"kd_zasob", typ:"zasob", n:"Skrzynki odstawione na bok", zbierz:{suchar_zolnierski:2, gorzalka_zgorzelska:1},
+       wynik:"Towar bez cła i bez właściciela, przynajmniej na najbliższą godzinę."},
+      {id:"kd_skrzynia", typ:"skrzynia", n:"Podwójne dno w ziemiance", zloto:160,
+       wynik:"Pod deskami leży to, czego Ropucha nie wpisuje nawet do swojego rejestru."}
+    ]
+  }
+  };
+  for(var tk in T) if(!TERENY[tk]) TERENY[tk] = T[tk];
+
+  /* --- zadania --- */
+  var Z = {
+  od_lan1:{t:"Wolna ręka: nabór", od:"Grzebień",
+    pelny:"<span class='mowa'>„U nas nie ma przysięgi. Jest tabliczka: wpisuję przezwisko, kreskę za każdą robotę i datę, kiedy przestałeś przychodzić.<br><br>Chcesz kreskę? To zrób coś, czego nikt inny nie chce robić. Idź do Szpona i powiedz, że przysyła cię Grzebień. Zobaczymy, jak długo wytrzymasz jego spojrzenie.”</span>",
+    opis:"Werbownik Odeszłych kieruje cię do mistrza najemników w Suchym Brodzie.",
+    cel:"Zgłoś się do Szpona w Suchym Brodzie.",
+    nagroda:{exp:240, zloto:60, rep:{od:2}}},
+  od_lan2:{t:"Wolna ręka: kontrakt bez nazwiska", od:"Szpon",
+    pelny:"<span class='mowa'>„Trzech moich wzięło ostatnio kontrakt, którego nie ma na ścianie. Wrócili z pieniędzmi, których nie zarobili u nikogo, kogo znam.<br><br>Jeden z nich ćwiczy teraz sam w wyschłym korycie i nie chce ze mną gadać. Idź i pogadaj ty. Jak zacznie odpowiadać ostrzem, to już będzie odpowiedź.”</span>",
+    opis:"Najemnicy z Suchego Brodu biorą zlecenia od kogoś spoza ściany kontraktów.",
+    cel:"Znajdź sprzedanego najemnika w wyschłym korycie za Suchym Brodem.",
+    nagroda:{exp:330, zloto:140, rep:{od:3}}},
+  od_lan3:{t:"Wolna ręka: kto płacił", od:"Szpon",
+    pelny:"Przy sprzedanym najemniku znalazłeś sakwę bez znaku i pół rozmowy zapisanej na skrawku.<br><br>Takich pieniędzy nie wymienia się w Zgorzeli jawnie. Wymienia się je w Krzywych Dołach, u Ropuchy, i to ona wie, kto ostatnio przywiózł monetę bitą nie u nas.",
+    opis:"Zapłata dla zdrajcy przeszła przez przemytników z Krzywych Dołów.",
+    cel:"Wypytaj Ropuchę w Krzywych Dołach o obcą monetę.",
+    nagroda:{exp:300, zloto:110, rep:{od:2}}},
+  od_lan4:{t:"Wolna ręka: lista imion", od:"Ropucha",
+    pelny:"<span class='mowa'>„Monetę widziałam. Przywiózł ją człowiek w czystym płaszczu i brudnych butach, a ze sobą miał listę.<br><br>Trzydzieści sześć przezwisk. Przy jedenastu dopisane kwoty. Nie wzięłam jej, bo nie chcę mieć w ziemiance czegoś takiego - ale wiem, gdzie on teraz siedzi.”</span>",
+    opis:"Ktoś z nizin wycenia głowy Odeszłych po kolei.",
+    cel:"Rozpraw się z łowcą głów na dnie wyrobiska w Zgorzeli i zabierz listę.",
+    nagroda:{exp:400, zloto:190, rep:{od:4}, przedmiot:"kaftan_przeszywany"}},
+  od_lan5:{t:"Wolna ręka: co jest warte imię", od:"Ropucha",
+    pelny:"Na liście jest trzydzieści sześć przezwisk. Twojego jeszcze nie ma, ale trzy ostatnie dopisano niedawno i innym rylcem.<br><br>Przy jedenastu stoją kwoty. Przy jednym - przy Wilkoszu - kwoty nie ma. Zamiast niej dopisano jedno słowo: „żywy”.<br><br>To już nie jest sprawa Suchego Brodu. To trzeba zanieść na najwyższą półkę Zgorzeli.",
+    opis:"Ktoś chce Wilkosza żywego, a resztę Odeszłych po cenniku.",
+    cel:"Zanieś listę imion Wilkoszowi w Zgorzeli.",
+    nagroda:{exp:520, zloto:280, rep:{od:6}, przedmiot:"szabla_popielna"}},
+
+  od_swiezak:{t:"Świeżak", od:"Grzebień",
+    pelny:"<span class='mowa'>„Świeżak to nie stopień, tylko stan. Znaczy: jeszcze nie wiadomo, czy warto pamiętać twoje imię.<br><br>Przejdź Trakt Popielny, zejdź między mielerze i wróć z węglem. Kto nie umie przynieść węgla, ten nie przyniesie niczego trudniejszego.”</span>",
+    opis:"Pierwsza kreska na tabliczce werbownika.",
+    cel:"Przynieś Grzebieniowi cztery worki węgla drzewnego.",
+    nagroda:{exp:200, zloto:60, rep:{od:1}}},
+  od_psy:{t:"Psy ze Zgorzeli", od:"Cyna",
+    pelny:"<span class='mowa'>„Wychowaliśmy je, a potem przestaliśmy karmić, bo zima była zła. Teraz chodzą stadem po dnie wyrobiska i biorą, co im się należy.<br><br>Nie mam do nich żalu. Mam za to towar na dole i nikogo, kto zniesie go po drabinie.”</span>",
+    opis:"Zdziczałe psy nie pozwalają znosić towaru na dno wyrobiska.",
+    cel:"Rozpędź psy przy Trakcie Popielnym i na Popielisku.",
+    nagroda:{exp:220, zloto:90, rep:{od:2}}},
+  od_wegiel:{t:"Wypał dla Podkowy", od:"Zgaga",
+    pelny:"<span class='mowa'>„Ksin bez węgla nie kuje, a jak nie kuje, to Suchy Bród nie ma czym walczyć i wszyscy mają do mnie pretensje.<br><br>Weź sześć worków. Nie zgub po drodze, bo węgiel się kruszy, a Ksin waży.”</span>",
+    opis:"Kuźnie w Podkowie stoją bez węgla.",
+    cel:"Przynieś Zgadze sześć worków węgla drzewnego.",
+    nagroda:{exp:210, zloto:100, rep:{od:1}}},
+  od_dzik:{t:"Odyniec z Wykrotu", od:"Sęk",
+    pelny:"<span class='mowa'>„Wziął mi dwóch ludzi w tym miesiącu. Nie zabił - poharatał tak, że jeden już nie podniesie siekiery.<br><br>Stary jest i nie boi się niczego, a to najgorsze połączenie, jakie może chodzić po lesie.”</span>",
+    opis:"Stary odyniec atakuje drwali w wywrotach.",
+    cel:"Rozpraw się z odyńcem w wywrotach pod Wykrotem.",
+    nagroda:{exp:330, zloto:140, rep:{od:2}, przedmiot:"kord_najemniczy"}},
+  od_utopiec:{t:"Światła nad wodą", od:"Kropla",
+    pelny:"<span class='mowa'>„Nawka mówi, żeby nie patrzeć w mgłę. Ja patrzyłem i coś stamtąd wyszło na brzeg.<br><br>Nie mam odwagi powiedzieć jej, że patrzyłem. Powiedz ty - albo lepiej: załatw to, zanim będzie trzeba komukolwiek mówić.”</span>",
+    opis:"Coś wychodzi z jeziora na brzeg Mgielnika.",
+    cel:"Rozpraw się z utopcem we mgle nad jeziorem.",
+    nagroda:{exp:310, zloto:120, rep:{od:2}, przedmiot:"plaszcz_mglisty"}},
+  od_rzemien:{t:"Rzemień na uprząż", od:"Bosa Wanda",
+    pelny:"<span class='mowa'>„Koń bez uprzęży to nie koń, tylko duże zmartwienie. Rzemienia mi brakuje od dwóch tygodni, bo rymarz w Zgorzeli sprzedaje wszystko Ksinowi.<br><br>Przynieś sześć pasów. Zapłacę uczciwie, co u nas znaczy: mniej niż w Zgorzeli, ale od razu.”</span>",
+    opis:"Koniuszka z Podkowy nie ma z czego robić uprzęży.",
+    cel:"Przynieś Wandzie sześć rzemieni.",
+    nagroda:{exp:200, zloto:110, rep:{od:1}}},
+  od_zbiry:{t:"Ci z przekopów", od:"Ropucha",
+    pelny:"<span class='mowa'>„Mam swoich ludzi i mam takich, którzy myślą, że są moi. Ci drudzy zaczęli brać myto od moich kupców w moich przekopach.<br><br>Nie chcę trupów w wiosce. Za przekopami rób, co uważasz.”</span>",
+    opis:"Zbiry ściągają myto w przekopach Krzywych Dołów.",
+    cel:"Rozpraw się ze zbirami w Krzywych Dołach i w rozmyciach Wyschłego Koryta.",
+    nagroda:{exp:290, zloto:150, rep:{od:2}}},
+  od_ryby:{t:"Węgorze dla karczmy", od:"Miedza",
+    pelny:"<span class='mowa'>„Najemnik zje wszystko, ale zapłaci tylko za węgorza. Taka jest cała ekonomia mojej karczmy.<br><br>Cztery sztuki z Mgielnika, świeże. Zapłacę i nie zapytam, komu podebrałeś więcierz.”</span>",
+    opis:"Karczma w Suchym Brodzie potrzebuje węgorzy z Mgielnika.",
+    cel:"Przynieś Miedzy cztery węgorze.",
+    nagroda:{exp:190, zloto:80, rep:{od:1}}},
+  od_kontrakt:{t:"Kontrakt ze ściany", od:"Ryza",
+    pelny:"<span class='mowa'>„Na ścianie wisi kontrakt, którego nikt nie zdejmuje od trzech tygodni: łowca głów kręci się koło Podkowy i wypytuje o konie.<br><br>Nikt go nie chce ruszyć, bo ci ludzie zawsze mają kogoś za plecami. Ja też bym nie ruszyła. Ale ja nie jestem świeża.”</span>",
+    opis:"Łowca głów obserwuje stajnie w Podkowie.",
+    cel:"Rozpraw się z łowcą głów za wybiegiem w Podkowie.",
+    nagroda:{exp:340, zloto:170, rep:{od:3}, przedmiot:"kolczyk_najemnika"}},
+  od_rejestr:{t:"Rejestr wolnych rąk", od:"Grzebień",
+    pelny:"<span class='mowa'>„Prowadzę ten rejestr od dziewiętnastu lat. Kto, dla kogo, za ile i czy wrócił.<br><br>Przeczytaj go. Nie dlatego, że lubię, jak ktoś w nim grzebie - tylko dlatego, że chcę, żebyś zobaczył, ilu nie wróciło, zanim postawisz swoją kreskę.”</span>",
+    opis:"Werbownik chce, żebyś wiedział, na co się piszesz.",
+    cel:"Przeczytaj Rejestr wolnych rąk i wróć do Grzebienia.",
+    nagroda:{exp:280, zloto:50, rep:{od:2}}},
+  od_woda:{t:"Najsłabsza ze szkół", od:"Ślepa Nawka",
+    pelny:"<span class='mowa'>„Powiedzą ci, że magia wody jest najsłabsza. To prawda i nie warto się o to spierać.<br><br>Powiedzą ci też, że przez to jest bezużyteczna. To już nieprawda i tego się dowiesz sam - przynieś mi cztery wywary z jeziora i zobaczymy, czy w ogóle umiesz zejść po nie do wody.”</span>",
+    opis:"Arcymagini wody sprawdza, czy przybysz nie boi się jeziora.",
+    cel:"Przynieś Nawce trzy wywary mgliste.",
+    nagroda:{exp:250, zloto:70, rep:{od:2}, przedmiot:"pierscien_cynowy"}},
+  od_zwiad:{t:"To, co widać ze wschodu", od:"Wilkosz Bezimienny",
+    pelny:"<span class='mowa'>„Nasi patrolują Ziemie Niczyje, bo nikt inny nie chce. Od miesiąca wracają z tym samym: coś idzie od wschodu i nie jest to ani Ismaal, ani Nowożytni.<br><br>Idź na dno wyrobiska i posłuchaj, co mówią ci, którzy stamtąd wrócili. Potem przyjdź i powiedz mi, czy uwierzyłeś.”</span>",
+    opis:"Odeszli widzieli coś na wschodzie i nie umieją tego nazwać.",
+    cel:"Posłuchaj wracających patroli na dnie wyrobiska i wróć do Wilkosza.",
+    nagroda:{exp:330, zloto:120, rep:{od:3}}}
+  };
+  for(var zk in Z) if(!ZADANIA[zk]) ZADANIA[zk] = Z[zk];
+
+  WROGOWIE.zdrajca_brodu.konczy = "od_lan2";
+  WROGOWIE.dzik_wykrotu.konczy = "od_dzik";
+  WROGOWIE.utopiec_mgielnika.konczy = "od_utopiec";
+}
+rozszerzOdeszlych();
+
+
 
 if(typeof window !== "undefined") window.__argena = {SCENY:SCENY, LOKACJE:LOKACJE, ZADANIA:ZADANIA,
   PRZEDMIOTY:PRZEDMIOTY, WROGOWIE:WROGOWIE, NAUKA:NAUKA, S:S, pokaz:pokaz, ekranLokacji:ekranLokacji,
