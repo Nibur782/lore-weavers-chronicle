@@ -11120,6 +11120,268 @@ function lokacjaSceny(id){ return LOKACJA_SCENY[id] || null; }
   }
 })();
 
+/* --- KWESTIE BEZCZELNE: jedna na region, tak jak w pierwowzorze ---
+   Bezimienny w Gothicu odzywa się chamsko rzadko - dlatego to działa.
+   Każda taka odzywka podbija cierpliwość i po trzech NPC przestaje rozmawiać. --- */
+(function(){
+  var P = [["bozydar","Liczysz mnie jak worek zboża. Ile jestem wart?","bozydar","Nie przestaje przesuwać liczydła.","„Dziś niewiele. Za to jesteś pozycją czystą - bez długów, bez rodziny, bez nikogo, kto by się o ciebie upomniał.<br><br>Takie pozycje są w tym mieście najdroższe, tylko sprzedaje się je raz.”"],["swietopelk","Trzy czarne chorągwie, a w regestrze pusto. Wstyd czy rozkaz?","swietopelk","Ręka na blacie zaciska się i rozluźnia.","„Rozkaz. I nie mój.<br><br>Powiedziałeś to raz i puszczam mimo uszu. Powiesz drugi raz przy kimś innym, a wtedy ani ja, ani ty nie będziemy o tym decydować.”"],["milobrat","Twierdza, w której nikt nie mieszka. Czego pilnujesz, pustki?","milobrat","Nie odwraca się od strzelnicy.","„Pilnuję bramy, przez którą nie przeszedł nikt bez rozkazu od dziewięciu lat.<br><br>Ty właśnie przeszedłeś. Pomyśl, co to znaczy, zanim jeszcze raz otworzysz usta.”"],["pl_starsza","Jeden kamień, deszczówka i wy wszyscy dookoła. Tak wygląda władza?","pl_starsza","Zanurza palce w deszczówce i nie wyciera ich.","„Tak wygląda władza, której nikt nie musi bronić przed własnymi ludźmi.<br><br>Ismaal miał trzech wodzów w jednym pokoleniu. Wszyscy trzej zginęli od swoich. Wróć do mnie z tym pytaniem, jak policzysz nasze groby.”"],["wilkosz","Bezimienny. Wygodne, jak trzeba się z czegoś wytłumaczyć.","wilkosz","Uśmiecha się bez wesołości.","„Wygodne. I dlatego wszyscy tu tak robią.<br><br>Ty też nie masz imienia, tylko ty się z tym jeszcze nie pogodziłeś. Daj sobie rok.”"],["ostoja","Cztery stołki i jeden stół. I nic z tego nie wynika.","ostoja","Odsuwa krzesło, ale nie wstaje.","„Póki siedzą, nie strzelają. To jest wszystko, co z tego wynika, i to jest więcej, niż mieliśmy przez dziewięć lat.<br><br>Jak wymyślisz coś lepszego, siadaj na piątym stołku.”"],["nawka","Ślepa arcymagini. Kto ci powiedział, że to działa?","nawka","Odwraca twarz dokładnie w twoją stronę.","„Nikt mi nie mówił. Sprawdziłam.<br><br>Widzę wodę w tobie. Jest jej w tobie tyle co w każdym, ale twoja stoi. To rzadkie i nie jest to komplement.”"],["cyna","Paserka w stolicy własnej frakcji. Nie boisz się swoich?","cyna","Odkłada monetę na blat, stemplem do dołu.","„Moi nie mają czego mi zabronić. To cała różnica między nami a nizinami.<br><br>Ale monety bitej poza naszymi ziemiami dalej nie wezmę, choćbyś był najbardziej bezczelny w tym mieście.”"],["racibor","Marszałek jarmarku. Kto cię wybrał - kupcy czy ty sam?","racibor","Śmieje się krótko i nie miło.","„Nikt mnie nie wybrał. Stanąłem tu pierwszy i zostałem, kiedy inni odeszli.<br><br>Możesz spróbować tak samo. Ostatni, który próbował, wisi na tamtym słupie jako obwieszczenie.”"],["wiosna","Arcydruidka, a gadasz o zielsku jak przekupka.","wiosna","Nie przerywa przebierania korzeni.","„Bo zielsko jest tym, o czym warto gadać. Reszta to wyobrażenia ludzi, którzy nigdy nie musieli nikogo wyleczyć.<br><br>Przyjdź do mnie z raną, a nie z pytaniem, to zobaczysz różnicę.”"]];
+  P.forEach(function(p){
+    var scena = p[0], etykieta = p[1], kogo = p[2], wstep = p[3], mowa = p[4];
+    var sc = SCENY[scena];
+    if(!sc || !sc.opcje) return;
+    var docelowa = scena + "_przytyk";
+    SCENY[docelowa] = {
+      portret:sc.portret, kto:sc.kto, npc:sc.npc,
+      tekst: wstep + "<br><br><span class='mowa'>" + mowa + "</span>",
+      opcje:[{l:"Niech ci będzie.", idz:scena,
+        ef:(function(k){ return function(){ S.cierpliwosc[k] = (S.cierpliwosc[k]||0) + 1; }; })(kogo)}]
+    };
+    sc.opcje.splice(Math.max(0, sc.opcje.length - 1), 0,
+      {l:etykieta, idz:docelowa, raz:true,
+       warunek:(function(k){ return function(){ return (S.cierpliwosc[k]||0) < 3; }; })(kogo)});
+  });
+})();
+
+/* --- GŁOSY FRAKCJI: sceny przejściowe przestają być szablonem ---
+   Cztery frakcje mówiły dotąd tym samym zdaniem. Każda mówi teraz po swojemu. --- */
+(function(){
+  var F = {
+    sk: {
+      odmowa: "Nie podnosi wzroku znad rozkazów."
+        + "<br><br><span class='mowa'>„Chęci. Chęci ma każdy rekrut, którego potem trzeba nieść z pola.<br><br>"
+        + "Ismaal nie przyjmuje ludzi, którzy chcą. Przyjmuje tych, po których widać, że już byli.”</span>",
+      start: "Kładzie ci na stole zwinięty pas w czerwieni i nie puszcza go od razu."
+        + "<br><br><span class='mowa'>„Barwy nie są nagrodą, tylko zobowiązaniem, i pierwsze zobowiązanie nie dotyczy walki.<br><br>"
+        + "Pojedziesz do Stołu Rozjemczego i staniesz przed legatem Ostoją. Nie w naszym imieniu - w swoim. Niech zapamięta twarz, zanim zapamięta chorągiew.”</span>",
+      ranga: "Pieczęć rozjemców ląduje na blacie. Dobrosława patrzy na nią dłużej niż na ciebie."
+        + "<br><br><span class='mowa'>„Proszą o ciebie z imienia. W Czerwieni Wysokiej takich próśb nie było od trzech lat.<br><br>"
+        + "Od dziś mówisz w naszym imieniu. Nie przy każdym stole i nie w każdej sprawie - ale mówisz. A jak powiesz źle, odpowiesz sam.”</span>",
+      nadanie: "Nic ci nie wręcza. Wpisuje coś do rejestru chorągwi i odwraca kartę."
+        + "<br><br><span class='mowa'>„U nas awans to nie ceremonia, tylko linijka w regestrze. Ceremonie robimy przy pogrzebach.”</span>"
+    },
+    nw: {
+      odmowa: "Nie odkłada pióra."
+        + "<br><br><span class='mowa'>„Chęć nie jest pozycją w rachunku. Nie umiem jej zaksięgować i nie umiem jej sprzedać.<br><br>"
+        + "Wróć, kiedy będziesz miał czym wypełnić rubrykę. Wtedy porozmawiamy jak ludzie interesu.”</span>",
+      start: "Odwraca ku tobie księgę i stuka palcem w pustą linijkę."
+        + "<br><br><span class='mowa'>„Podpis już masz. Teraz trzeba, żeby ktoś poza kontorem wiedział, co ten podpis znaczy.<br><br>"
+        + "Pojedziesz do Stołu Rozjemczego, do legata Ostoi. Nie jako nasz posłaniec - jako pozycja, która sama się przedstawia. Tak wychodzi taniej.”</span>",
+      ranga: "Pieczęć rozjemców trafia między kałamarze. Sędziwoj waży ją w dłoni jak odważnik."
+        + "<br><br><span class='mowa'>„Ktoś poza kontorem wpisał cię do własnej księgi. To zmienia twoją wartość, a wartość zmienia uprawnienia.<br><br>"
+        + "Od dziś podpisujesz w naszym imieniu. Radzę czytać, zanim podpiszesz - to nie jest rada uprzejmościowa.”</span>",
+      nadanie: "Wpisuje trzy słowa, przesypuje piaskiem i dmucha."
+        + "<br><br><span class='mowa'>„Gotowe. U nas awans to wpis, a wpis jest trwalszy od przysięgi, bo przysięgę można odwołać po pijanemu.”</span>"
+    },
+    od: {
+      odmowa: "Wzrusza ramionami i wraca do liczenia worków."
+        + "<br><br><span class='mowa'>„Nikt cię tu nie odrzuca. My nikogo nie przyjmujemy i nikogo nie odrzucamy.<br><br>"
+        + "Po prostu na razie nikt o ciebie nie pyta. Zrób coś, przez co zaczną, i wróć.”</span>",
+      start: "Nie wstaje. Popycha ku tobie tabliczkę z jedną świeżą kreską."
+        + "<br><br><span class='mowa'>„Nie ma przysięgi, nie ma pasowania i nie ma pieśni. Jest kreska.<br><br>"
+        + "Za pierwszą robotę pojedziesz do Stołu Rozjemczego, do legata Ostoi. Niech zobaczy, że my też siadamy przy stołach, jak nam pasuje.”</span>",
+      ranga: "Ogląda pieczęć rozjemców pod światło, jak ogląda się monetę bitą gdzie indziej."
+        + "<br><br><span class='mowa'>„Proszą o ciebie na piśmie. U nas to znaczy więcej niż u nich, bo my pisma nie używamy.<br><br>"
+        + "Od dziś mówisz za wolne ręce. Nikt cię do tego nie zmusza i nikt cię nie obroni, jak powiesz nie to.”</span>",
+      nadanie: "Rylec robi kreskę, tym razem głębszą od poprzednich."
+        + "<br><br><span class='mowa'>„Tyle. U nas awans wygląda dokładnie tak i nikt nie oczekuje niczego więcej.”</span>"
+    },
+    pl: {
+      odmowa: "Nie odrywa wzroku od ognia."
+        + "<br><br><span class='mowa'>„Puszcza nie słucha chęci. Puszcza patrzy, ile razy wróciłeś.<br><br>"
+        + "Wracaj dalej. Kiedyś przestaniesz być hałasem i wtedy porozmawiamy.”</span>",
+      start: "Krata za jej plecami stoi otworem po raz pierwszy, odkąd tu przychodzisz."
+        + "<br><br><span class='mowa'>„Nie przyjęliśmy cię. Przestaliśmy cię zauważać i to jest u nas to samo.<br><br>"
+        + "Teraz przejdziesz przez rzekę w drugą stronę i staniesz przed legatem Ostoją przy Stole Rozjemczym. Chcemy wiedzieć, czy niziny zobaczą w tobie kogoś, czy tylko czyjeś barwy.”</span>",
+      ranga: "Kładzie pieczęć rozjemców w wodzie przy kamieniu i patrzy, jak znak ciemnieje."
+        + "<br><br><span class='mowa'>„Niziny proszą o ciebie z imienia. Nie wiem jeszcze, czy to dobrze.<br><br>"
+        + "Od dziś mówisz za puszczę. Powiedz mało. My mówimy mało nie z dumy, tylko dlatego, że każde nasze słowo ktoś potem policzy.”</span>",
+      nadanie: "Nie mówi nic. Zanurza dłoń w deszczówce i przeciąga mokrym palcem po twoim przedramieniu."
+        + "<br><br><span class='mowa'>„Tyle. Wyschnie do wieczora, a zostanie na zawsze. Tak to u nas działa.”</span>"
+    }
+  };
+
+  ["sk","nw","od","pl"].forEach(function(f){
+    if(SCENY["wstap_"+f] && !SCENY["wstap_"+f].__stary){
+      var oryg = SCENY["wstap_"+f].tekst;
+      SCENY["wstap_"+f].__stary = true;
+      SCENY["wstap_"+f].tekst = (function(fr, o){ return function(){
+        var brak = typeof o === "function" ? o() : o;
+        var czysty = brak.replace(/<[^>]+>/g, "").replace(/[„”]/g, "");
+        var k = czysty.indexOf("Wróć, kiedy ");
+        var warunki = k >= 0 ? czysty.slice(k + 12).trim() : czysty.trim();
+        return F[fr].odmowa + "<br><br><em>Brakuje ci tego: " + warunki + "</em>";
+      }; })(f, oryg);
+    }
+    if(SCENY["ch2_start_"+f]) SCENY["ch2_start_"+f].tekst = F[f].start;
+    if(SCENY["ch2_ranga_"+f]) SCENY["ch2_ranga_"+f].tekst = F[f].ranga;
+    if(SCENY["sciezka_nadanie_"+f]) SCENY["sciezka_nadanie_"+f].tekst = F[f].nadanie;
+  });
+
+  /* dwaj NPC witali gracza tym samym „No?” */
+  if(SCENY.milena) SCENY.milena.tekst = "Nie opuszcza łuku, tylko rozluźnia cięciwę na tyle, żeby nie było to groźbą."
+    + "<br><br><span class='mowa'>„Mów, ale nie zasłaniaj tarczy.”</span>";
+  if(SCENY.wit) SCENY.wit.tekst = "Chowa dłonie pod pachy, jakby nagle zrobiło mu się zimno."
+    + "<br><br><span class='mowa'>„No? Bracia mówili, żebym nie zaczynał rozmów. Nie mówili, żeby nie kończyć.”</span>";
+})();
+
+/* --- GŁOS BOHATERA: cała gra ---
+   Każdy NPC dostaje własne kwestie tam, gdzie wcześniej stała etykieta interfejsu.
+   Kolejność w tabeli: [wyjście, "kim jesteś", "zapamiętam", potwierdzenie, nauka, handel]. --- */
+var GLOS_NPC = {
+  weteran:["Nic. Ostrz dalej.","A ty kim jesteś, że tak siedzisz i ostrzysz?","Zapamiętam.","Czyli o nic.","Naucz mnie czegoś, co utrzyma mnie przy życiu.",null],
+  kowal:["Kuj swoje.","Kowal, co nie kuje mieczy. Ciekawe.","Zapamiętam, gdzie wracały.","Podkowa to podkowa.",null,"Pokaż, co masz na kowadle."],
+  swierad:["Licz dalej.","Masz imię czy same owce?","Policzę je za ciebie.","Dwie owce. Rozumiem.",null,null],
+  kobieta:["Wrócę z zielem.","Po kim ten cebrzyk?","Znajdę to ziele.","Trzeci dzień. Wiem.",null,null],
+  wanda:["Rób swoje.","Kto ci pozwolił tu warzyć?","Będę pamiętał.","Deska przy drodze. Jasne.","Naucz mnie tego, co robisz z tymi korzeniami.","Czego ci brakuje do tej deski?"],
+  cieszko:["Kuj dalej w ten kamień.","Sam tu kujesz ten kamieniołom?","Zapamiętam, gdzie leży.","Kamień jak kamień.",null,null],
+  wielislaw:["Stój dalej pod tą bramą.","Ty tu dowodzisz tą wartą?","Zapamiętam rozkaz.","Rozkaz to rozkaz.",null,null],
+  kalina:["Pisz dalej.","Trzy księgi i jeden pisarz. Czym się zajmujesz?","Wpisz mnie, jak chcesz.","Czyli wszystko jest w księgach poza prawdą.",null,null],
+  nieszka:["Zszywaj tę sieć.","Przewozisz czy tylko siedzisz przy łodzi?","Zapamiętam brzeg.","Na drugą stronę nie. Rozumiem.",null,null],
+  leszy:["Stój przy tej kracie.","Pilnujesz kraty od dawna?","Zapamiętam, po której jestem stronie.","Krata zamknięta. Jasne.",null,null],
+  roszko:["Spisuj dalej.","Co ty tu właściwie inspekcjonujesz?","Zapamiętam ten spis.","Wszystko ma numer. Wygodnie.",null,null],
+  marta:["Pisz swoje.","Rejestr to twoja robota?","Zapisz, jak musisz.","Czyli mnie tu nie ma.",null,null],
+  ozog:["Grzej ręce dalej.","Siedzisz przy rogatce i patrzysz. Kto ci za to płaci?","Zapamiętam znak.","Runa przekonuje. Ciekawe.","Nauczysz mnie tego, co umiesz?",null],
+  bolko:["Zjeżdżaj z powrotem w dół.","Ty tu jesteś od pilnowania czy od kopania?","Zapamiętam, gdzie jest żyła.","Sztolnia jak sztolnia.","Naucz mnie roboty przy kowadle.","Pokaż, co masz."],
+  nawoj:["Siedź tu dalej sam.","Mieszkasz tu sam z wyboru?","Zapamiętam.","Przeprawa nieczynna. Rozumiem.",null,null],
+  przybyslaw:["Wracaj do szybu.","Ty tu jesteś sztygarem czy tylko krzyczysz?","Zapamiętam, ile bierze szyb.","Wiatr nie ustaje. Wierzę.","Naucz mnie hutnictwa.","Bierzesz rudę?"],
+  ludmila:["Lej dalej.","Karczma twoja czy tylko w niej stoisz?","Zapamiętam, kto tu pije.","Wietrznica jak Wietrznica.",null,"Masz coś, co się je?"],
+  bogna:["Susz dalej.","Zielarka w kopalni. Jak to się stało?","Zapamiętam ten wywar.","Zioła zamiast rudy. Rozsądnie.","Naucz mnie warzenia.","Co masz w tych słojach?"],
+  kuna:["Znikaj mi z oczu.","Kim jesteś, że nikt tu nie chce o tobie mówić?","Zapamiętam twarz.","Czyli przemyt. Jasne.",null,null],
+  sedziwoj:["Licz dalej te słupki.","Rachmistrz w placówce granicznej. Co tu liczysz?","Wpisz to sobie.","Wszystko się zgadza poza ludźmi.",null,null],
+  dobroniega:["Rządź dalej tą wsią.","Kto cię wybrał na starościnę?","Zapamiętam, komu obiecałem.","Trzy łodzie. Rozumiem.",null,null],
+  chwalibog:["Odbijaj.","Przewozisz każdego czy wybierasz?","Zapamiętam bród.","Woda wysoka. Jasne.",null,null],
+  milena:["Strzelaj dalej.","Uczysz łuku czy tylko strzelasz?","Zapamiętam odległość.","Ręka i oddech. Rozumiem.","Naucz mnie łuku.",null],
+  dratwa:["Struż dalej.","Szkutnik nad brodem. Kto tu potrzebuje łodzi?","Zapamiętam, z jakiego pnia.","Jeden pień, jedna łódź. Jasne.",null,"Pokaż, co masz na sprzedaż."],
+  jarogniewa:["Niech ogień słucha dalej.","Kim jesteś, że siedzisz przy tej kracie?","Zapamiętam te słowa.","Kamień, wyspa, brama. Zapamiętałem.",null,null],
+  dobrogost:["Módl się dalej.","Zostałeś tu sam z tej dwudziestki siedmiu?","Zapamiętam imiona.","Dwudziestu siedmiu. Rozumiem.","Naucz mnie znaków.",null],
+  zbyslawa:["Przepisuj dalej.","Kopistka w spalonym opactwie. Po co?","Zapamiętam, co było na tej karcie.","Karty spłonęły. Jasne.","Naucz mnie warzenia.",null],
+  wit:["Rób swoje.","Co ci zrobiło te dłonie?","Zapamiętam.","Popiół i popiół. Rozumiem.",null,null],
+  smil:["Szukaj dalej.","Szukasz tu czegoś konkretnego czy czegokolwiek?","Zapamiętam miejsce.","Legenda. Jasne.","Naucz mnie tego ciosu.",null],
+  sedzimir:["Siedź cicho dalej.","Kwatermistrz bez kwatery. Jak to działa?","Zapamiętam.","Nic nie widziałem.",null,"Pokaż zapasy."],
+  racibor:["Rządź tym jarmarkiem.","Marszałek jarmarku. Kto cię tu ustanowił?","Zapamiętam prawo jarmarku.","Cztery barwy, żadnej władzy. Rozumiem.","Naucz mnie kuszy.",null],
+  halszka:["Handluj dalej.","Kupcowa na wolnym targu. Skąd bierzesz towar?","Zapamiętam cenę.","Wozy w wąwozie. Rozumiem.",null,"Pokaż towar."],
+  raclaw:["Ogłaszaj dalej.","Herold bez dworu. Komu to ogłaszasz?","Zapamiętam obwieszczenie.","Trzy chorągwie. Jasne.",null,null],
+  pchla:["Znikaj.","Nazywają cię Pchłą. Sam sobie to wybrałeś?","Zapamiętam, po której kieszeni.","Nikt nie liczy. Rozumiem.","Naucz mnie tego, co robisz z cudzymi kieszeniami.",null],
+  dobroslawa:["Trzymaj tę strażnicę.","Kasztelanka wysuniętej placówki. Kto cię tu wysłał?","Zapamiętam rozkaz.","Czerwień do końca. Rozumiem.",null,null],
+  ostoja:["Siedź przy tym stole.","Legat rozjemców. Kto rozjemuje rozjemców?","Zapamiętam warunki.","Cztery stołki. Rozumiem.","Naucz mnie tego ciosu.",null],
+  swietobor:["Wracaj do czerwieni.","Poseł Ismaala przy wspólnym stole. Ciężko ci?","Zapamiętam, co przekazać.","Czerwień nie ustąpi. Jasne.",null,null],
+  radomila:["Licz dalej.","Kanclerz kontoru na rozjemczym stole. Kto ci płaci?","Zapamiętam wpis.","Wszystko na piśmie. Rozumiem.",null,null],
+  wierzchoslawa:["Zamknij oczy dalej.","Szeptucha przy stole zbrojnych. Kto cię tu przysłał?","Zapamiętam szept.","Piasek, brama, oni. Zapamiętałem.",null,null],
+  bezchoragwi_scena:["Siedź przy tym ogniu.","Zbrojny bez chorągwi. Sam zdjąłeś czy zdjęli ci?","Zapamiętam.","Bez barw. Znam to.",null,null],
+  zwiadowca_scena:["Wracaj za kratę.","Zwiadowca po tej stronie rzeki. Kto cię puścił?","Zapamiętam, co widziałeś.","Puszcza widzi. Rozumiem.",null,null],
+  bozydar:["Licz dalej pozycje.","Syndyk giełdy. Ile jestem wart w twojej księdze?","Zapamiętam pozycję.","Jestem pozycją w rachunku. Świetnie.",null,null],
+  nawoja:["Waż dalej.","Wagmistrzyni cechu. Kto sprawdza twoje odważniki?","Zapamiętam miarę.","Szalka nie kłamie. Ludzie tak.","Nauczysz mnie liczyć i targować?",null],
+  zegota:["Wystawiaj rachunki dalej.","Mag ognia na żołdzie cechu. Nie uwiera?","Zapamiętam znak.","Ogień nie pyta. Za to ty pytasz.","Naucz mnie sztuki ognia.",null],
+  ciborek:["Wracam w cień.","Zwiadowca bez barw. Dla kogo chodzisz?","Zapamiętam ścieżkę.","Bez barwy. Wygodnie dla obu.","Naucz mnie chodzić cicho.",null],
+  dobiegniew:["Bij dalej tę monetę.","Cechmistrz mennicy. Dla obu stron naraz?","Zapamiętam stempel.","Moneta jak moneta. Rozumiem.",null,null],
+  wszebora:["Pisz dalej.","Pisarka cechu. Wszystko przez twoje ręce?","Zapamiętam wpis.","Księga wag. Rozumiem.",null,null],
+  trojan:["Pilnuj tego portu.","Kapitan portu. Co tu wpływa, czego nie powinno?","Zapamiętam.","Czerwony płaszcz. Widzę, że wiesz.",null,null],
+  swietoslawa:["Niech się pali.","Latarniczka. Co się stanie, jak zgaśnie?","Zapamiętam.","Ogień, który nie gaśnie. Do czasu.",null,null],
+  nw_wit:["Struż dalej.","Szkutnik w porcie. Ile łodzi masz na sumieniu?","Zapamiętam wręgę.","Jeden pień. Rozumiem.",null,null],
+  ninogniew:["Pilnuj tych pieców.","Hutmistrz. Co wychodzi z twoich pieców poza żelazem?","Zapamiętam wytop.","Koła chodzą dzień i noc. Wierzę.",null,null],
+  domaslaw:["Kuj dalej.","Zbrojmistrz cechu. Kogo zbroisz naprawdę?","Zapamiętam chwyt.","Nauka boli dłużej. Wiem.","Naucz mnie broni dwuręcznej.","Pokaż zbrojownię."],
+  milosz:["Sołtysuj dalej.","Sołtys przy trakcie. Kto tędy jeździ?","Zapamiętam.","Wieś przy drodze. Rozumiem.",null,null],
+  radzim:["Dymij dalej.","Smolarz w borze. Sam tu siedzisz?","Zapamiętam mielerz.","Dym widać z daleka. Właśnie.",null,null],
+  sulislaw:["Zgarniaj tę sól.","Warzelnik. Ile z tej soli idzie w rejestr?","Zapamiętam panwie.","Sól po kreskę. Rozumiem.",null,null],
+  swietopelk:["Wracaj do chorągwi.","Chorąży Wielki. Ile chorągwi naprawdę masz?","Zapamiętam barwy.","Brak przydziału. Ładnie ujęte.",null,null],
+  przeclaw:["Kancluj dalej.","Kanclerz Czerwieni. Co przepisujesz, żeby się zgadzało?","Zapamiętam regestr.","Ten sam atrament. Zauważyłem.",null,null],
+  bogusza:["Powtarzaj swoje.","Arcymag ognia. Ilu uczniów spaliłeś?","Zapamiętam.","Przypadek zabija obu. Rozumiem.","Naucz mnie ognia.",null],
+  sk_wojslaw:["Wrzeszcz dalej na rekrutów.","Sierżant szkolny. Ilu z nich wraca?","Zapamiętam.","Rekrut to rekrut. Jasne.","Naucz mnie tego, co wbijasz rekrutom.",null],
+  zbroslaw:["Odlewaj dalej.","Ludwisarz. Dzwony to twoja główna robota?","Zapamiętam odlew.","Dzwon i to, co dzwonem nie jest. Rozumiem.",null,"Pokaż odlewy."],
+  raclawa:["Mieszaj dalej ten proch.","Prochmistrzyni. Kto odbiera twój towar?","Zapamiętam skład.","Proch jak proch. Do czasu.",null,"Pokaż skład."],
+  wszerad:["Płoń sobie dalej.","Mag ognia w ludwisarni. Grzejesz im formy?","Zapamiętam znak.","Ogień na służbie. Rozumiem.","Naucz mnie ognia.",null],
+  ziemowit:["Siedź w tej ciemności.","Mistrz Cieni. Kto ci na to pozwolił w Ismaalu?","Zapamiętam.","Ciemność uczy inaczej. Wierzę.","Naucz mnie tego, czego uczysz.",null],
+  otylia:["Kop dalej.","Grabarka w mieście uczonych. Dużo roboty?","Zapamiętam grób.","Jedni piszą, drudzy kopią. Rozumiem.",null,null],
+  racibor_ml:["Archiwizuj dalej.","Archiwista. Co jest w tym archiwum, czego nie ma w regestrze?","Zapamiętam sygnaturę.","Papier pamięta lepiej. Rozumiem.",null,null],
+  milobrat:["Trzymaj tę bramę.","Kasztelan twierdzy. Ile razy ją otwierałeś nie z rozkazu?","Zapamiętam.","Brama się nie otworzyła. Dobrze.",null,null],
+  bronislawa:["Strzelaj dalej.","Strzelmistrzyni twierdzy. Kuszą czy łukiem?","Zapamiętam odległość.","Bełt leci prosto. Rozumiem.","Naucz mnie kuszy.",null],
+  jaksa:["Ćwicz dalej.","Rycerz nauczający. Ilu twoich uczniów żyje?","Zapamiętam tarczę.","Tarcza ważniejsza. Zapamiętam.","Naucz mnie miecza i tarczy.",null],
+  niemir:["Pilnuj tych owiec.","Owczarz na wrzosowisku. Sam z tymi owcami?","Zapamiętam.","Owce i wiatr. Rozumiem.",null,null],
+  domicela:["Tłucz dalej ten kamień.","Kamieniarka pod czerwoną ścianą. Twoja kuźnia?","Zapamiętam.","Kamień na mury. Jasne.","Naucz mnie kucia.","Pokaż, co masz."],
+  przybyslawa_s:["Gospodaruj dalej.","Wdowa w wiosce podatkowej. Jak sobie radzisz?","Zapamiętam.","Poborca częściej niż ksiądz. Rozumiem.",null,null],
+  pl_starsza:["Siedź przy tym kamieniu.","Ty tu jesteś starszyzną? Cała?","Zapamiętam.","Jeden kamień i deszczówka. Rozumiem.",null,null],
+  pl_swietobor:["Nie zdejmuj tego łuku.","Wielki Łowczy. Kiedy ostatnio zdjąłeś ten łuk z pleców?","Zapamiętam strzał.","Łuk zawsze przy sobie. Rozumiem.","Naucz mnie strzału.",null],
+  wiosna:["Rośnij dalej powoli.","Arcydruidka. Ile masz zim?","Zapamiętam.","Rośnie wolno. Widzę.","Naucz mnie tego, co rośnie.","Pokaż zielarnię."],
+  wyszebor:["Biegnij dalej.","Goniec, który nie biegnie. Co się stało?","Zapamiętam drogę.","Nikt już nie biegnie. Rozumiem.","Naucz mnie chodzić po puszczy.",null],
+  milorad:["Pilnuj tej ścieżki.","Strażnik leśny. Ilu takich jak ja zawróciłeś?","Zapamiętam ścieżkę.","Sam sobie winien. Wiem.","Naucz mnie łuku.",null],
+  pl_radomila:["Struż dalej te drzewce.","Cieśla i łucznica naraz. Co pierwsze?","Zapamiętam drzewce.","Drzewce z jednego pnia. Rozumiem.",null,"Pokaż warsztat."],
+  zbylut:["Doglądaj tych barci.","Bartnik przy bramie. Niedźwiedzie nie przeszkadzają?","Zapamiętam barć.","Miód i dym. Rozumiem.",null,null],
+  ostromir:["Nie bierz więcej, niż odrośnie.","Druid. Ile lat cię to uczono?","Zapamiętam.","Zioła i zioła. Rozumiem.","Naucz mnie tego, co rośnie.",null],
+  milina:["Szepcz dalej.","Szeptucha. Komu szepczesz, jak nikogo nie ma?","Zapamiętam.","Szept zostaje. Rozumiem.",null,null],
+  pl_wit:["Ucz się dalej.","Nowicjusz. Długo jeszcze do druida?","Zapamiętam.","Nowicjusz i nowicjusz. Znam to.",null,null],
+  pl_ludmila:["Tańcz dalej.","Tancerka Śmierci. Skąd taki tytuł?","Zapamiętam krok.","Dwa ostrza. Rozumiem.","Naucz mnie dwóch ostrzy.",null],
+  pl_sulislaw:["Ćwicz dalej przed świtem.","Blizna przez obie dłonie. Kto ci to zrobił?","Zapamiętam.","Przed świtem. Rozumiem.","Naucz mnie ostrza.",null],
+  dobromir:["Klep dalej.","Płatnerz w lesie. Skąd bierzesz żelazo?","Zapamiętam.","Lekko i cicho. Rozumiem.",null,"Pokaż płatnerstwo."],
+  pl_kalina:["Przewoź dalej.","Przewoźniczka na kładkach. Co siedzi pod nimi?","Zapamiętam kładkę.","Mokre nogawki. Widzę.",null,null],
+  wszebor:["Łów dalej.","Rybak na rozlewisku. Bierze?","Zapamiętam łowisko.","Ryba to ryba. Rozumiem.","Naucz mnie łowić.",null],
+  pl_swietoslawa:["Doglądaj tych barci.","Bartniczka w siatce. Ile razy cię pokąsały?","Zapamiętam.","Miód. Rozumiem.",null,null],
+  godzimir:["Zastawiaj dalej.","Traper na wysepce. Sam tu zimujesz?","Zapamiętam wnyki.","Skóry i skóry. Rozumiem.",null,"Pokaż skóry."],
+  chwalislawa:["Susz dalej.","Zielarka na skraju puszczy. Kto do ciebie przychodzi?","Zapamiętam wywar.","Susz pod każdym okapem. Widzę.","Naucz mnie warzenia.","Pokaż susz."],
+  wilkosz:["Rządź dalej tym wyrobiskiem.","Bezimienny jak ja. Zbieg okoliczności?","Zapamiętam.","Bez króla i bez wieca. Rozumiem.",null,null],
+  struga:["Nie płoń.","Maginia wody. Dlaczego nie ogień?","Zapamiętam.","Woda nie zdradza. Rozumiem.","Naucz mnie wody.",null],
+  grzebien:["Rób kreski dalej.","Prowadzisz rachunek zmarłych. Kto prowadzi twój?","Zapamiętam kreskę.","Dziewiętnaście tabliczek. Rozumiem.","Naucz mnie roboty, której nikt nie chce.",null],
+  cyna:["Pasuj dalej.","Paserka w stolicy. Nie za blisko?","Zapamiętam cenę.","Nie pyta się o pochodzenie. Wygodnie.",null,"Pokaż, co przeszło przez twoje ręce."],
+  szpon:["Napraw sobie kogoś innego.","Mistrz najemników. Ilu naprawiłeś?","Zapamiętam.","Naprawia się albo umiera. Rozumiem.","Naucz mnie bić się jak wy.",null],
+  ryza:["Ładuj dalej.","Kusznik u Odeszłych. Skąd kusze?","Zapamiętam nastaw.","Wybacza słabe ręce. Przydatne.","Naucz mnie kuszy.",null],
+  miedza:["Lej dalej.","Karczmarka przy ścianie kontraktów. Czytasz je?","Zapamiętam kontrakt.","Kontrakt jak kontrakt. Rozumiem.",null,"Masz coś do kotła?"],
+  nawka:["Patrz dalej w tę mgłę.","Ślepa, a nazywają cię arcymaginią. Jak to?","Zapamiętam.","Mgła nie opada. Zauważyłem.","Naucz mnie wody.",null],
+  kropla:["Ucz się dalej.","Nowicjusz wody. Długo jeszcze?","Zapamiętam.","Nowicjusz. Znam to.",null,null],
+  bruzda:["Odbijaj.","Przewoźnik we mgle. Widzisz cokolwiek?","Zapamiętam brzeg.","Mgła i woda. Rozumiem.",null,null],
+  ksin:["Kuj dalej.","Kulawy Ksin. Od kucia czy od konia?","Zapamiętam.","Ma działać, nie wyglądać. Zgoda.","Naucz mnie kucia.","Pokaż, co masz."],
+  od_wanda:["Doglądaj tych koni.","Bosa w kuźni. Nie parzy?","Zapamiętam konia.","Konie i kuźnie. Rozumiem.",null,"Pokaż konie."],
+  zgaga:["Wypalaj dalej.","Wypalacz węgla. Ile zim przy tym mielerzu?","Zapamiętam mielerz.","Czerń i czerń. Rozumiem.","Naucz mnie roboty przy węglu.",null],
+  sek:["Wal dalej w te pnie.","Drwal. Pnie leżą, gdzie padły. Twoja robota?","Zapamiętam pień.","Drewno i węgiel. Rozumiem.","Naucz mnie siły.",null],
+  ropucha:["Przemycaj dalej.","Przemytniczka. Każda chata ma drugie wyjście?","Zapamiętam wyjście.","Drugie wyjście. Rozsądnie.","Naucz mnie znikać.",null]
+};
+
+(function(){
+  var WYJSCIA   = ["Odejdź","Odejdź.","Wyjdź","Odejść","Odchodzę.","Odejdź od kramu",
+                   "Wracam do sali.","Wracam do służby","Odejdź w cień","Zostaw ją","Wyjdź na powietrze"];
+  var KIM       = ["Kim jesteś?","Kim jesteś"];
+  var ZAPAMIETAM= ["Zapamiętam.","Zapamiętam"];
+  var POTWIERDZ = ["Rozumiem.","...","Widzę.","Jasne.","Dziękuję.","Słucham.","Rozsądnie."];
+  var NAUKA     = ["Nauka","Chcę się uczyć.","Ucz mnie.","Nauka: miary, liczby i targ",
+                   "Nauka: sztuka ognia","Nauka: cichy chód i strzał z ukrycia",
+                   "Nauka: broń dwuręczna i twarda ręka"];
+  var HANDEL    = ["Handel","Pokaż towar.","Handluj"];
+
+  /* zapasowe wyjścia dla scen bez własnego NPC - żeby nigdzie nie stało 110 razy "Odejdź" */
+  var ZAPAS = ["Odchodzę.","Dość tego.","Tyle mi wystarczy.","Wracam.","Nie mam więcej pytań.",
+               "Zostawiam cię z tym.","Skończyliśmy.","Bywaj.","Idę swoją drogą.","Na tyle."];
+  var licznik = 0;
+
+  /* scena -> NPC, także dla scen pobocznych danego rozmówcy (npc_cos) */
+  function ktoTo(id, sc){
+    if(sc.npc && GLOS_NPC[sc.npc]) return sc.npc;
+    if(GLOS_NPC[id]) return id;
+    var korzen = id.replace(/_.*$/, "");
+    if(GLOS_NPC[korzen]) return korzen;
+    for(var k in GLOS_NPC) if(id.indexOf(k + "_") === 0) return k;
+    return null;
+  }
+
+  function podmien(o, id, sc){
+    if(typeof o.l !== "string") return;
+    var kto = ktoTo(id, sc);
+    var g = kto ? GLOS_NPC[kto] : null;
+    if(WYJSCIA.indexOf(o.l) >= 0){
+      o.l = (g && g[0]) ? g[0] : ZAPAS[(licznik++) % ZAPAS.length];
+      return;
+    }
+    if(KIM.indexOf(o.l) >= 0 && g && g[1]){ o.l = g[1]; return; }
+    if(ZAPAMIETAM.indexOf(o.l) >= 0 && g && g[2]){ o.l = g[2]; return; }
+    if(POTWIERDZ.indexOf(o.l) >= 0 && g && g[3]){ o.l = g[3]; return; }
+    if(NAUKA.indexOf(o.l) >= 0){ o.l = (g && g[4]) ? g[4] : "Naucz mnie tego, co umiesz."; return; }
+    if(HANDEL.indexOf(o.l) >= 0){ o.l = (g && g[5]) ? g[5] : "Pokaż, co masz."; return; }
+  }
+
+  for(var id in SCENY){
+    var sc = SCENY[id];
+    (sc.opcje||[]).forEach(function(o){ podmien(o, id, sc); });
+    if(sc.intro) (sc.intro.opcje||[]).forEach(function(o){ podmien(o, id, sc); });
+  }
+})();
+
 /* --- GŁOS BOHATERA: rozdział I, Popielnica i Kruczy Dół ---
    Krótko, konkretnie, z przytykiem. Nigdy "Rozumiem." tam, gdzie da się powiedzieć coś,
    co coś o nim mówi. Wzór: Bezimienny z Gothica - mediana pięciu słów. --- */
