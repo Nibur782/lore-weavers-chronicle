@@ -66,15 +66,15 @@ plik:"mapa.jpg",
 znaczniki:[
 {x:50, y:6.5,  n:"Ziemie Nieznane", typ:"kraina", o:"Za północną granią. Nikt stamtąd nie wraca z opowieścią, która się zgadza."},
 {x:50, y:12,   n:"Odeszli", typ:"kraina", o:"Pas między dwiema graniami. Odeszli od obu stron i założyli własne siedziby."},
-{x:72, y:24,   n:"Stolica Odeszłych", typ:"stolica", o:"Wśród skał na wodzie. Trudno tam wejść i trudno stamtąd wyjść."},
-{x:24, y:38,   n:"Królestwo Ismaala", typ:"kraina", o:"Mury starsze niż rachuba lat. Urodzenie decyduje o całym życiu."},
-{x:20, y:28.5, n:"Stolica Ismaala", typ:"stolica", o:"Twierdza w czerwonych skałach."},
-{x:78, y:38,   n:"Nowożytni", typ:"kraina", o:"Kominy, rejestry i umowy."},
-{x:62, y:34,   n:"Stolica Nowożytnych", typ:"stolica", o:"Miasto, do którego wchodzi się przez kolejkę, nie przez bramę."},
+{x:58, y:21,   n:"Stolica Odeszłych", typ:"stolica", o:"Wśród skał na wodzie. Trudno tam wejść i trudno stamtąd wyjść."},
+{x:27, y:36,   n:"Królestwo Ismaala", typ:"kraina", o:"Mury starsze niż rachuba lat. Urodzenie decyduje o całym życiu."},
+{x:24, y:31, n:"Stolica Ismaala", typ:"stolica", o:"Twierdza w czerwonych skałach."},
+{x:66, y:36,   n:"Nowożytni", typ:"kraina", o:"Kominy, rejestry i umowy."},
+{x:60, y:36,   n:"Stolica Nowożytnych", typ:"stolica", o:"Miasto, do którego wchodzi się przez kolejkę, nie przez bramę."},
 {x:47, y:41.5, n:"Ziemie Niczyje", typ:"kraina", o:"Pas, o który biją się obie strony. Tu zaczyna się twoja droga.", tu:true},
 {x:30, y:46.5, n:"Most zachodni", typ:"most", o:"Jedno z dwóch przejść do Prastarego Ludu."},
 {x:69, y:46.5, n:"Most wschodni", typ:"most", o:"Drugie przejście. Zamknięte, dopóki puszcza nie zechce inaczej."},
-{x:48, y:61.5, n:"Prastary Lud", typ:"kraina", o:"Puszcza za rzeką. Granica zamknięta."},
+{x:45.5, y:60.5, n:"Prastary Lud", typ:"kraina", o:"Puszcza za rzeką. Granica zamknięta."},
 {x:44, y:44.2, n:"Popielnica", typ:"osada", o:"Dwanaście chałup przy trakcie i studnia, o którą biją się obie strony."},
 {x:41, y:43.4, n:"Rozdroże Wierzbowe", typ:"punkt", o:"Cztery wierzby i tabliczka, z której deszcz zmył wszystko poza jedną literą."},
 {x:41.5, y:45.6, n:"Mokradła", typ:"punkt", o:"Grunt puszcza pod butem i wraca z bulgotem."},
@@ -97,64 +97,64 @@ znaczniki:[
 {x:60, y:40.6, n:"Kopalnia Żelazna", typ:"punkt", o:"Hałda, kołowrót, dwa kominy i nikt nie podnosi głowy."},
 {x:53, y:46, n:"Przeprawa Wschodnia", typ:"punkt", o:"Most stoi cały i nikt nim nie chodzi."},
 {x:57, y:47, n:"Stary Cmentarz", typ:"punkt", o:"Kamienie bez napisów i zapadnięta płyta."},
-  {x:40.2, y:46.4, n:"Mokradła Pod Wierzbami", typ:"punkt", o:"Woda stoi tu od wiosny i nie ma dokąd spłynąć."},
-  {x:25, y:40.2, n:"Dno Wyrobiska", typ:"punkt", o:"Na dnie kamieniołomu, gdzie kończy się droga dla wozów."},
-  {x:21, y:39.4, n:"Jaskinia Szeptów", typ:"punkt", o:"Szczelina pod murem Ismaala. Echo wraca później, niż powinno."},
+  {x:40, y:46, n:"Mokradła Pod Wierzbami", typ:"punkt", o:"Woda stoi tu od wiosny i nie ma dokąd spłynąć."},
+  {x:25, y:42.5, n:"Dno Wyrobiska", typ:"punkt", o:"Na dnie kamieniołomu, gdzie kończy się droga dla wozów."},
+  {x:22.5, y:42.7, n:"Jaskinia Szeptów", typ:"punkt", o:"Szczelina pod murem Ismaala. Echo wraca później, niż powinno."},
   {x:30, y:46.5, n:"Most Zachodni", typ:"most", o:"Przejście do puszczy. Krata zamknięta od strony południowej."},
   {x:61, y:39.6, n:"Zalany Chodnik", typ:"punkt", o:"Sztolnia pod kopalnią, po kolana w wodzie."},
   {x:69, y:46.5, n:"Most Wschodni", typ:"most", o:"Most stoi cały i nikt nim nie chodzi."},
-  {x:57.5, y:48, n:"Katakumby", typ:"punkt", o:"Pod zapadniętą płytą starego cmentarza."},
-  {x:47.5, y:39, n:"Serpentyna", typ:"punkt", o:"Droga wykuta w zboczu, wąska na jeden wóz."},
-  {x:48, y:36.5, n:"Wietrznica", typ:"osada", o:"Osada górnicza pod graniami. Wiatr nie ustaje tu nigdy."},
-  {x:59, y:44, n:"Kontor Nowożytnych", typ:"punkt", o:"Placówka rejestrowa przy trakcie. Wszystko na piśmie."},
-  {x:44, y:48.6, n:"Trzcinowy Trakt", typ:"punkt", o:"Droga nad rzeką, po obu stronach trzcina wyższa od jeźdźca."},
-  {x:42.5, y:50.2, n:"Sokoli Bród", typ:"osada", o:"Wieś rybacka przy brodzie. Łodzie wyciągnięte na piach."},
-  {x:35, y:51, n:"Uroczysko za Kratą", typ:"punkt", o:"Placówka Prastarego Ludu po tej stronie kraty."},
-  {x:63, y:48.5, n:"Aleja Kamienna", typ:"punkt", o:"Rząd kamiennych słupów bez napisów, ciągnący się na wschód."},
-  {x:66, y:50, n:"Spopielone Opactwo", typ:"punkt", o:"Ruina zakonna. Dach spłonął dawno, mury stoją."},
-  {x:67.5, y:45, n:"Kryjówka Odeszłych", typ:"punkt", o:"Wejście, którego nie widać z drogi."},
-  {x:64, y:44.5, n:"Wąwóz Kupiecki", typ:"punkt", o:"Wąskie gardło, przez które przechodzi każdy wóz na wschód."},
-  {x:61.5, y:46, n:"Jarmark Trzech Chorągwi", typ:"osada", o:"Wolne targowisko. Cztery barwy, żadnej władzy."},
+  {x:57, y:47.5, n:"Katakumby", typ:"punkt", o:"Pod zapadniętą płytą starego cmentarza."},
+  {x:50, y:40, n:"Serpentyna", typ:"punkt", o:"Droga wykuta w zboczu, wąska na jeden wóz."},
+  {x:52, y:38, n:"Wietrznica", typ:"osada", o:"Osada górnicza pod graniami. Wiatr nie ustaje tu nigdy."},
+  {x:55, y:42.5, n:"Kontor Nowożytnych", typ:"punkt", o:"Placówka rejestrowa przy trakcie. Wszystko na piśmie."},
+  {x:44, y:48, n:"Trzcinowy Trakt", typ:"punkt", o:"Droga nad rzeką, po obu stronach trzcina wyższa od jeźdźca."},
+  {x:41, y:49.5, n:"Sokoli Bród", typ:"osada", o:"Wieś rybacka przy brodzie. Łodzie wyciągnięte na piach."},
+  {x:35, y:49.5, n:"Uroczysko za Kratą", typ:"punkt", o:"Placówka Prastarego Ludu po tej stronie kraty."},
+  {x:62, y:47.5, n:"Aleja Kamienna", typ:"punkt", o:"Rząd kamiennych słupów bez napisów, ciągnący się na wschód."},
+  {x:65.3, y:49.4, n:"Spopielone Opactwo", typ:"punkt", o:"Ruina zakonna. Dach spłonął dawno, mury stoją."},
+  {x:58, y:30, n:"Kryjówka Odeszłych", typ:"punkt", o:"Wejście, którego nie widać z drogi."},
+  {x:62, y:32, n:"Wąwóz Kupiecki", typ:"punkt", o:"Wąskie gardło, przez które przechodzi każdy wóz na wschód."},
+  {x:59.5, y:45.3, n:"Jarmark Trzech Chorągwi", typ:"osada", o:"Wolne targowisko. Cztery barwy, żadnej władzy."},
   {x:26, y:44, n:"Strażnica Ismaala", typ:"punkt", o:"Wysunięta placówka w czerwonych barwach."},
-  {x:47, y:43, n:"Droga Poselska", typ:"punkt", o:"Pas rozjemczy. Broni się tu nie dobywa."},
-  {x:49, y:42.2, n:"Stół Rozjemczy", typ:"osada", o:"Cztery stołki i jeden stół. Siedziba rozjemców."},
-  {x:50.5, y:43.2, n:"Obozowisko Chorążych", typ:"osada", o:"Namioty czterech barw ustawione tak, by nie stykały się bokami."},
-  {x:58, y:40.5, n:"Trakt Wagowy", typ:"punkt", o:"Droga w ziemie Nowożytnych. Co milę słup z rachunkiem."},
-  {x:62, y:34, n:"Nowy Ostrów", typ:"stolica", o:"Stolica Nowożytnych. Wchodzi się przez kolejkę, nie przez bramę."},
-  {x:66.5, y:36.5, n:"Miedziana Waga", typ:"miasto", o:"Miasto mennicze. Bije monetę dla obu stron wojny."},
-  {x:70, y:39, n:"Droga Latarnicza", typ:"punkt", o:"Grobla do portu. Po obu stronach woda."},
-  {x:74, y:40.5, n:"Latarnica", typ:"miasto", o:"Port Nowożytnych. Ogień na wieży nie gaśnie."},
-  {x:67, y:31.5, n:"Kuźnice Wodne", typ:"miasto", o:"Miasto hutnicze. Koła wodne pracują dzień i noc."},
-  {x:60.5, y:38, n:"Kobylniki", typ:"osada", o:"Wieś przy trakcie. Żyje z tego, że ktoś tędy jedzie."},
-  {x:64.5, y:29.5, n:"Smolarze", typ:"osada", o:"Wieś w borze. Dym z mielerzy widać z daleka."},
-  {x:30.5, y:41, n:"Gościniec Czerwony", typ:"punkt", o:"Droga w ziemie Ismaala. Ziemia pod butem jest czerwona."},
-  {x:20, y:28.5, n:"Czerwień Wysoka", typ:"stolica", o:"Stolica Ismaala. Twierdza w czerwonych skałach."},
-  {x:24.5, y:33, n:"Żarnowiec", typ:"miasto", o:"Miasto ludwisarzy. Odlewa dzwony i to, co dzwonem nie jest."},
-  {x:22.5, y:25, n:"Droga Krucza", typ:"punkt", o:"Trakt na północ, ku graniom."},
-  {x:24, y:21.5, n:"Kruczyn", typ:"miasto", o:"Miasto uczonych i grabarzy. Jedni piszą, drudzy kopią."},
-  {x:29, y:26.5, n:"Twierdza Grot", typ:"miasto", o:"Miasto-garnizon. Nikt tu nie mieszka, kto nie służy."},
-  {x:17.5, y:34.5, n:"Wrzosy", typ:"osada", o:"Wieś na wrzosowisku. Owce i wiatr."},
-  {x:21.5, y:37.5, n:"Kamionka", typ:"osada", o:"Wieś kamieniarzy pod czerwoną ścianą."},
-  {x:27, y:36, n:"Sępnica", typ:"osada", o:"Wieś podatkowa. Poborca bywa częściej niż ksiądz."},
-  {x:52, y:49.5, n:"Wilczy Przesmyk", typ:"punkt", o:"Droga w puszczę. Wilki chodzą tu za wozami."},
-  {x:48, y:61, n:"Wiecznik", typ:"stolica", o:"Stolica Prastarego Ludu. Miasto na pomostach nad wodą."},
-  {x:42, y:58.5, n:"Borowe Wrota", typ:"miasto", o:"Miasto łuczników. Brama z dwóch żywych dębów."},
-  {x:52, y:58, n:"Ścieżka Mchowa", typ:"punkt", o:"Trakt na północ puszczy. Mech tłumi każdy krok."},
-  {x:56, y:60, n:"Mchowiec", typ:"miasto", o:"Miasto druidów. Domy wrastają w drzewa."},
-  {x:52.5, y:63.5, n:"Jodłogród", typ:"miasto", o:"Miasto zbrojnych leśnych. Ćwiczą przed świtem."},
-  {x:38.5, y:62, n:"Rosica", typ:"miasto", o:"Miasto nad rozlewiskiem. Chodzi się kładkami."},
-  {x:45, y:64.5, n:"Barcie", typ:"osada", o:"Wieś bartników. Miód i dym."},
-  {x:58.5, y:63, n:"Lisia Kępa", typ:"osada", o:"Wieś traperów na wysepce między odnogami."},
-  {x:44.5, y:56.5, n:"Olszyny", typ:"osada", o:"Wieś zielarska. Susz wisi pod każdym okapem."},
-  {x:64, y:41.5, n:"Trakt Popielny", typ:"punkt", o:"Droga w ziemie Odeszłych. Popiół zamiast kurzu."},
-  {x:72, y:24, n:"Zgorzel", typ:"stolica", o:"Stolica Odeszłych, w wyrobisku wśród skał na wodzie."},
-  {x:66, y:26.5, n:"Suchy Bród", typ:"miasto", o:"Miasto najemnicze. Ściana kontraktów zamiast ratusza."},
-  {x:68.5, y:20.5, n:"Wyschłe Koryto", typ:"punkt", o:"Trakt na północ. Rzeka odeszła stąd dawno."},
-  {x:63, y:17, n:"Mgielnik", typ:"miasto", o:"Miasto magów wody. Mgła nie podnosi się nigdy."},
-  {x:75.5, y:28, n:"Podkowa", typ:"miasto", o:"Miasto kuźni i koni. Słychać je, zanim się je zobaczy."},
-  {x:58.5, y:23.5, n:"Popielisko", typ:"osada", o:"Wieś wypalaczy węgla."},
-  {x:61, y:27.5, n:"Wykrot", typ:"osada", o:"Wieś drwali. Pnie leżą tam, gdzie padły."},
-  {x:70, y:31, n:"Krzywe Doły", typ:"osada", o:"Wieś przemytnicza. Każda chata ma drugie wyjście."},
+  {x:48, y:44, n:"Droga Poselska", typ:"punkt", o:"Pas rozjemczy. Broni się tu nie dobywa."},
+  {x:50, y:43, n:"Stół Rozjemczy", typ:"osada", o:"Cztery stołki i jeden stół. Siedziba rozjemców."},
+  {x:52.5, y:44.9, n:"Obozowisko Chorążych", typ:"osada", o:"Namioty czterech barw ustawione tak, by nie stykały się bokami."},
+  {x:58.5, y:41.5, n:"Trakt Wagowy", typ:"punkt", o:"Droga w ziemie Nowożytnych. Co milę słup z rachunkiem."},
+  {x:60, y:36, n:"Nowy Ostrów", typ:"stolica", o:"Stolica Nowożytnych. Wchodzi się przez kolejkę, nie przez bramę."},
+  {x:64, y:39, n:"Miedziana Waga", typ:"miasto", o:"Miasto mennicze. Bije monetę dla obu stron wojny."},
+  {x:65, y:41, n:"Droga Latarnicza", typ:"punkt", o:"Grobla do portu. Po obu stronach woda."},
+  {x:67, y:42, n:"Latarnica", typ:"miasto", o:"Port Nowożytnych. Ogień na wieży nie gaśnie."},
+  {x:57, y:33, n:"Kuźnice Wodne", typ:"miasto", o:"Miasto hutnicze. Koła wodne pracują dzień i noc."},
+  {x:56, y:39, n:"Kobylniki", typ:"osada", o:"Wieś przy trakcie. Żyje z tego, że ktoś tędy jedzie."},
+  {x:62, y:33.5, n:"Smolarze", typ:"osada", o:"Wieś w borze. Dym z mielerzy widać z daleka."},
+  {x:30, y:42.5, n:"Gościniec Czerwony", typ:"punkt", o:"Droga w ziemie Ismaala. Ziemia pod butem jest czerwona."},
+  {x:24, y:31, n:"Czerwień Wysoka", typ:"stolica", o:"Stolica Ismaala. Twierdza w czerwonych skałach."},
+  {x:28, y:35, n:"Żarnowiec", typ:"miasto", o:"Miasto ludwisarzy. Odlewa dzwony i to, co dzwonem nie jest."},
+  {x:28, y:32, n:"Droga Krucza", typ:"punkt", o:"Trakt na północ, ku graniom."},
+  {x:26, y:28.5, n:"Kruczyn", typ:"miasto", o:"Miasto uczonych i grabarzy. Jedni piszą, drudzy kopią."},
+  {x:31, y:29.5, n:"Twierdza Grot", typ:"miasto", o:"Miasto-garnizon. Nikt tu nie mieszka, kto nie służy."},
+  {x:22.5, y:37, n:"Wrzosy", typ:"osada", o:"Wieś na wrzosowisku. Owce i wiatr."},
+  {x:24, y:40, n:"Kamionka", typ:"osada", o:"Wieś kamieniarzy pod czerwoną ścianą."},
+  {x:28, y:39, n:"Sępnica", typ:"osada", o:"Wieś podatkowa. Poborca bywa częściej niż ksiądz."},
+  {x:45.9, y:50.5, n:"Wilczy Przesmyk", typ:"punkt", o:"Droga w puszczę. Wilki chodzą tu za wozami."},
+  {x:50, y:59, n:"Wiecznik", typ:"stolica", o:"Stolica Prastarego Ludu. Miasto na pomostach nad wodą."},
+  {x:40, y:58, n:"Borowe Wrota", typ:"miasto", o:"Miasto łuczników. Brama z dwóch żywych dębów."},
+  {x:52, y:57.5, n:"Ścieżka Mchowa", typ:"punkt", o:"Trakt na północ puszczy. Mech tłumi każdy krok."},
+  {x:57, y:58, n:"Mchowiec", typ:"miasto", o:"Miasto druidów. Domy wrastają w drzewa."},
+  {x:54, y:61, n:"Jodłogród", typ:"miasto", o:"Miasto zbrojnych leśnych. Ćwiczą przed świtem."},
+  {x:36.5, y:58.5, n:"Rosica", typ:"miasto", o:"Miasto nad rozlewiskiem. Chodzi się kładkami."},
+  {x:46.5, y:59, n:"Barcie", typ:"osada", o:"Wieś bartników. Miód i dym."},
+  {x:62, y:58.5, n:"Lisia Kępa", typ:"osada", o:"Wieś traperów na wysepce między odnogami."},
+  {x:43, y:57.5, n:"Olszyny", typ:"osada", o:"Wieś zielarska. Susz wisi pod każdym okapem."},
+  {x:48, y:29, n:"Trakt Popielny", typ:"punkt", o:"Droga w ziemie Odeszłych. Popiół zamiast kurzu."},
+  {x:58, y:21, n:"Zgorzel", typ:"stolica", o:"Stolica Odeszłych, w wyrobisku wśród skał na wodzie."},
+  {x:46, y:23, n:"Suchy Bród", typ:"miasto", o:"Miasto najemnicze. Ściana kontraktów zamiast ratusza."},
+  {x:50, y:18, n:"Wyschłe Koryto", typ:"punkt", o:"Trakt na północ. Rzeka odeszła stąd dawno."},
+  {x:38, y:19, n:"Mgielnik", typ:"miasto", o:"Miasto magów wody. Mgła nie podnosi się nigdy."},
+  {x:63, y:23, n:"Podkowa", typ:"miasto", o:"Miasto kuźni i koni. Słychać je, zanim się je zobaczy."},
+  {x:34, y:23, n:"Popielisko", typ:"osada", o:"Wieś wypalaczy węgla."},
+  {x:42, y:25.5, n:"Wykrot", typ:"osada", o:"Wieś drwali. Pnie leżą tam, gdzie padły."},
+  {x:52, y:25.5, n:"Krzywe Doły", typ:"osada", o:"Wieś przemytnicza. Każda chata ma drugie wyjście."},
   {x:70, y:81, n:"Podobno wyspa", typ:"legenda", o:"Żeglarze mówią o wyspie daleko na południu. Jedni ją widzieli, drudzy widzieli tych, którzy ją widzieli.", odkryj:"Wyspa Cieni"}
 ]
 };
@@ -3719,9 +3719,35 @@ d.innerHTML = '<div class="rzecz"><span>'+z.n+'<div class="rzecz-o">'+z.o+'</div
 }
 
 function zoomMapy(k){
-  S.mapaZoom = k;
+  S.mapaZoom = Math.max(1, Math.min(5, k));
   odswiezPanel();
 }
+
+/* Rozsuwanie palcami zmienia nasze powiększenie, a nie zoom przeglądarki.
+   Dzięki temu kółka i nazwy maleją, zamiast rosnąć razem z mapą. */
+(function(){
+  var start = 0, startZoom = 1;
+  function dystans(t){
+    var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+  function wMapie(el){
+    while(el){ if(el.classList && el.classList.contains("mapa-ramka")) return true; el = el.parentNode; }
+    return false;
+  }
+  document.addEventListener("touchstart", function(e){
+    if(e.touches.length !== 2 || !wMapie(e.target)) return;
+    start = dystans(e.touches);
+    startZoom = S.mapaZoom || 1;
+  }, {passive:true});
+  document.addEventListener("touchmove", function(e){
+    if(e.touches.length !== 2 || !start || !wMapie(e.target)) return;
+    var k = dystans(e.touches) / start;
+    var cel = Math.round(startZoom * k);
+    if(cel !== (S.mapaZoom || 1)) zoomMapy(cel);
+  }, {passive:true});
+  document.addEventListener("touchend", function(){ start = 0; }, {passive:true});
+})();
 function filtrMapy(k){
   S.mapaKraina = k;
   S.mapaZoom = (k === "wsz") ? 1 : Math.max(S.mapaZoom || 1, 2);

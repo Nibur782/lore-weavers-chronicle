@@ -154,7 +154,8 @@ filter:drop-shadow(0 0 3px #000) drop-shadow(0 0 6px #000)}
 text-shadow:0 0 4px #000,0 0 4px #000}
 .pkt.brak{opacity:.45}
 .pkt.mob span{color:#e8a89c}
-.mapa-ramka{overflow:auto;margin:0 0 14px;background:#0b0907;-webkit-overflow-scrolling:touch}
+.mapa-ramka{overflow:auto;margin:0 0 14px;background:#0b0907;-webkit-overflow-scrolling:touch;
+touch-action:pan-x pan-y}   /* rozsuwanie palcami obsluguje gra, nie przegladarka */
 #mapa-plotno{position:relative;width:100%;transition:width .2s}
 #mapa-obraz{display:block;width:100%;height:auto}
 /* Podpisy i znaczniki maleja wraz z powiekszeniem mapy, zeby nie zaslanialy sie nawzajem.
@@ -164,10 +165,12 @@ font-family:Cinzel,serif;letter-spacing:.06em;text-transform:uppercase;
 color:#fff;text-shadow:0 0 4px #000,0 0 4px #000,0 1px 2px #000;pointer-events:none;
 font-size:9px;display:none}
 .podpis.most{display:none!important}
-#mapa-plotno.z2 .podpis{display:block;font-size:7px}
-#mapa-plotno.z3 .podpis{display:block;font-size:6px}
-#mapa-plotno.z4 .podpis{display:block;font-size:5px}
-#mapa-plotno.z5 .podpis{display:block;font-size:4.5px}
+/* Im wieksze powiekszenie, tym mniejsze napisy - mapa rosnie, podpisy nie.
+   Rozmiary sa liczone wzgledem szerokosci plotna, wiec na kazdym telefonie wychodza tak samo. */
+#mapa-plotno.z2 .podpis{display:block;font-size:6.5px;letter-spacing:.04em}
+#mapa-plotno.z3 .podpis{display:block;font-size:5px;letter-spacing:.02em}
+#mapa-plotno.z4 .podpis{display:block;font-size:4px;letter-spacing:0}
+#mapa-plotno.z5 .podpis{display:block;font-size:3.4px;letter-spacing:0}
 #mapa-plotno.z1 .podpis.kraina,#mapa-plotno.z1 .podpis.legenda{display:block;font-size:9px}
 #mapa-plotno.z2 .podpis.kraina,#mapa-plotno.z2 .podpis.legenda{font-size:8px}
 #mapa-plotno.z2 .znacznik{width:18px;height:18px;min-height:18px;border-width:1.5px}
