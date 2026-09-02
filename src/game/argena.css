@@ -212,3 +212,23 @@ font-family:Cinzel,serif;color:var(--tekst-cichy);background:var(--tlo-2);border
 button.mini-akcja{display:inline-block;width:auto;min-height:34px;padding:6px 12px;margin:8px 8px 0 0;
 font-size:13px;color:var(--zloto);border-color:var(--braz);background:linear-gradient(180deg,#221b12,#171309)}
 .rzecz > span:first-child{flex:1}
+
+/* ---------- POWIADOMIENIA ---------- */
+/* Krótki komunikat po oddaniu zadania albo zdobyciu rzeczy. Sam znika po chwili. */
+#powiadomienia{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:60;
+display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:min(92vw,420px)}
+.pow{background:linear-gradient(180deg,#241d13,#171208);border:1px solid var(--braz);
+border-radius:4px;padding:10px 16px;font-family:Cinzel,serif;font-size:13px;letter-spacing:.04em;
+color:var(--tekst);box-shadow:0 6px 18px rgba(0,0,0,.6);text-align:center;
+animation:powIn .28s ease-out}
+.pow b{color:var(--zloto);font-weight:600}
+.pow.nagroda{border-color:var(--zloto)}
+.pow.przedmiot{border-color:var(--braz-jasny);font-size:12px;padding:8px 14px}
+@keyframes powIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ---------- SKLEP: opis działania i zapas ---------- */
+/* Kupujący ma wiedzieć, co bierze, zanim zapłaci. */
+button em.mech{display:block;font-style:italic;font-size:12px;line-height:1.45;
+color:var(--braz-jasny);margin-top:5px;letter-spacing:.01em;text-transform:none;font-family:inherit}
+.koszt i.ile{display:block;font-style:normal;font-size:10px;letter-spacing:.08em;
+color:var(--tekst-cichy);margin-top:3px;text-transform:uppercase}

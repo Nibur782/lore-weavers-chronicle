@@ -515,6 +515,7 @@ function oddajZadanie(id){
   if(stanZadania(id) !== "gotowe") return;
   S.zadania[id] = "oddane";
   var n = ZADANIA[id].nagroda || {};
+  powiadom("<b>" + ZADANIA[id].t + "</b><br>" + nagrodaTekst(n), "nagroda");
   if(n.exp) S.awans = dodajExp(n.exp);
   if(n.zloto) S.zloto += n.zloto;
   if(n.rep) for(var k in n.rep) S.rep[k] += n.rep[k];
@@ -579,7 +580,12 @@ function kosztZl(w){
 
 /* ---------- PLECAK ---------- */
 
-function dodaj(id, ile){ S.plecak[id] = (S.plecak[id] || 0) + (ile || 1); }
+function dodaj(id, ile){
+  S.plecak[id] = (S.plecak[id] || 0) + (ile || 1);
+  if(PRZEDMIOTY[id] && typeof powiadom === "function" && !cichoDodaj)
+    powiadom("Do plecaka: <b>" + PRZEDMIOTY[id].n + "</b>" + ((ile||1) > 1 ? " \u00d7 " + (ile||1) : ""), "przedmiot");
+}
+var cichoDodaj = false;
 function usun(id, ile){
   ile = ile || 1;
   if(!S.plecak[id]) return;
@@ -1480,7 +1486,7 @@ studnia:{
   opcje:[
     {l:"Odsuń się. Nabiorę jej tej wody.", rep:{sk:2, nw:-1}, exp:30, wynik:"Kobieta nie dziękuje - kiwa głową, jakbyś zrobił rzecz oczywistą. Urzędnik zapisuje twoją twarz w pamięci."},
     {l:"Skoro nie ma tego w spisie, to nie ma o czym mówić.", rep:{nw:2, sk:-1}, exp:30, zloto:10, wynik:"Kobieta odchodzi bez wody. Urzędnik notuje coś przy twoim imieniu, którego mu nie podałeś - i którego sam nie znasz. Potem wciska ci kilka monet, żebyś sobie poszedł."},
-    {l:"Ile kosztuje wiadro? Zapłacę i wszyscy będą mieli spokój.", warunek:function(){return S.zloto >= 15;}, ef:function(){S.zloto -= 15;}, rep:{sk:1, nw:1}, wynik:"Rejestr się zgadza, kobieta dostaje wodę, obaj są zadowoleni. Ty zostajesz bez grosza i bez niczyjej wdzięczności."}
+    {l:"Ile kosztuje wiadro? Zapłacę i wszyscy będą mieli spokój.", cena:15, warunek:function(){return S.zloto >= 15;}, ef:function(){S.zloto -= 15;}, rep:{sk:1, nw:1}, wynik:"Rejestr się zgadza, kobieta dostaje wodę, obaj są zadowoleni. Ty zostajesz bez grosza i bez niczyjej wdzięczności."}
   ],
   potem:"studnia_hub"
 },
@@ -2691,13 +2697,18 @@ function widokTerenu(id, h){
   var akcje = [], i = 0;
 
   h += '<div class="mapka rama"><div class="mapka-tlo"></div>';
+  /* Pozycję liczymy z miejsca punktu w pełnej liście, nie w przefiltrowanej.
+     Inaczej zebranie jednego zioła przesuwa wszystkie pozostałe. */
+  var miejsce = {};
+  T.punkty.forEach(function(pk, n){ miejsce[pk.id] = n; });
   var punkty = T.punkty.filter(function(pk){
     if(pk.warunek && !pk.warunek()) return false;
     if(pk.typ !== "mob" && S.zebrane[pk.id]) return false;
     if(pk.typ === "mob" && S.pokonane && S.pokonane[pk.id]) return false;
     return true;
   });
-  punkty.forEach(function(pk, n){
+  punkty.forEach(function(pk){
+    var n = miejsce[pk.id];
     var x = pk.x !== undefined ? pk.x : 18 + (n % 3) * 32;
     var y = pk.y !== undefined ? pk.y : 22 + Math.floor(n / 3) * 30;
     var brak = pk.wymaga && !S.umie[pk.wymaga];
@@ -2788,6 +2799,7 @@ function ekranTrenera(sc){
       var sufit = !poSufitem(w);
       var stac = (S.pn >= pn && S.zloto >= cenaN) && (!w.wymagaUm || S.umie[w.wymagaUm])
                  && !zaNiski && !limitSC && !brakFrakcji && !sufit;
+      void stac;
       if(!umie && stac) cokolwiek = true;
       var etykieta = umie ? (w.l.replace(/ \+1$/,"") + " - już to umiesz")
         : (w.uczy === "nikt" ? w.l + " - nikt tu tego nie uczy"
@@ -2838,19 +2850,33 @@ function ekranSklepu(sc){
         + '<span>Plecak <b>'+sztukWPlecaku()+'</b></span></div>';
   var akcje = [], i = 0;
 
-  h += '<div class="kat">Na sprzedaż</div>';
   var sklepId = sc.__id || S.scena;
   sklep = sklep.concat(dodatkoweTowary(sklepId));
-  var puste = 0;
-  sklep.forEach(function(k){
-    if(!PRZEDMIOTY[k]) return;
+
+  /* Najpierw to, co się zakłada, potem to, co się zjada, na końcu surowce i pisma. */
+  var KOLEJNOSC = {wyposazenie:1, amunicja:2, napoj_many:3, jadalne:3, ziolo:4, ksiega:5, towar:6, skladnik:6, zadaniowy:7};
+  var dostepne = sklep.filter(function(k){
+    return PRZEDMIOTY[k] && zapasSklepu(sklepId, k) > 0;
+  }).sort(function(a, b){
+    var ra = KOLEJNOSC[PRZEDMIOTY[a].typ] || 9, rb = KOLEJNOSC[PRZEDMIOTY[b].typ] || 9;
+    if(ra !== rb) return ra - rb;
+    return (PRZEDMIOTY[b].cena || 0) - (PRZEDMIOTY[a].cena || 0);
+  });
+  var NAGLOWKI = {1:"Broń, pancerze i biżuteria", 2:"Amunicja", 3:"Mikstury i pożywienie",
+                  4:"Zioła", 5:"Pisma", 6:"Surowce i towary", 7:"Rzeczy osobliwe", 9:"Reszta"};
+  var ostatniaGrupa = null;
+  dostepne.forEach(function(k){
     var p = PRZEDMIOTY[k], cena = Math.round(p.cena * mnoznik);
     var zostalo = zapasSklepu(sklepId, k);
-    if(zostalo <= 0){ puste++; return; }
+    var grupa = KOLEJNOSC[p.typ] || 9;
+    if(grupa !== ostatniaGrupa){ h += '<div class="kat">'+NAGLOWKI[grupa]+'</div>'; ostatniaGrupa = grupa; }
     var braknie = S.zloto < cena;
+    var mech = opisMechaniki(p);
     h += '<button data-i="'+i+'"'+(braknie ? " disabled" : "")+'>'
-       + '<span class="koszt">'+cena+' zł</span>'+p.n
-       + '<b>zostało: '+zostalo+'</b></button>';
+       + '<span class="koszt">'+cena+' zł<i class="ile">ilość: '+zostalo+'</i></span>'
+       + p.n
+       + (mech ? '<em class="mech">'+mech+'</em>' : '')
+       + '</button>';
     akcje.push(function(){
       if(S.zloto < cena) return;
       if(zapasSklepu(sklepId, k) <= 0) return;
@@ -2860,7 +2886,7 @@ function ekranSklepu(sc){
     });
     i++;
   });
-  if(puste) h += '<p class="tekst" style="font-size:14px;color:var(--tekst-cichy)">Część towaru rozeszła się już z półek. Kupiec sprowadzi nowy, gdy świat ruszy dalej.</p>';
+  if(!dostepne.length) h += '<p class="tekst" style="font-size:14px;color:var(--tekst-cichy)">Półki są puste. Kupiec sprowadzi nowy towar, gdy świat ruszy dalej.</p>';
 
   var moje = Object.keys(S.plecak).filter(function(k){
     return PRZEDMIOTY[k].cena > 0 && PRZEDMIOTY[k].typ !== "ksiega";
@@ -3879,21 +3905,31 @@ function czescZadania(){
 
   var grupy = {}, kolejnosc = [];
   wpisy.forEach(function(id){
+    /* Zadanie bez łańcucha dostaje własną zakładkę, a nie wspólny worek. */
     var l = lancuchZadania(id);
+    if(l === "inne") l = "poj_" + id;
     if(!grupy[l]){ grupy[l] = []; kolejnosc.push(l); }
     grupy[l].push(id);
   });
   kolejnosc.sort(function(a,b){
-    if(a === "inne") return 1;
-    if(b === "inne") return -1;
+    var pa = a.indexOf("poj_") === 0, pb = b.indexOf("poj_") === 0;
+    if(pa !== pb) return pa ? 1 : -1;
+    if(pa && pb){
+      var ta = stanZadania(a.slice(4)) !== "oddane", tb = stanZadania(b.slice(4)) !== "oddane";
+      if(ta !== tb) return ta ? -1 : 1;
+      return 0;
+    }
     return grupy[b].length - grupy[a].length;
   });
 
   var wybrany = S.zakLancuch && grupy[S.zakLancuch] ? S.zakLancuch : kolejnosc[0];
   var h = '<div class="zakladki">' + kolejnosc.map(function(l){
     var trwa = grupy[l].some(function(id){ return stanZadania(id) !== "oddane"; });
+    var nazwa = l.indexOf("poj_") === 0
+      ? (ZADANIA[l.slice(4)] ? ZADANIA[l.slice(4)].t : l.slice(4))
+      : (NAZWY_LANCUCHOW[l] || l);
     return '<button data-akcja="lancuch" data-klucz="'+l+'" class="zakladka'+(wybrany===l?" on":"")+'">'
-      + (NAZWY_LANCUCHOW[l] || l) + (trwa ? " &bull;" : "") + '</button>';
+      + nazwa + (trwa ? " &bull;" : "") + '</button>';
   }).join("") + '</div>';
 
   var lista = grupy[wybrany].slice().sort();
@@ -4142,7 +4178,12 @@ function pokaz(id){
     + '<p class="tekst">'+tresc+'</p>'
     + przyciski(dostepne.map(function(o){
         var brak = o.wymaga && !S.umie[o.wymaga];
-        return {l:o.l, koszt: brak ? "wymaga: "+nazwaUmiejetnosci(o.wymaga) : "", wylacz: brak};
+        var opis = "";
+        if(brak) opis = "wymaga: " + nazwaUmiejetnosci(o.wymaga);
+        else if(o.cena) opis = o.cena + " zł";
+        else if(o.wymagaPrzedmiotu && PRZEDMIOTY[o.wymagaPrzedmiotu])
+          opis = PRZEDMIOTY[o.wymagaPrzedmiotu].n + (o.ile > 1 ? " \u00d7 " + o.ile : "");
+        return {l:o.l, koszt: opis, wylacz: brak};
       }));
 
   podepnij(dostepne.map(function(o){
@@ -4300,6 +4341,38 @@ function blokCzasu(){
 
 /* ---------- ODPOCZYNEK ---------- */
 
+/* ---------- POWIADOMIENIA ---------- */
+var kolejkaPowiadomien = [];
+function powiadom(tekst, rodzaj){
+  if(!tekst) return;
+  kolejkaPowiadomien.push({t:tekst, r:rodzaj || "zwykle"});
+  rysujPowiadomienia();
+}
+function nagrodaTekst(n){
+  if(!n) return "";
+  var cz = [];
+  if(n.exp) cz.push("+" + n.exp + " dośw.");
+  if(n.zloto) cz.push("+" + n.zloto + " zł");
+  if(n.przedmiot && PRZEDMIOTY[n.przedmiot]) cz.push(PRZEDMIOTY[n.przedmiot].n);
+  if(n.rep) for(var k in n.rep) if(n.rep[k]) cz.push((n.rep[k] > 0 ? "+" : "") + n.rep[k] + " rep. " + (FRAKCJE_INFO[k] ? FRAKCJE_INFO[k].n : k));
+  return cz.join("  \u00b7  ");
+}
+function rysujPowiadomienia(){
+  var box = document.getElementById("powiadomienia");
+  if(!box){
+    box = document.createElement("div");
+    box.id = "powiadomienia";
+    document.body.appendChild(box);
+  }
+  box.innerHTML = kolejkaPowiadomien.map(function(p){
+    return '<div class="pow ' + p.r + '">' + p.t + '</div>';
+  }).join("");
+  if(kolejkaPowiadomien.length) setTimeout(function(){
+    kolejkaPowiadomien.shift();
+    rysujPowiadomienia();
+  }, 3200);
+}
+
 function odpocznij(o, wracaScena){
   uzupelnijStan();
   var lozko = o.lozko === true;
@@ -4307,20 +4380,26 @@ function odpocznij(o, wracaScena){
     if(o.lok){ S.widok="lokacja"; ekranLokacji(o.lok); return; }
     pokaz(o.wraca || wracaScena);
   };
-  var opcje = [1,2,4,8];
+  var zapisz = function(){
+    S.trybZapisu = true; panel = "zapisy";
+    var dz = document.getElementById("panel");
+    dz.hidden = false; odswiezPanel(); rysujPasek();
+  };
+  var opcje = [4,8,12];
   var h = '<p class="tekst">'+(o.tekst || "Siadasz i pozwalasz, żeby czas zrobił swoje.")
     + '<br><br><em>' + godzinaGry() + ", " + poraDnia() + '.</em></p>';
   h += lozko
     ? '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Sen w łóżku pod dachem przywraca pełnię sił - za to się płaci.</p>'
     : '<p class="tekst" style="font-size:15px;color:var(--tekst-cichy)">Przy ogniu i studni odpoczywa się tylko z nazwy: mija czas, sił nie przybywa. Tu za to można zapisać drogę.</p>';
   h += przyciski(opcje.map(function(gg){
-    return {l:"Czekaj "+gg+(gg===1?" godzinę":(gg<5?" godziny":" godzin")),
+    return {l:(lozko ? "Śpij " : "Czekaj ")+gg+" godzin",
             koszt: lozko ? (kosztNoclegu(gg)+" zł") : "",
             wylacz: lozko && S.zloto < kosztNoclegu(gg)};
-  }).concat(lozko ? [{l:"Wstań"}] : [{l:"Zapisz drogę"},{l:"Wstań"}]));
+  }).concat([{l:"Zapisz drogę"},{l:"Wstań"}]));
   var akcje = opcje.map(function(gg){
     return function(){
       var cena = lozko ? kosztNoclegu(gg) : 0;
+      void cena;
       if(lozko && S.zloto < cena) return;
       S.zloto -= cena;
       mijaCzas(gg*60);
@@ -4331,11 +4410,11 @@ function odpocznij(o, wracaScena){
           : "Siedzisz, patrzysz w ogień, prostujesz plecy. Nic więcej się z tego nie bierze.")
         + "<br><br><em>Mija " + gg + " godz. Jest " + godzinaGry() + ", " + poraDnia() + ".</em>"
         + (lozko ? "<br>Odzyskujesz " + (S.hp-przedHp) + " życia i " + (S.mana-przedM) + " many." : "");
-      g.innerHTML = '<p class="tekst">'+t+'</p>' + przyciski([{l:"Wstań"}]);
-      podepnij([wroc]);
+      g.innerHTML = '<p class="tekst">'+t+'</p>' + przyciski([{l:"Zapisz drogę"},{l:"Wstań"}]);
+      podepnij([zapisz, wroc]);
     };
   });
-  if(!lozko) akcje.push(function(){
+  akcje.push(function(){
     S.trybZapisu = true; panel = "zapisy";
     var dz = document.getElementById("panel");
     dz.hidden = false; odswiezPanel(); rysujPasek();
@@ -4345,7 +4424,8 @@ function odpocznij(o, wracaScena){
   podepnij(akcje);
 }
 
-function kosztNoclegu(godzin){ return Math.max(4, godzin * 2); }
+/* Nocleg kosztuje tyle samo bez względu na długość snu - płacisz za łóżko, nie za godziny. */
+function kosztNoclegu(){ return 12; }
 
 /* ---------- KRADZIEŻ ---------- */
 
@@ -11181,6 +11261,2455 @@ function lokacjaSceny(id){ return LOKACJA_SCENY[id] || null; }
   }
 })();
 
+/* ================= CZTERY NURTY GŁÓWNEJ FABUŁY =================
+   Wojna, Zagrożenie, Artefakt i Pochodzenie. Każdy nurt to pięć ogniw,
+   każde ogniwo u innego człowieka, w innym mieście. Nurty biegną równolegle
+   i dopiero razem układają się w to, co gracz ma zrozumieć na końcu rozdziału. --- */
+(function(){
+
+  function ogniwo(o){
+    /* o: {q, poprz, t, od, dawca, przyjmij, pelny, opis, cel,
+           swiadek, pytanie, kon, oddaj, exp, zl, rep, wiedza} */
+    ZADANIA[o.q] = {t:o.t, od:o.od, pelny:o.pelny, opis:o.opis, cel:o.cel,
+                    nagroda:{exp:o.exp, zloto:o.zl, rep:o.rep || {}}};
+    var dawca = SCENY[o.dawca];
+    if(dawca && dawca.opcje){
+      dawca.opcje.splice(Math.max(0, dawca.opcje.length-1), 0, {
+        l:o.przyjmij, dajZ:o.q, idz:o.dawca,
+        warunekZ:{id:o.q, stan:"brak"},
+        warunek:(function(p){ return function(){
+          return !p || stanZadania(p) === "oddane";
+        }; })(o.poprz)
+      });
+    }
+    var sw = SCENY[o.swiadek];
+    if(sw && sw.opcje){
+      sw.opcje.splice(Math.max(0, sw.opcje.length-1), 0, {
+        l:o.pytanie, idz:o.swiadek, warunekZ:{id:o.q, stan:"aktywne"},
+        ef:(function(q, w){ return function(){
+          gotoweZadanie(q);
+          if(w){ S.wiedza = S.wiedza || {}; S.wiedza[w] = true; }
+        }; })(o.q, o.wiedza)
+      });
+    }
+    var kon = SCENY[o.kon || o.dawca];
+    if(kon && kon.opcje){
+      kon.opcje.splice(Math.max(0, kon.opcje.length-1), 0, {
+        l:o.oddaj, oddajZ:o.q, idz:(o.kon || o.dawca),
+        warunekZ:{id:o.q, stan:"gotowe"}
+      });
+    }
+  }
+
+  /* ---------- NURT I: WOJNA ---------- */
+  ogniwo({q:"w_1", poprz:null, t:"Wojna: srebro, którego nikt nie bije",
+    od:"Probierz Sędziwoj Krzywy", dawca:"nw_probierz",
+    przyjmij:"Znajdę, skąd jest ta moneta.",
+    pelny:"<span class='mowa'>„Trzy monety w tym roku. Srebro czystsze niż nasze, stempel spoza katalogu, krawędź świeża.<br><br>Ktoś bije lepszą monetę niż mennica całego kraju. Chcę wiedzieć, kto płaci nią w Ismaalu.”</span>",
+    opis:"Probierz znalazł monetę bitą przez kogoś spoza czterech frakcji.",
+    cel:"Wypytaj saletrnika w prochowni Żarnowca i wróć do probierza.",
+    swiadek:"sk_saletrnik", pytanie:"Kto płaci u was lepiej niż Ismaal?",
+    oddaj:"Ktoś skupuje saletrę drożej niż obie armie.",
+    exp:340, zl:160, rep:{nw:2}, wiedza:"w_moneta"});
+
+  ogniwo({q:"w_2", poprz:"w_1", t:"Wojna: obie strony, jedna kieszeń",
+    od:"Wachlarz", dawca:"od_wachlarz",
+    przyjmij:"Ktoś zbroi obie strony naraz. Pomożesz mi to sprawdzić?",
+    pelny:"<span class='mowa'>„Zdjęłam trzy pierścienie w tym roku i za każdym razem druga strona zrywała umowę tego samego tygodnia.<br><br>To nie jest zbieg okoliczności. To jest jeden człowiek, który mówi dwóm stronom to samo. Znajdź go w rachunkach Ismaala.”</span>",
+    opis:"Wachlarz podejrzewa, że kontrakty obu stron zrywa ten sam człowiek.",
+    cel:"Sprawdź rachunki u intendenta Twierdzy Grot i wróć do Zgorzeli.",
+    swiadek:"sk_intendent", pytanie:"Wydajesz na siedmiuset, żywisz czterystu. Komu idzie reszta?",
+    oddaj:"Wozy z Grotu jadą na wschód i wraca jeden woźnica.",
+    exp:380, zl:190, rep:{od:2}, wiedza:"w_kontrakty"});
+
+  ogniwo({q:"w_3", poprz:"w_2", t:"Wojna: trzy działa, których nie ma",
+    od:"Zbrojmistrzyni Nawoja Młodsza", dawca:"nw_zbrojmistrzowa",
+    przyjmij:"Trzeci rząd jest pusty. Dowiem się, dokąd poszedł.",
+    pelny:"<span class='mowa'>„Sto dwadzieścia toporów i osiemdziesiąt tarcz na jeden nieczytelny podpis.<br><br>W Grocie stały trzy nasze działa, zdobyte pod Kruczynem. Sprawdź, czy tam jeszcze są. Jeżeli nie, to znaczy, że ktoś zbiera armię z rzeczy, których nikt nie liczy.”</span>",
+    opis:"Nawoja Młodsza chce wiedzieć, gdzie trafił sierpniowy transport.",
+    cel:"Wypytaj arsenałowego w Twierdzy Grot i wróć do Kuźnic Wodnych.",
+    swiadek:"sk_arsenalowy", pytanie:"Zapytam jeszcze raz.",
+    oddaj:"Działa wyjechały. Bez papieru, na jedno słowo.",
+    exp:400, zl:200, rep:{nw:3}, wiedza:"w_dziala"});
+
+  ogniwo({q:"w_4", poprz:"w_3", t:"Wojna: siedemnaście dzwonów",
+    od:"Dzwonniczka Bogumiła", dawca:"sk_dzwonnica",
+    przyjmij:"Policzę tych siedemnastu za ciebie.",
+    pelny:"<span class='mowa'>„Dwadzieścia cztery uderzenia to chorąży. Biłam dwadzieścia cztery siedemnaście razy w dwa tygodnie sierpnia.<br><br>Siedemnastu chorążych nie ginie w dwa tygodnie w wojnie, w której nie było bitwy. Grabarz w Kruczynie wie, ile grobów wykuł. Zapytaj go.”</span>",
+    opis:"Bogumiła policzyła siedemnaście pogrzebów chorążych w dwa tygodnie bez bitwy.",
+    cel:"Porównaj z liczbą grobów u grabarza w Kruczynie i wróć do Żarnowca.",
+    swiadek:"sk_grabarz", pytanie:"Ile grobów wykułeś w tym roku?",
+    oddaj:"Dwadzieścia dwa wykute, dwadzieścia osiem opłaconych i pustych.",
+    exp:420, zl:180, rep:{sk:3}, wiedza:"w_dzwony"});
+
+  ogniwo({q:"w_5", poprz:"w_4", t:"Wojna: wojna, której nikt nie wypowiedział",
+    od:"Wielki Syndyk Zbigniew", dawca:"nw_zbigniew",
+    przyjmij:"Wiem już, kto zbroi obie strony. Chcesz to usłyszeć?",
+    pelny:"<span class='mowa'>„Mówisz, że ktoś kupuje saletrę, konie, kolce, proch i ludzi, i płaci monetą, której nie znamy.<br><br>Jeżeli masz rację, to nasza wojna jest tylko sposobem, żeby nikt nie zauważył, jak ktoś inny buduje armię. Idź do rozjemców. Ostoja musi to usłyszeć, zanim usłyszy to od kogoś innego.”</span>",
+    opis:"Syndyk chce, żeby legat rozjemców usłyszał to jako pierwszy.",
+    cel:"Zanieś to legatowi Ostoi przy Stole Rozjemczym i wróć do syndyka.",
+    swiadek:"ostoja", pytanie:"Ktoś zbroi obie strony wojny i nie jest żadną z nich.",
+    oddaj:"Ostoja wysłuchał. Nie zaprzeczył ani razu.",
+    exp:500, zl:300, rep:{nw:3, sk:1, od:1}, wiedza:"w_koniec"});
+
+  /* ---------- NURT II: ZAGROŻENIE ---------- */
+  ogniwo({q:"z_1", poprz:null, t:"Zagrożenie: linia, wzdłuż której milkną żaby",
+    od:"Bagienna Żywia", dawca:"pl_zabiarz",
+    przyjmij:"Pokaż mi tę linię.",
+    pelny:"<span class='mowa'>„Żaby przestały skakać w trzech miejscach naraz, a wszystkie trzy leżą na jednej prostej, jakby ktoś przeciągnął sznurek.<br><br>Grzybiarz mówi, że po wschodniej stronie leżą pnie, które nie próchnieją. Zapytaj go, gdzie dokładnie. Chcę wiedzieć, czy to ta sama linia.”</span>",
+    opis:"Żywia chce sprawdzić, czy martwe bagna i nieprochniejące pnie leżą na tej samej linii.",
+    cel:"Wypytaj grzybiarza w Mchowcu i wróć na bagna.",
+    swiadek:"pl_grzybiarz", pytanie:"Gdzie leżą te pnie, które nie próchnieją?",
+    oddaj:"To ta sama linia. Biegnie z północnego wschodu.",
+    exp:340, zl:120, rep:{pl:2}, wiedza:"z_linia"});
+
+  ogniwo({q:"z_2", poprz:"z_1", t:"Zagrożenie: coś zabrało rozkład",
+    od:"Druid Trzebor", dawca:"pl_druid_st",
+    przyjmij:"Nazwij to, co czuje puszcza.",
+    pelny:"<span class='mowa'>„Woda ucieka, grzyb nie rośnie, drewno nie próchnieje. Wszystko, co potrzebuje rozkładu, zatrzymało się na wschodzie.<br><br>Magowie wody z Mgielnika patrzą w wodę i widzą, gdzie jej nie ma. Przynieś mi, co widzą. Chcę wiedzieć, czy nasza linia i ich sucha woda to jedno.”</span>",
+    opis:"Trzebor chce porównać obserwacje druidów z tym, co widzą magowie wody.",
+    cel:"Wypytaj Poziomowego Znaka w Zbiorniku Mgielnika i wróć do Mchowca.",
+    swiadek:"od_poziomowy", pytanie:"Trzy ostatnie kreski są niżej o pół łokcia każda. Skąd ta woda przychodzi?",
+    oddaj:"Woda schodzi, bo pod granią jej już nie ma.",
+    exp:380, zl:150, rep:{pl:2, od:1}, wiedza:"z_woda"});
+
+  ogniwo({q:"z_3", poprz:"z_2", t:"Zagrożenie: czarny osad z sufitu",
+    od:"Czerpaczka Struga Młodsza", dawca:"od_czerpaczka",
+    przyjmij:"Dowiem się, co się kruszy pod granią.",
+    pelny:"<span class='mowa'>„Pół garnca czarnego żużlu, spadło z sufitu razem z wodą z północy. Nie rozpuszcza się, nie pali, nie kruszy.<br><br>Pod granią nie ma czego palić - jest sam kamień i lód. Probierz w Miedzianej Wadze umie rozpoznać każdy kruszec. Pokaż mu to.”</span>",
+    opis:"Struga Młodsza chce, żeby ktoś rozpoznał czarny osad znoszony wodą z północy.",
+    cel:"Pokaż osad probierzowi w Miedzianej Wadze i wróć do Mgielnika.",
+    swiadek:"nw_probierz", pytanie:"Rozpoznasz to? Przyszło z wodą spod grani.",
+    oddaj:"Probierz nie rozpoznał. Powiedział tylko, że to było kiedyś żywe.",
+    exp:400, zl:170, rep:{od:2}, wiedza:"z_zuzel"});
+
+  ogniwo({q:"z_4", poprz:"z_3", t:"Zagrożenie: to, co idzie na ostrze",
+    od:"Zbrojmistrz Leśny Ninogniew", dawca:"pl_zbrojmistrz",
+    przyjmij:"Kto to widział poza Wielkim Łowczym?",
+    pelny:"<span class='mowa'>„Uczę ciąć w szyję i pierś, bo Wielki Łowczy powiedział jedno zdanie: <em>ono idzie na ostrze</em>.<br><br>Nie chcę uczyć osiemdziesięciu ludzi na podstawie jednego zdania. Znajdź kogoś, kto to widział i wrócił. U Odeszłych są tacy, którzy wracają.”</span>",
+    opis:"Ninogniew chce potwierdzenia od kogoś, kto wrócił ze wschodu.",
+    cel:"Wypytaj Krzywoustego w Suchym Brodzie i wróć do Jodłogrodu.",
+    swiadek:"od_krzywousty", pytanie:"Więc dlaczego?",
+    oddaj:"Wrócił jeden na jedenaście lat. Drugi powiesił się po roku.",
+    exp:440, zl:200, rep:{pl:3, od:1}, wiedza:"z_ostrze"});
+
+  ogniwo({q:"z_5", poprz:"z_4", t:"Zagrożenie: raport dla czterech chorągwi",
+    od:"Szeptucha Wierzchosława", dawca:"wierzchoslawa",
+    przyjmij:"Mam dość, żeby to powiedzieć przy stole.",
+    pelny:"<span class='mowa'>„Powtarzałam im: piasek, brama, oni. Trzy słowa i cztery chorągwie, z których żadna nie chce ich usłyszeć.<br><br>Ty masz więcej niż trzy słowa. Masz linię, wodę, żużel i człowieka, który wrócił. Połóż to na stole, a ja dopowiem resztę.”</span>",
+    opis:"Wierzchosława chce, żebyś złożył raport z tego, co zebrałeś, przed rozjemcami.",
+    cel:"Złóż raport legatowi Ostoi i wróć do szeptuchy.",
+    swiadek:"ostoja", pytanie:"Puszcza, woda i najemnicy mówią to samo. Coś idzie ze wschodu.",
+    oddaj:"Powiedziałem to przy stole. Nikt się nie roześmiał.",
+    exp:520, zl:260, rep:{pl:3, od:2}, wiedza:"z_koniec"});
+
+  /* ---------- NURT III: ARTEFAKT ---------- */
+  ogniwo({q:"a_1", poprz:null, t:"Artefakt: karta, której nie ma na półce",
+    od:"Wieszczka Jarogniewa", dawca:"jarogniewa",
+    przyjmij:"Poszukam zapisu o kamieniu.",
+    pelny:"<span class='mowa'>„Kamień barwy krwi, wyspa, świątynia, która upadła. Powtarzam to od trzydziestu lat i przez trzydzieści lat nikt tego nie zapisał.<br><br>Ismaal zapisuje wszystko. W Kruczynie jest archiwum, do którego nie wolno wchodzić na czwarty poziom. Zapytaj archiwistki wprost, a odmowa też będzie odpowiedzią.”</span>",
+    opis:"Jarogniewa chce wiedzieć, czy Ismaal ma zapisy o Krwawym Rubinie.",
+    cel:"Zapytaj archiwistkę w Kruczynie i wróć na Uroczysko.",
+    swiadek:"sk_archiwistka", pytanie:"Czy jest tam coś o Bramie?",
+    oddaj:"Odmówiła odpowiedzi. Ręce jej drżały.",
+    exp:360, zl:140, rep:{pl:2}, wiedza:"a_archiwum"});
+
+  ogniwo({q:"a_2", poprz:"a_1", t:"Artefakt: zapalono ponownie",
+    od:"Zapisowa Nocy Ostoja", dawca:"nw_dziennikarka",
+    przyjmij:"Co znaczy - ponownie?",
+    pelny:"<span class='mowa'>„Pierwszy tom dziennika zaczyna się od zdania: <em>zapalono ponownie, po Zamknięciu</em>.<br><br>Ponownie znaczy, że latarnia stała tu wcześniej, przed rachubą. Klasztor Rachuby liczy od Zamknięcia Bram i nie ma ani jednej linijki o tym, czym ono było. Zapytaj brata rachmistrza.”</span>",
+    opis:"Zapisowa chce wiedzieć, co oznacza pierwsze zdanie dziennika latarni.",
+    cel:"Wypytaj brata Godzisza w Klasztorze Rachuby i wróć na wieżę.",
+    swiadek:"nw_godzisz", pytanie:"Skąd nazwa - Zamknięcie Bram?",
+    oddaj:"Trzysta lat liczymy od czegoś, o czym nie ma jednej linijki.",
+    exp:400, zl:160, rep:{nw:2}, wiedza:"a_zamkniecie"});
+
+  ogniwo({q:"a_3", poprz:"a_2", t:"Artefakt: łuk w misie z wodą",
+    od:"Mistrzyni Wód Studnia", dawca:"od_kropla_st",
+    przyjmij:"Twoja uczennica coś widziała. Sprawdzę to.",
+    pelny:"<span class='mowa'>„Moja uczennica z Mgielnika zobaczyła w misie łuk z kamienia i coś, co przez ten łuk płynęło i nie było wodą.<br><br>Kazano jej zapomnieć. Nie zapomniała i dobrze. Idź do niej i wysłuchaj jej dokładnie, bo mnie nie powie - boi się, że znów ją odsuną od mis.”</span>",
+    opis:"Studnia chce, żeby ktoś obcy wysłuchał jej uczennicy z Mgielnika.",
+    cel:"Wypytaj Rosę Mokrą w Szkole Wody i wróć do Cysterny.",
+    swiadek:"od_uczen_w", pytanie:"Widziałaś coś w misie?",
+    oddaj:"Widziała łuk z kamienia. Nie zapomniała.",
+    exp:420, zl:180, rep:{od:2}, wiedza:"a_luk"});
+
+  ogniwo({q:"a_4", poprz:"a_3", t:"Artefakt: woda bez brzegu",
+    od:"Bosman Chwalisz", dawca:"nw_bosman",
+    przyjmij:"Kto pływał najdalej na południe?",
+    pelny:"<span class='mowa'>„Pytasz o wyspę. Wszyscy pijani o niej gadają i żaden trzeźwy tam nie był.<br><br>Ale szyprowa Kaper wozi ludzi na południe częściej, niż zapisuje. Ona wie, gdzie kończy się brzeg. Zapytaj ją, tylko nie przy świadkach.”</span>",
+    opis:"Bosman odsyła cię do szyprowej, która pływa dalej, niż zapisuje.",
+    cel:"Wypytaj szyprową Kaper w Latarnicy i wróć do bosmana.",
+    swiadek:"nw_kaper", pytanie:"Jak daleko na południe da się dopłynąć?",
+    oddaj:"Za Prastarym Ludem woda nie ma brzegu. Ale ma dno.",
+    exp:440, zl:210, rep:{nw:2}, wiedza:"a_wyspa"});
+
+  ogniwo({q:"a_5", poprz:"a_4", t:"Artefakt: kto weźmie, ten otworzy",
+    od:"Starsza Jarogniewa", dawca:"pl_starsza",
+    przyjmij:"Wiem już, gdzie szukać kamienia.",
+    pelny:"<span class='mowa'>„Przyszedłeś z archiwum, z latarni, z misy i z pokładu. Cztery drogi i wszystkie prowadzą w to samo miejsce.<br><br>Zanim powiesz mi, dokąd, powiedz to Wieszczce. Ona nosi tę przepowiednię od trzydziestu lat i zasłużyła, żeby usłyszeć pierwsza.”</span>",
+    opis:"Starsza chce, żeby Wieszczka usłyszała to jako pierwsza.",
+    cel:"Powiedz Wieszczce Jarogniewie, czego się dowiedziałeś, i wróć do Wiecznika.",
+    swiadek:"jarogniewa", pytanie:"Kamień leży na wyspie, w świątyni, która upadła. Wiem, gdzie szukać.",
+    oddaj:"Wieszczka usłyszała. Płakała i nie ukrywała tego.",
+    exp:560, zl:280, rep:{pl:4}, wiedza:"a_koniec"});
+
+  /* ---------- NURT IV: POCHODZENIE ---------- */
+  ogniwo({q:"p_1", poprz:null, t:"Pochodzenie: wers, za który biją",
+    od:"Rosa", dawca:"sk_rosa",
+    przyjmij:"Znajdę ten wers w całości.",
+    pelny:"<span class='mowa'>„W pieśni o pierwszym Ismaalu jest wers o tym, skąd przyszedł. Przez trzysta lat nikomu nie przeszkadzał, a od pół roku za niego biją.<br><br>W Kruczynie siedzi introligator, który jedenaście lat wyjmował karty z ksiąg. Zapytaj go, czy wyjmował też ten wers.”</span>",
+    opis:"Rosa chce odzyskać wers, którego dziś nie wolno śpiewać.",
+    cel:"Wypytaj introligatora w Kruczynie i wróć do gospody w Czerwieni.",
+    swiadek:"sk_introligator", pytanie:"Zachowałeś którąś?",
+    oddaj:"Zachował jedną kartę. Wers mówi o puszczy.",
+    exp:360, zl:150, rep:{sk:2}, wiedza:"p_wers"});
+
+  ogniwo({q:"p_2", poprz:"p_1", t:"Pochodzenie: rubryka, której się nie używa",
+    od:"Siostra Marcjanna", dawca:"sk_marcjanna",
+    przyjmij:"Otwórz tę księgę jeszcze raz.",
+    pelny:"<span class='mowa'>„Przeczytałam raz rejestr chrztów sprzed dwustu lat. W rubryce <em>ród</em> przy trzech wpisach stało słowo, którego dziś się nie używa.<br><br>Nie otworzę jej drugi raz. Ale na Cmentarzu Wysokim jest grób z dziewiątego piętra, którego imię ktoś odnawia od trzystu lat. Zapytaj rytowniczki, jak ono brzmi.”</span>",
+    opis:"Marcjanna odsyła cię do grobu, którego imię odnawia się od trzystu lat.",
+    cel:"Wypytaj rytowniczkę na Cmentarzu Wysokim i wróć do kaplicy.",
+    swiadek:"sk_kamieniarka_c", pytanie:"Wykuwałaś to imię z dziewiątego piętra?",
+    oddaj:"Imię jest krótkie i nie jest ismaalskie. Brzmi jak z puszczy.",
+    exp:400, zl:170, rep:{sk:2}, wiedza:"p_grob"});
+
+  ogniwo({q:"p_3", poprz:"p_2", t:"Pochodzenie: ten, co odszedł",
+    od:"Druid Ostromir", dawca:"ostromir",
+    przyjmij:"Ismaal był stąd. Chcę dowodu, nie opowieści.",
+    pelny:"<span class='mowa'>„Mówiłem ci już, że Ismaal był spod tych drzew. Powiedziałem to jak legendę, bo tak mi to przekazano.<br><br>Ale w Wieczniku siedzi Dziad Świątopełk, sto pięć zim, i on pamięta, jak mówił jego dziadek. Różnica jest w jednym słowie. Idź i usłysz ją sam.”</span>",
+    opis:"Ostromir odsyła cię do najstarszego człowieka w Wieczniku.",
+    cel:"Wypytaj Dziada Świątopełka w Wieczniku i wróć do Mchowca.",
+    swiadek:"pl_swiatopelk", pytanie:"Pamiętasz opowieści o Ismaalu?",
+    oddaj:"Niziny mówią, że przyszedł. Wy mówicie, że odszedł.",
+    exp:440, zl:180, rep:{pl:3}, wiedza:"p_odszedl"});
+
+  ogniwo({q:"p_4", poprz:"p_3", t:"Pochodzenie: a przyszedł z",
+    od:"Kapłan Przybysław", dawca:"sk_przybyslaw_k",
+    przyjmij:"Trzy słowa na tablicy. Znajdę czwarte.",
+    pelny:"<span class='mowa'>„Pod światło widać na tablicy trzy słowa: <em>a przyszedł z</em>. Reszty wyskrobano siedemdziesiąt lat temu.<br><br>Nie mam prawa szukać dalej. Ty masz, bo nie należysz do kaplicy. Archiwum w Kruczynie ma czwarty poziom, a archiwistka odmawia tylko wtedy, gdy odpowiedź istnieje.”</span>",
+    opis:"Kapłan chce, żebyś odzyskał wyskrobane zakończenie zdania z tablicy.",
+    cel:"Wróć do archiwistki w Kruczynie i wróć do Kaplicy Pierwszego.",
+    swiadek:"sk_archiwistka", pytanie:"Czy jest tam coś o Bramie?",
+    oddaj:"Odmówiła drugi raz. Tym razem nie odwróciła się.",
+    exp:460, zl:200, rep:{sk:2}, wiedza:"p_tablica"});
+
+  ogniwo({q:"p_5", poprz:"p_4", t:"Pochodzenie: po tym się go pozna",
+    od:"Brat Ożóg", dawca:"ozog",
+    przyjmij:"Powiedziałeś, że w księgach pisano o kimś takim jak ja.",
+    pelny:"<span class='mowa'>„Powiedziałem ci raz i nie powtórzę przy nikim innym: przyjdzie bez imienia i bez domu, i po tym się go pozna.<br><br>Ty przyszedłeś z Ismaala, choć o tym nie wiesz, a Ismaal przyszedł z puszczy, choć oni o tym nie chcą wiedzieć. Idź do Wieszczki i zapytaj ją o siebie. Nie o przepowiednię - o siebie.”</span>",
+    opis:"Ożóg każe zapytać Wieszczkę nie o przepowiednię, tylko o siebie.",
+    cel:"Zapytaj Wieszczkę Jarogniewę o siebie i wróć do Ożoga.",
+    swiadek:"jarogniewa", pytanie:"Nie pytam o przepowiednię. Pytam o siebie.",
+    oddaj:"Wieszczka patrzyła na mnie długo. Nie powiedziała, że się mylę.",
+    exp:600, zl:250, rep:{sk:1, pl:2}, wiedza:"p_koniec"});
+
+  /* wpisy do dziennika za każdy domknięty nurt */
+  WIEDZA.push({id:"nurt_wojna", t:"Kto zbroi obie strony", grupa:"Świat",
+    w:function(){ return !!(S.wiedza && S.wiedza.w_koniec); },
+    o:"Saletra, konie, proch, kolce, uprzęże i ludzie - wszystko skupuje jeden kupujący, płacąc srebrem czystszym niż mennica Nowożytnych i monetą, której nie zna żaden katalog. Wojna Ismaala z Nowożytnymi jest przy tym drobiazgiem, który zajmuje obu stronom oczy."});
+  WIEDZA.push({id:"nurt_zagrozenie", t:"Linia, wzdłuż której milknie wszystko", grupa:"Świat",
+    w:function(){ return !!(S.wiedza && S.wiedza.z_koniec); },
+    o:"Bagna milkną, grzyb nie rośnie, drewno nie próchnieje, woda spod grani wyschła, a z jej resztkami spada czarny żużel, który był kiedyś żywy. Wszystko to leży na jednej prostej biegnącej z północnego wschodu. Ci, którzy stamtąd wracają, mówią o czymś, co idzie na ostrze zamiast przed nim uciekać."});
+  WIEDZA.push({id:"nurt_artefakt", t:"Kamień barwy krwi", grupa:"Świat",
+    w:function(){ return !!(S.wiedza && S.wiedza.a_koniec); },
+    o:"Archiwum Ismaala odmawia odpowiedzi o Bramie, a odmowa jest odpowiedzią. Dziennik latarni zaczyna się od słowa <em>ponownie</em>. W misie z wodą widać łuk z kamienia i coś, co przez niego płynie. Na południe od Prastarego Ludu woda nie ma brzegu, ale ma dno - a więc ma i wyspę."});
+  WIEDZA.push({id:"nurt_pochodzenie", t:"Ten, co odszedł", grupa:"Świat",
+    w:function(){ return !!(S.wiedza && S.wiedza.p_koniec); },
+    o:"Ismaal nie przyszedł do puszczy - odszedł z niej. Wykreślony wers pieśni, rubryka <em>ród</em> w rejestrze chrztów, imię z dziewiątego piętra cmentarza odnawiane od trzystu lat i wyskrobane zdanie w kaplicy mówią to samo. A ty przyszedłeś z Ismaala, choć nie masz imienia, które by to potwierdziło."});
+})();
+
+/* ================= ZADANIA STOLIC =================
+   Miasto bez roboty to dekoracja. Każda stolica dostaje trzy zadania,
+   a wszystkie trzy prowadzą do tego samego pytania o wschód. --- */
+(function(){
+  var Z = [
+    /* [id, tytul, od, sceneDawcy, pelny, opis, cel, exp, zloto, rep, frakcja,
+        etykietaPrzyjecia, sceneOddania, etykietaOddania, warunekOddania] */
+    ["nw_skrzynie","Skrzynie, których nikt nie odbiera","Karczmarz Wojmił","nw_wojmil",
+     "<span class='mowa'>„Trzy tygodnie pod ścianą i nikt po nie nie przyszedł. Czwarty tydzień to straż, a straż w mojej izbie to koniec interesu.<br><br>Dowiedz się, czyje są. Nie otwieraj - dowiedz się.”</span>",
+     "Wojmił chce wiedzieć, czyje skrzynie stoją w jego izbie.",
+     "Wypytaj o skrzynie w Pałacu Giełdowym i wróć do Wojmiła.",
+     260,120,{nw:2},"Dowiem się, czyje są.","nw_milostryj_t0",
+     "Sekretarz sprawdził. Skrzynie są niczyje - i to jest wpisane.","nw_wojmil"],
+    ["nw_zaulki","To, co zostawiają pod mostami","Strażniczka Halina","nw_halina",
+     "<span class='mowa'>„Od miesiąca ktoś zostawia rzeczy w zaułkach. Nie kradnie - zostawia.<br><br>Wchodzimy tam po dwóch. Ty pójdziesz sam, bo ciebie nikt nie rozpozna.”</span>",
+     "Halina chce wiedzieć, kto zostawia rzeczy w zaułkach pod mostami.",
+     "Zejdź w zaułki pod mostami i wróć do Haliny.",
+     280,140,{nw:2},"Pójdę sam.","nw_halina",
+     "Byłem w zaułkach. Zostawiają tam monety, których nikt nie zna.","nw_halina"],
+    ["nw_karta","Karta, której nie ma na półce","Adept Wierzchosław","nw_wierzchoslaw",
+     "<span class='mowa'>„Widziałem ją raz. Rysunek bramy, i rektorka nazywa to zabobonem.<br><br>Ciebie nie wyrzuci z kolegium, bo do niego nie należysz. Zapytaj ją wprost.”</span>",
+     "Wierzchosław chce, żebyś zapytał rektorkę o zamkniętą kartę z rysunkiem bramy.",
+     "Zapytaj Rektorkę Dobrogniewę o kartę i wróć do adepta.",
+     300,90,{nw:1},"Zapytam ją wprost.","nw_dobrogniewa",
+     "Wierzchosław mówi o karcie z bramą. Co na niej jest?","nw_wierzchoslaw"],
+
+    ["sk_chorag","Pusty hak na ścianie","Ochmistrzyni Zofia","sk_zofia",
+     "<span class='mowa'>„Płótno pogrzebowe wzrosło czterokrotnie, a bitew nie przybyło. Chorągiew trzecia jest w naprawie od jedenastu miesięcy.<br><br>Nie mogę o to pytać. Ty możesz - jesteś nikim i nikt cię nie wpisze do drugiej księgi.”</span>",
+     "Zofia chce wiedzieć, co stało się z trzecią czarną chorągwią.",
+     "Wypytaj w koszarach chorągwianych i wróć do ochmistrzyni.",
+     320,150,{sk:2},"Zapytam za ciebie.","sk_miroslaw",
+     "Czwarty rząd prycz jest zasłany i pusty. Kto tam spał?","sk_zofia"],
+    ["sk_wers","Wers, który przestał być prawdziwy","Rosa","sk_rosa",
+     "<span class='mowa'>„Za jeden wers biją. Wers mówi, skąd przyszedł Ismaal, i przez trzysta lat nikomu nie przeszkadzał.<br><br>W Kaplicy Pierwszego jest tablica z wyskrobanym zdaniem. Chcę wiedzieć, czy to ten sam wers.”</span>",
+     "Rosa chce wiedzieć, czy wyskrobane zdanie z kaplicy to ten sam wers, za który dziś biją.",
+     "Obejrzyj tablicę w Kaplicy Pierwszego i wróć do Rosy.",
+     300,110,{sk:1},"Sprawdzę tę tablicę.","sk_przybyslaw_k",
+     "Co wyskrobano z tablicy? Powiedz mi wprost.","sk_rosa"],
+    ["sk_proch","Cztery beczki, które nie wróciły","Puszkarz Domarat Młodszy","sk_domarat_m",
+     "<span class='mowa'>„Sam pakowałem, sam liczyłem. Wrócił jeden pusty wóz ze śladami pazurów.<br><br>Praczka widziała, co przychodziło do prania. Zapytaj ją, zanim ktoś jej każe milczeć.”</span>",
+     "Domarat Młodszy chce potwierdzenia tego, co widział na wozie.",
+     "Wypytaj praczkę Dobrochnę i wróć do puszkarza.",
+     290,130,{sk:2},"Zapytam praczkę.","sk_dobrochna",
+     "Powiedz mi, co było na tym ostatnim transporcie.","sk_domarat_m"],
+
+    ["pl_zoledzie","Pięćdziesiąt jeden na sto","Nowicjuszka Kalinka","pl_kalinka",
+     "<span class='mowa'>„Osiemdziesiąt wschodziło trzy lata temu. Teraz pięćdziesiąt jeden. Ostromir kazał liczyć i milczeć.<br><br>Ja nie doczekam czterech lat. Powiedz to komuś, kto stoi przy kamieniu.”</span>",
+     "Kalinka chce, żeby starszyzna usłyszała o żołędziach, które przestają wschodzić.",
+     "Powtórz to Starszemu Borzysławowi i wróć do Kalinki.",
+     280,80,{pl:2},"Powiem to przy kamieniu.","pl_borzyslaw",
+     "Żołędzie przestają wschodzić. Wiesz o tym?","pl_kalinka"],
+    ["pl_zapadlisko","Miejsce, z którego nogi zawracają same","Zbieracz Wiech","pl_wiech",
+     "<span class='mowa'>„Za Rosicą jest zapadlisko, w którym od zimy nie rośnie nic. Nawet mech.<br><br>Trzy razy zawróciłem bez powodu, a nie jestem strachliwy. Powiedz to Starszej. Mnie nie wierzy.”</span>",
+     "Wiech chce, żeby Starsza usłyszała o zapadlisku za Rosicą.",
+     "Powtórz to Starszej Jarogniewie i wróć do Wiecha.",
+     300,90,{pl:2},"Powiem Starszej.","pl_starsza",
+     "Za Rosicą jest miejsce, z którego nogi zawracają same.","pl_wiech"],
+    ["pl_sokoly","Trzy z siedmiu","Wierzba","pl_wierzba",
+     "<span class='mowa'>„Z północy wracają trzy sokoły z siedmiu, bez obrączek i bez piór na skrzydle.<br><br>Coś strąca je w locie i nie robi tego łuk. Goniec wrócił stamtąd biegiem. Zapytaj go, zanim znów zaśnie.”</span>",
+     "Wierzba chce wiedzieć, co strąca sokoły nad północną granią.",
+     "Wypytaj gońca w Domu Ognia i wróć do sokolnicy.",
+     270,100,{pl:1},"Zapytam gońca.","pl_gosciec",
+     "Co widziałeś na północy? Sokoły stamtąd nie wracają.","pl_wierzba"],
+
+    ["od_kolce","Cztery tysiące kolców","Iskra","od_iskra",
+     "<span class='mowa'>„Wykuwałam je nocą, po sto na noc. Odbierał człowiek, który nie zdjął kaptura, i płacił monetą, której nikt tu nie zna.<br><br>Wdowa Sowa ma taką samą. Porównaj je.”</span>",
+     "Iskra chce, żebyś porównał monetę z zaliczki z tą, którą trzyma Wdowa Sowa.",
+     "Obejrzyj monetę u Wdowy Sowy i wróć do Iskry.",
+     310,140,{od:2},"Porównam je.","od_wdowa",
+     "Pokaż mi tę monetę. Iskra widziała taką samą.","od_iskra"],
+    ["od_woda","Woda, w którą nie ma gdzie patrzeć","Mistrzyni Wód Studnia","od_kropla_st",
+     "<span class='mowa'>„Od trzech miesięcy na północy nie mam gdzie patrzeć - cała woda tam wyschła.<br><br>Rybacy z Wiecznika widzą to samo od drugiej strony. Przynieś mi to, co mówią.”</span>",
+     "Studnia chce potwierdzenia z drugiej strony rzeki.",
+     "Wypytaj sieciarkę Ładę w Wieczniku i wróć do Cysterny.",
+     330,160,{od:2,pl:1},"Przyniosę.","pl_lada",
+     "Ryba ucieka z północy. Powiedz mi wszystko.","od_kropla_st"],
+    ["od_imiona","Sto siedem imion","Liczarz","od_liczarz",
+     "<span class='mowa'>„Sto siedem nowych imion w tym roku. Rok wcześniej dziewiętnaście.<br><br>Rylec żłobi trzecią kolumnę i zaraz zabraknie mu ściany. Zapytaj go, kto dyktuje te imiona.”</span>",
+     "Liczarz chce wiedzieć, kto zamawia wykucie imion na trzeciej kolumnie.",
+     "Wypytaj Rylca w Sali Kontraktów i wróć do Liczarza.",
+     290,120,{od:2},"Zapytam Rylca.","od_rylec",
+     "Kto dyktuje imiona do trzeciej kolumny?","od_liczarz"]
+  ];
+
+  Z.forEach(function(z){
+    var id=z[0];
+    ZADANIA[id] = {t:z[1], od:z[2], pelny:z[4], opis:z[5], cel:z[6],
+                   nagroda:{exp:z[7], zloto:z[8], rep:z[9]}};
+    /* przyjęcie u dawcy */
+    var dawca = SCENY[z[3]];
+    if(dawca && dawca.opcje)
+      dawca.opcje.splice(Math.max(0,dawca.opcje.length-1), 0,
+        {l:z[10], dajZ:id, warunekZ:{id:id, stan:"brak"}, idz:z[3]});
+    /* oddanie u drugiego rozmówcy */
+    var cel = SCENY[z[11]];
+    if(cel && cel.opcje)
+      cel.opcje.splice(Math.max(0,cel.opcje.length-1), 0,
+        {l:z[12], warunekZ:{id:id, stan:"aktywne"}, idz:z[11],
+         ef:(function(q){ return function(){ gotoweZadanie(q); }; })(id)});
+    /* rozliczenie u dawcy */
+    var kon = SCENY[z[13]];
+    if(kon && kon.opcje)
+      kon.opcje.splice(Math.max(0,kon.opcje.length-1), 0,
+        {l:"Mam to, o co prosiłeś.", oddajZ:id, warunekZ:{id:id, stan:"gotowe"}, idz:z[13]});
+  });
+})();
+
+/* ================= ZADANIA STOLIC =================
+   Miasto bez roboty to dekoracja. Każda stolica dostaje trzy zadania,
+   a wszystkie trzy prowadzą do tego samego pytania o wschód. --- */
+(function(){
+  var Z = [
+    /* [id, tytul, od, sceneDawcy, pelny, opis, cel, exp, zloto, rep, frakcja,
+        etykietaPrzyjecia, sceneOddania, etykietaOddania, warunekOddania] */
+    ["nw_skrzynie","Skrzynie, których nikt nie odbiera","Karczmarz Wojmił","nw_wojmil",
+     "<span class='mowa'>„Trzy tygodnie pod ścianą i nikt po nie nie przyszedł. Czwarty tydzień to straż, a straż w mojej izbie to koniec interesu.<br><br>Dowiedz się, czyje są. Nie otwieraj - dowiedz się.”</span>",
+     "Wojmił chce wiedzieć, czyje skrzynie stoją w jego izbie.",
+     "Wypytaj o skrzynie w Pałacu Giełdowym i wróć do Wojmiła.",
+     260,120,{nw:2},"Dowiem się, czyje są.","nw_milostryj_t0",
+     "Sekretarz sprawdził. Skrzynie są niczyje - i to jest wpisane.","nw_wojmil"],
+    ["nw_zaulki","To, co zostawiają pod mostami","Strażniczka Halina","nw_halina",
+     "<span class='mowa'>„Od miesiąca ktoś zostawia rzeczy w zaułkach. Nie kradnie - zostawia.<br><br>Wchodzimy tam po dwóch. Ty pójdziesz sam, bo ciebie nikt nie rozpozna.”</span>",
+     "Halina chce wiedzieć, kto zostawia rzeczy w zaułkach pod mostami.",
+     "Zejdź w zaułki pod mostami i wróć do Haliny.",
+     280,140,{nw:2},"Pójdę sam.","nw_halina",
+     "Byłem w zaułkach. Zostawiają tam monety, których nikt nie zna.","nw_halina"],
+    ["nw_karta","Karta, której nie ma na półce","Adept Wierzchosław","nw_wierzchoslaw",
+     "<span class='mowa'>„Widziałem ją raz. Rysunek bramy, i rektorka nazywa to zabobonem.<br><br>Ciebie nie wyrzuci z kolegium, bo do niego nie należysz. Zapytaj ją wprost.”</span>",
+     "Wierzchosław chce, żebyś zapytał rektorkę o zamkniętą kartę z rysunkiem bramy.",
+     "Zapytaj Rektorkę Dobrogniewę o kartę i wróć do adepta.",
+     300,90,{nw:1},"Zapytam ją wprost.","nw_dobrogniewa",
+     "Wierzchosław mówi o karcie z bramą. Co na niej jest?","nw_wierzchoslaw"],
+
+    ["sk_chorag","Pusty hak na ścianie","Ochmistrzyni Zofia","sk_zofia",
+     "<span class='mowa'>„Płótno pogrzebowe wzrosło czterokrotnie, a bitew nie przybyło. Chorągiew trzecia jest w naprawie od jedenastu miesięcy.<br><br>Nie mogę o to pytać. Ty możesz - jesteś nikim i nikt cię nie wpisze do drugiej księgi.”</span>",
+     "Zofia chce wiedzieć, co stało się z trzecią czarną chorągwią.",
+     "Wypytaj w koszarach chorągwianych i wróć do ochmistrzyni.",
+     320,150,{sk:2},"Zapytam za ciebie.","sk_miroslaw",
+     "Czwarty rząd prycz jest zasłany i pusty. Kto tam spał?","sk_zofia"],
+    ["sk_wers","Wers, który przestał być prawdziwy","Rosa","sk_rosa",
+     "<span class='mowa'>„Za jeden wers biją. Wers mówi, skąd przyszedł Ismaal, i przez trzysta lat nikomu nie przeszkadzał.<br><br>W Kaplicy Pierwszego jest tablica z wyskrobanym zdaniem. Chcę wiedzieć, czy to ten sam wers.”</span>",
+     "Rosa chce wiedzieć, czy wyskrobane zdanie z kaplicy to ten sam wers, za który dziś biją.",
+     "Obejrzyj tablicę w Kaplicy Pierwszego i wróć do Rosy.",
+     300,110,{sk:1},"Sprawdzę tę tablicę.","sk_przybyslaw_k",
+     "Co wyskrobano z tablicy? Powiedz mi wprost.","sk_rosa"],
+    ["sk_proch","Cztery beczki, które nie wróciły","Puszkarz Domarat Młodszy","sk_domarat_m",
+     "<span class='mowa'>„Sam pakowałem, sam liczyłem. Wrócił jeden pusty wóz ze śladami pazurów.<br><br>Praczka widziała, co przychodziło do prania. Zapytaj ją, zanim ktoś jej każe milczeć.”</span>",
+     "Domarat Młodszy chce potwierdzenia tego, co widział na wozie.",
+     "Wypytaj praczkę Dobrochnę i wróć do puszkarza.",
+     290,130,{sk:2},"Zapytam praczkę.","sk_dobrochna",
+     "Powiedz mi, co było na tym ostatnim transporcie.","sk_domarat_m"],
+
+    ["pl_zoledzie","Pięćdziesiąt jeden na sto","Nowicjuszka Kalinka","pl_kalinka",
+     "<span class='mowa'>„Osiemdziesiąt wschodziło trzy lata temu. Teraz pięćdziesiąt jeden. Ostromir kazał liczyć i milczeć.<br><br>Ja nie doczekam czterech lat. Powiedz to komuś, kto stoi przy kamieniu.”</span>",
+     "Kalinka chce, żeby starszyzna usłyszała o żołędziach, które przestają wschodzić.",
+     "Powtórz to Starszemu Borzysławowi i wróć do Kalinki.",
+     280,80,{pl:2},"Powiem to przy kamieniu.","pl_borzyslaw",
+     "Żołędzie przestają wschodzić. Wiesz o tym?","pl_kalinka"],
+    ["pl_zapadlisko","Miejsce, z którego nogi zawracają same","Zbieracz Wiech","pl_wiech",
+     "<span class='mowa'>„Za Rosicą jest zapadlisko, w którym od zimy nie rośnie nic. Nawet mech.<br><br>Trzy razy zawróciłem bez powodu, a nie jestem strachliwy. Powiedz to Starszej. Mnie nie wierzy.”</span>",
+     "Wiech chce, żeby Starsza usłyszała o zapadlisku za Rosicą.",
+     "Powtórz to Starszej Jarogniewie i wróć do Wiecha.",
+     300,90,{pl:2},"Powiem Starszej.","pl_starsza",
+     "Za Rosicą jest miejsce, z którego nogi zawracają same.","pl_wiech"],
+    ["pl_sokoly","Trzy z siedmiu","Wierzba","pl_wierzba",
+     "<span class='mowa'>„Z północy wracają trzy sokoły z siedmiu, bez obrączek i bez piór na skrzydle.<br><br>Coś strąca je w locie i nie robi tego łuk. Goniec wrócił stamtąd biegiem. Zapytaj go, zanim znów zaśnie.”</span>",
+     "Wierzba chce wiedzieć, co strąca sokoły nad północną granią.",
+     "Wypytaj gońca w Domu Ognia i wróć do sokolnicy.",
+     270,100,{pl:1},"Zapytam gońca.","pl_gosciec",
+     "Co widziałeś na północy? Sokoły stamtąd nie wracają.","pl_wierzba"],
+
+    ["od_kolce","Cztery tysiące kolców","Iskra","od_iskra",
+     "<span class='mowa'>„Wykuwałam je nocą, po sto na noc. Odbierał człowiek, który nie zdjął kaptura, i płacił monetą, której nikt tu nie zna.<br><br>Wdowa Sowa ma taką samą. Porównaj je.”</span>",
+     "Iskra chce, żebyś porównał monetę z zaliczki z tą, którą trzyma Wdowa Sowa.",
+     "Obejrzyj monetę u Wdowy Sowy i wróć do Iskry.",
+     310,140,{od:2},"Porównam je.","od_wdowa",
+     "Pokaż mi tę monetę. Iskra widziała taką samą.","od_iskra"],
+    ["od_woda","Woda, w którą nie ma gdzie patrzeć","Mistrzyni Wód Studnia","od_kropla_st",
+     "<span class='mowa'>„Od trzech miesięcy na północy nie mam gdzie patrzeć - cała woda tam wyschła.<br><br>Rybacy z Wiecznika widzą to samo od drugiej strony. Przynieś mi to, co mówią.”</span>",
+     "Studnia chce potwierdzenia z drugiej strony rzeki.",
+     "Wypytaj sieciarkę Ładę w Wieczniku i wróć do Cysterny.",
+     330,160,{od:2,pl:1},"Przyniosę.","pl_lada",
+     "Ryba ucieka z północy. Powiedz mi wszystko.","od_kropla_st"],
+    ["od_imiona","Sto siedem imion","Liczarz","od_liczarz",
+     "<span class='mowa'>„Sto siedem nowych imion w tym roku. Rok wcześniej dziewiętnaście.<br><br>Rylec żłobi trzecią kolumnę i zaraz zabraknie mu ściany. Zapytaj go, kto dyktuje te imiona.”</span>",
+     "Liczarz chce wiedzieć, kto zamawia wykucie imion na trzeciej kolumnie.",
+     "Wypytaj Rylca w Sali Kontraktów i wróć do Liczarza.",
+     290,120,{od:2},"Zapytam Rylca.","od_rylec",
+     "Kto dyktuje imiona do trzeciej kolumny?","od_liczarz"]
+  ];
+
+  Z.forEach(function(z){
+    var id=z[0];
+    ZADANIA[id] = {t:z[1], od:z[2], pelny:z[4], opis:z[5], cel:z[6],
+                   nagroda:{exp:z[7], zloto:z[8], rep:z[9]}};
+    /* przyjęcie u dawcy */
+    var dawca = SCENY[z[3]];
+    if(dawca && dawca.opcje)
+      dawca.opcje.splice(Math.max(0,dawca.opcje.length-1), 0,
+        {l:z[10], dajZ:id, warunekZ:{id:id, stan:"brak"}, idz:z[3]});
+    /* oddanie u drugiego rozmówcy */
+    var cel = SCENY[z[11]];
+    if(cel && cel.opcje)
+      cel.opcje.splice(Math.max(0,cel.opcje.length-1), 0,
+        {l:z[12], warunekZ:{id:id, stan:"aktywne"}, idz:z[11],
+         ef:(function(q){ return function(){ gotoweZadanie(q); }; })(id)});
+    /* rozliczenie u dawcy */
+    var kon = SCENY[z[13]];
+    if(kon && kon.opcje)
+      kon.opcje.splice(Math.max(0,kon.opcje.length-1), 0,
+        {l:"Mam to, o co prosiłeś.", oddajZ:id, warunekZ:{id:id, stan:"gotowe"}, idz:z[13]});
+  });
+})();
+
+/* ================= STOLICE: WNĘTRZA I LUDZIE =================
+   Stolica ma być miastem, nie przystankiem. Każda dostaje sześć budynków,
+   do których się wchodzi, i kilkunastu ludzi, z których każdy coś wie. --- */
+(function(){
+
+  /* --- narzędzia: budowanie postaci i wnętrz bez powtarzania szablonu --- */
+  function osoba(spec){
+    /* spec: [id, imie, nieznany, rola, portret, mowa, [[etykieta, odpowiedz], ...]] */
+    var id = spec[0], imie = spec[1], nieznany = spec[2], rola = spec[3],
+        portret = spec[4], mowa = spec[5], tematy = spec[6] || [];
+    var opcje = [];
+    tematy.forEach(function(t, i){
+      var pod = id + "_t" + i;
+      SCENY[pod] = {portret:portret, kto:imie, npc:id,
+        tekst:"<span class='mowa'>" + t[1] + "</span>",
+        opcje:[{l:t[2] || "Zapamiętam.", idz:id}]};
+      opcje.push({l:t[0], idz:pod, raz:true});
+    });
+    opcje.push({l:spec[7] || "Bywaj.", idz:"__wyjscie"});
+    SCENY[id] = {portret:portret, kto:imie, npc:id,
+      ktoNieznany:nieznany,
+      tekst:"<span class='mowa'>" + mowa + "</span>",
+      opcje:opcje};
+    return {n:imie, id:id, nieznany:nieznany, rola:rola, scena:id, portret:portret};
+  }
+
+  function wnetrze(spec){
+    /* spec: {id, n, region, opis, wraca, ludzie:[...], miejsca:[...]} */
+    var post = spec.ludzie.map(osoba);
+    post.forEach(function(p){
+      /* wyjście z rozmowy prowadzi z powrotem do wnętrza */
+      SCENY[p.scena].opcje.forEach(function(o){ if(o.idz === "__wyjscie") o.idz = "__lok_" + spec.id; });
+      spec.ludzie.forEach(function(sp){
+        (sp[6]||[]).forEach(function(t, i){
+          var pod = sp[0] + "_t" + i;
+          if(SCENY[pod]) SCENY[pod].opcje.forEach(function(o){ if(o.idz === "__wyjscie") o.idz = sp[0]; });
+        });
+      });
+    });
+    LOKACJE[spec.id] = {
+      n: spec.n, region: spec.region, opis: spec.opis,
+      postacie: post,
+      miejsca: spec.miejsca || [],
+      drogi: [{n:"Wyjdź na ulicę", lok:spec.wraca, min:0}]
+    };
+    return {n: spec.wejscie, lok: spec.id, min:0};
+  }
+
+  function ulica(lokId, ludzie){
+    var L = LOKACJE[lokId];
+    ludzie.map(osoba).forEach(function(p){
+      SCENY[p.scena].opcje.forEach(function(o){ if(o.idz === "__wyjscie") o.idz = "__lok_" + lokId; });
+      L.postacie.push(p);
+    });
+  }
+
+  function budynki(lokId, lista){
+    var L = LOKACJE[lokId];
+    L.miejsca = L.miejsca || [];
+    lista.forEach(function(b){ L.miejsca.push(b); });
+  }
+
+  /* ============ NOWY OSTRÓW - stolica Nowożytnych ============ */
+  ulica("nowy_ostrow", [
+    ["nw_milesa","Poborczyni Milesa","Kobieta ze skrzynką na rzemieniu","poborczyni wjazdowa","kobieta",
+     "„Wchodzisz pieszo, więc płacisz najmniej. Za wóz brałabym dwadzieścia, za konia osiem, za ciebie dwa.”",
+     [["Dwa złote za wejście do miasta?","„Za wejście nic. Dwa złote za to, że przez ciebie ktoś będzie musiał posprzątać ulicę.<br><br>Tak to jest zapisane w taryfie i nikt tego nie czytał od dwunastu lat.”","Zapłacę."],
+      ["Kto ustala tę taryfę?","„Giełda. To znaczy Bożydar, to znaczy ci, którzy siedzą przy końcu jego stołu.<br><br>Ja tylko zbieram i oddaję co do grosza. Sprawdzają.”","Rozumiem."]]],
+    ["nw_ninomysl","Tragarz Ninomysł","Człowiek z odciskiem od pasa na barku","tragarz","kowal",
+     "„Dwanaście lat noszę cudze skrzynie i wiem o tym mieście więcej niż syndyk. Tylko mnie nikt nie pyta.”",
+     [["To pytam. Co wiozą przez Ostrów?","„Sól z zachodu, choć zachód nam wojnę wypowiedział. Żelazo z Kuźnic. I skrzynie, których nie wolno przechylać, a które nie brzęczą.<br><br>Nie brzęczą, bo w środku jest coś przełożonego słomą. Nie pytałem czym.”","Ciekawe."],
+      ["Bolą cię te plecy?","„Bolą od dziewiątego roku. Cech tragarski płaci za to trzy złote miesięcznie i nazywa to zapomogą.<br><br>Wystarcza na wódkę, a wódka wystarcza na plecy. Wszystko się zgadza.”","Trzymaj się."]]],
+    ["nw_dobieslaw","Skryba Dobiesław","Człowiek z przenośnym pulpitem","pisarz uliczny","urzednik",
+     "„Piszę listy dla tych, co nie umieją. Grosz za linijkę, dwa za kłamstwo.”",
+     [["Dlaczego kłamstwo drożej?","„Bo trzeba je wymyślić i zapamiętać. Prawdę wystarczy przepisać.<br><br>Połowa listów, które piszę, idzie na wojnę do ludzi, którzy już nie żyją. Za to nie biorę.”","Uczciwie."],
+      ["Napisz coś dla mnie.","„Do kogo? Nie masz nikogo - widzę to po tym, jak stoisz.<br><br>Wróć, jak będziesz miał komu. Wtedy napiszę za darmo, bo pierwszy list zawsze piszę za darmo.”","Wrócę."]]],
+    ["nw_tomil","Zbieg Tomił","Człowiek w za dużym płaszczu","zbieg z Ismaala","weteran",
+     "„Nie patrz tak. Uciekłem i nie wstydzę się tego. Wstydziłbym się, gdybym został.”",
+     [["Przed czym uciekłeś?","„Przed trzecią czarną chorągwią. Wcielają do niej tych, co nie mają rodziny, bo po takich nikt nie pyta.<br><br>Wciągnęli mnie na listę w marcu. W kwietniu przeszedłem przez góry.”","Rozumiem."],
+      ["Nowożytni cię przyjęli?","„Wpisali. To nie to samo, ale wystarczy. Tu nie pytają, czyim jesteś synem - pytają, co umiesz i za ile.<br><br>Umiem kuć. Nie pytali o nic więcej.”","Powodzenia."]]]
+  ]);
+  budynki("nowy_ostrow", [
+    wnetrze({id:"ostrow_karczma", wejscie:"Wejdź do karczmy Pod Trzema Mostami", wraca:"nowy_ostrow",
+      n:"Pod Trzema Mostami", region:"karczma w Nowym Ostrowie",
+      opis:"Nisko, ciepło i głośno. Pod ścianą stoją skrzynie, których nikt nie odbiera, a przy każdej siedzi ktoś, kto twierdzi, że pilnuje.",
+      ludzie:[
+       ["nw_wojmil","Karczmarz Wojmił","Człowiek z ręcznikiem na ramieniu","karczmarz","kowal",
+        "„Piwo, polewka, izba na górze. Trzecie najdroższe, bo najciszej.”",
+        [["Kto tu przychodzi?","„Tragarze przed świtem, pisarze po południu, giełdziarze po zmroku. Trzy różne miasta w jednej izbie.<br><br>Nie mieszają się. Jedyne, co ich łączy, to że wszyscy płacą z góry.”","Rozsądnie."],
+         ["Co jest w tych skrzyniach?","„Nie moje, nie wiem, nie pytam i tobie też nie radzę.<br><br>Stoją tu od trzech tygodni. Kiedy stoją cztery, wysyłam po straż. Taka umowa.”","Nie pytam."]]],
+       ["nw_lubka","Szulerka Lubka","Kobieta tasująca coś pod stołem","szulerka","kobieta",
+        "„Siadaj albo idź, tylko nie stój nade mną. Zasłaniasz światło, a ja przy złym świetle przegrywam.”",
+        [["Ty przegrywasz?","„Przegrywam dokładnie tyle, żeby przychodzili drugi raz. To jest cała sztuka i nie jest to sztuka o kartach.<br><br>W tym mieście wszyscy tak robią. Ja tylko robię to szybciej.”","Ładnie."],
+         ["Co się mówi przy stole?","„Że giełda pożyczyła obu stronom wojny i obie strony mają jej oddać. Że wygra ta, która przegra wolniej.<br><br>I że ktoś skupuje stare mapy. Płaci głupio dużo za takie, na których jest morze na południu.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"ostrow_palac", wejscie:"Wejdź do Pałacu Giełdowego", wraca:"nowy_ostrow",
+      n:"Pałac Giełdowy", region:"siedziba władzy Nowożytnych",
+      opis:"Sala bez tronu. Zamiast tronu jest stół długi na trzydzieści kroków, a przy nim krzesła ponumerowane od jednego do czterdziestu ośmiu. Zajętych jest dziewięć.",
+      ludzie:[
+       ["nw_zbigniew","Wielki Syndyk Zbigniew","Starzec przy krześle numer jeden","wielki syndyk","urzednik",
+        "„Krzesło pierwsze. Nie dlatego, że najważniejsze - dlatego, że najbliżej drzwi. Kto siedzi przy drzwiach, ten wychodzi pierwszy.”",
+        [["Kto rządzi Nowożytnymi?","„Czterdziestu ośmiu. Dziewięciu przychodzi, trzech czyta, jeden decyduje.<br><br>Nie powiem ci który. Sam nie jestem pewien i to jest w tym najlepsze.”","Sprytne."],
+         ["Wojna z Ismaalem - opłaca się wam?","„Wojna nie opłaca się nikomu. Opłaca się długi czas przed nią i długi czas po niej.<br><br>My jesteśmy dobrzy w obu. Dlatego nie spieszymy się ani z wygraną, ani z przegraną.”","Zimno to brzmi."],
+         ["Co wiecie o wschodzie?","„Że przestały stamtąd wracać rachunki. Nie ludzie - rachunki.<br><br>Człowiek może zdezerterować. Rachunek nie ma dokąd. Jeżeli rachunek nie wraca, to znaczy, że nie ma komu go przywieźć.”","To niepokojące."]]],
+       ["nw_milostryj","Sekretarz Miłostryj","Człowiek z czterema piórami za uchem","sekretarz giełdy","urzednik",
+        "„Mów wolno. Zapisuję wszystko, także to, czego nie chciałeś powiedzieć.”",
+        [["Wszystko trafia do ksiąg?","„Wszystko. Twoje imię też, gdybyś je miał.<br><br>Nie masz, więc wpisałem: mężczyzna, bez barw, wszedł od południa. Trzy słowa i już istniejesz w rejestrze.”","Wolałbym nie istnieć."],
+         ["Co robicie z tymi księgami?","„Nic. Leżą. W tym cały sens - nikt ich nie czyta, dopóki ktoś nie potrzebuje, żeby ktoś inny miał kłopoty.<br><br>Wtedy okazuje się, że wszystko jest zapisane.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"ostrow_kolegium", wejscie:"Wejdź do Kolegium Ognia", wraca:"nowy_ostrow",
+      n:"Kolegium Ognia", region:"szkoła magów Nowożytnych",
+      opis:"Sala wykładowa z osmalonym sufitem i podłogą wyłożoną kamieniem. Pod ścianą stoją wiadra z piaskiem, ustawione co pięć kroków.",
+      ludzie:[
+       ["nw_dobrogniewa","Rektorka Dobrogniewa","Kobieta z opalonymi brwiami","rektorka kolegium","kobieta",
+        "„Wiadra są co pięć kroków, bo tyle wynosi zasięg pomyłki nowicjusza. Zmierzyliśmy to na siedmiu nowicjuszach.”",
+        [["Czego uczycie?","„Powtarzalności. Ognia nie uczymy - ogień każdy potrafi wywołać raz.<br><br>My uczymy, jak wywołać go dwa razy tak samo i przeżyć oba.”","Rozsądnie."],
+         ["Cech płaci za tę szkołę?","„Cech płaci i cech odbiera. Każdy, kto tu skończy, ma siedem lat służby w kontraktach giełdy.<br><br>Nazywają to stypendium. Ja to nazywam tak, jak się nazywa.”","Wiem, jak się nazywa."]]],
+       ["nw_wierzchoslaw","Adept Wierzchosław","Chłopak z zabandażowaną dłonią","adept ognia","urzednik",
+        "„Trzeci rok. Dłoń z drugiego. Nie pytaj, bo opowiem, a nie chcesz tego słuchać przed jedzeniem.”",
+        [["Warto było?","„Nie wiem. Zapytaj mnie za cztery lata, jak skończę służbę.<br><br>Wtedy będę wiedział, czy siedem lat cudzych kontraktów jest warte jednej dłoni.”","Powodzenia."],
+         ["Co czytacie o Ziemiach Nieznanych?","„Nic. To znaczy jest jedna karta, ale rektorka trzyma ją zamkniętą i mówi, że to zabobon.<br><br>Widziałem ją raz. Nie było na niej zabobonu. Był rysunek bramy.”","Bramy?"]]]
+      ]}),
+    wnetrze({id:"ostrow_klasztor", wejscie:"Wejdź do Klasztoru Rachuby", wraca:"nowy_ostrow",
+      n:"Klasztor Rachuby", region:"zakon liczących",
+      opis:"Cele bez okien, w każdej pulpit i liczydło. Bracia nie modlą się głosem - liczą, a liczenie u nich jest modlitwą.",
+      ludzie:[
+       ["nw_cichoslaw","Przeor Cichosław","Starzec z liczydłem na kolanach","przeor","urzednik",
+        "„U nas nie ma boga. Jest równanie, które musi się zgadzać, i wiara, że kiedyś się zgodzi.”",
+        [["Co liczycie?","„Wszystko, co da się policzyć, i to od trzystu lat. Urodzenia, śmierci, zbiory, pożary.<br><br>Od dziewięciu lat kolumna śmierci rośnie szybciej niż kolumna urodzeń. Po raz pierwszy w całym rejestrze.”","To wojna."],
+         ["I co z tego wynika?","„Że jeżeli tak zostanie, za sto czterdzieści lat nie będzie kogo liczyć.<br><br>Powiedziałem to giełdzie. Odpowiedzieli, że sto czterdzieści lat to nie jest termin, który ich obowiązuje.”","Trudno się z tym kłócić."]]],
+       ["nw_godzisz","Brat Godzisz","Zakonnik z atramentem na palcach","brat rachmistrz","urzednik",
+        "„Cicho. Zgubię linijkę i będę liczył ten rok od początku.”",
+        [["Co to za rok?","„Tysiąc czterdziesty trzeci od Zamknięcia Bram. Liczę go od jesieni i wciąż mi się nie zgadza o dwieście czterdzieści.<br><br>Dwieście czterdzieści ludzi, których nie ma ani wśród żywych, ani wśród zmarłych. Poszli na wschód.”","Na wschód."],
+         ["Skąd nazwa - Zamknięcie Bram?","„Nie wiadomo. Rachuba zaczyna się od tego wydarzenia i nikt nie zapisał, czym ono było.<br><br>Trzysta lat liczymy od czegoś, o czym nie mamy jednej linijki. To mnie budzi w nocy.”","Mnie też."]]]
+      ]}),
+    wnetrze({id:"ostrow_koszary", wejscie:"Wejdź do koszar straży miejskiej", wraca:"nowy_ostrow",
+      n:"Koszary Straży", region:"straż miejska Nowego Ostrowa",
+      opis:"Podwórzec z ubitej gliny. Na stojaku wiszą kaftany z numerami zamiast herbów - straż w tym mieście też jest pozycją w rachunku.",
+      ludzie:[
+       ["nw_bogumil","Setnik Bogumił","Człowiek liczący kaftany","setnik straży","weteran",
+        "„Sto kaftanów, siedemdziesięciu ludzi. Trzydzieści wisi, bo giełda płaci za kaftany, nie za ludzi.”",
+        [["Kogo pilnujecie?","„Kramów, mostów i skrzyń. Ludzi pilnujemy przy okazji, jeśli akurat stoją obok czegoś wartościowego.<br><br>Tak to jest zapisane w kontrakcie. Czytałem, zanim podpisałem.”","Szczerze."],
+         ["Kradzieże w mieście?","„Codziennie. Łapiemy co dziesiątego i to nam wystarcza, bo za każdego złapanego jest premia, a za każdego niezłapanego nie ma kary.<br><br>Kontrakt jest zły. Ale to nie ja go pisałem.”","Rozumiem."]]],
+       ["nw_halina","Strażniczka Halina","Kobieta z drzewcem opartym o ramię","strażniczka","kobieta",
+        "„Stój, gdzie stoisz. Nie dlatego, że coś zrobiłeś - dlatego, że tak mam mówić do każdego bez barw.”",
+        [["A gdybym miał barwy?","„Wtedy mówiłabym to samo, tylko ciszej. Czerwonym z Ismaala mówię przez zaciśnięte zęby, bo mam brata pod Kruczynem.<br><br>Nie wiem, czy żyje. Wiem, że tam poszedł.”","Przykro mi."],
+         ["Co się dzieje w nocy?","„Zaułki pod mostami. Wchodzimy tam po dwóch, nigdy po jednym, i wychodzimy zawsze po dwóch.<br><br>Od miesiąca ktoś zostawia tam rzeczy. Nie kradnie - zostawia. To gorsze.”","Sprawdzę to."]]]
+      ]}),
+    wnetrze({id:"ostrow_kramy", wejscie:"Wejdź w Rząd Kramów", wraca:"nowy_ostrow",
+      n:"Rząd Kramów", region:"targ Nowego Ostrowa",
+      opis:"Sto kroków dachu na słupach i pod nim wszystko, co da się sprzedać. Ceny wywieszone, a pod każdą ceną druga, mniejsza - dla wpisanych do ksiąg.",
+      ludzie:[
+       ["nw_sulimir","Kupiec Sulimir","Człowiek stojący za dwiema cenami","kupiec kramowy","urzednik",
+        "„Górna cena dla ciebie, dolna dla wpisanych. Nie obrażaj się - sam byłem kiedyś górną ceną.”",
+        [["Jak się wpisać?","„Podpisem u Sędziwoja w kontorze albo służbą u kogoś, kto już jest wpisany.<br><br>Pierwsze jest szybsze, drugie tańsze. Trzeciej drogi nie ma i nie szukaj.”","Zapamiętam."],
+         ["Skąd bierzesz towar?","„Zewsząd, także stamtąd, skąd nie wolno. Sól ismaalska idzie przez Jarmark i przez ludzi, którzy nie mają barw.<br><br>Giełda o tym wie i pobiera od tego cło. Nazywają to opłatą za szczególne trudności.”","Oczywiście."]]],
+       ["nw_dobroniega_ml","Płatnerka Dobroniega","Kobieta klepiąca blachę na kolanie","płatnerka","kobieta",
+        "„Naprawiam, nie robię. Nowe robią w Kuźnicach, a tam nie wpuszczają nikogo bez wpisu.”",
+        [["Dlaczego nie robisz nowych?","„Bo cech płatnerski wykupił prawo do nowych i sprzedał je Kuźnicom. Ja mam prawo do naprawiania i do niczego więcej.<br><br>Robię więc najlepsze naprawy w mieście. Czasem z naprawy zostaje nowa rzecz, ale wtedy nazywam ją naprawą.”","Sprytnie."],
+         ["Widzisz, w czym ludzie wracają?","„Widzę i wolałabym nie. Ostatnio przynieśli mi napierśnik z dziurą, której nie zrobiła broń.<br><br>Brzegi były stopione i wygięte do środka. Do środka, rozumiesz. Coś wchodziło, nie wychodziło.”","Zachowaj go."]]]
+      ]})
+  ]);
+
+  /* ============ CZERWIEŃ WYSOKA - stolica Ismaala ============ */
+  ulica("czerwien_wysoka", [
+    ["sk_wojciech","Odźwierny Wojciech","Człowiek z laską okutą na czerwono","odźwierny bramy górnej","weteran",
+     "„Do góry nie wejdziesz. Do góry wchodzą ci, których ojcowie tam wchodzili.”",
+     [["A ja?","„A ty wejdziesz tam, dokąd cię wpuszczą, czyli na dół i na bok.<br><br>Nie mam nic do ciebie. Mam rozkaz i laskę. Laska jest starsza ode mnie i od rozkazu.”","Rozumiem."],
+      ["Kiedy ostatnio kogoś wpuściłeś?","„Cztery lata temu. Posła Nowożytnych, i to na kolanach, i to nie do końca.<br><br>Wyszedł po godzinie bez czapki. Czapkę zatrzymali.”","Ładny zwyczaj."]]],
+    ["sk_dobrochna","Praczka Dobrochna","Kobieta z rękami czerwonymi od ługu","praczka garnizonowa","kobieta",
+     "„Piorę dla trzeciej chorągwi. To znaczy prałam, bo trzecia chorągiew nie przysyła już nic do prania.”",
+     [["Od kiedy nie przysyła?","„Od jesieni. Wcześniej co tydzień szedł wóz z płótnem, teraz nic.<br><br>Pytałam intendenta. Powiedział, że trzecia chorągiew pierze sobie sama. Chorągiew nie pierze sobie sama. Nigdy.”","To dziwne."],
+      ["Widziałaś, co przychodziło?","„Widziałam. Ostatni transport miał krew na wszystkim, ale nie w tych miejscach, gdzie zwykle.<br><br>Krew była na plecach i na podeszwach. Ludzie uciekali i coś ich brało od tyłu.”","Zapamiętam to."]]],
+    ["sk_bartosz","Kaleka Bartosz","Człowiek o jednej ręce siedzący pod murem","weteran spod Kruczyna","weteran",
+     "„Nie żebrzę. Siedzę. Za siedzenie nikt nie płaci i to mi odpowiada.”",
+     [["Straciłeś ją pod Kruczynem?","„Straciłem ją trzy dni po Kruczynie, u felczera, który nie umiał czyścić ran.<br><br>Bitwę przeżyłem. Leczenie nie.”","Marnie."],
+      ["Za co się bijecie z Nowożytnymi?","„Nam mówią, że o wiarę. Im mówią, że o cło. Obie strony kłamią i obie strony w to wierzą.<br><br>Bijemy się o to, że dziewięć lat temu ktoś się nie ukłonił i nikt już nie pamięta który.”","Głupio."]]],
+    ["sk_zbyszka","Zbyszka Kołodziejówna","Dziewczyna z naręczem szprych","kołodziejka","kobieta",
+     "„Ojciec robił koła. Ojca wzięli do wojska. Teraz ja robię koła i nikt nie ma z tym problemu, dopóki koła się kręcą.”",
+     [["Wzięli go siłą?","„Wzięli go z chorągwią, muzyką i przemową kasztelana o urodzeniu.<br><br>Ojciec urodził się kołodziejem. Kasztelan mówił, że urodził się rycerzem. Ojciec nie umiał zaprzeczyć kasztelanowi.”","Rozumiem."],
+      ["Dokąd idą twoje koła?","„Na wozy, wozy na wschód, a co dalej, tego mi nie mówią.<br><br>Wiem tylko, że wozy nie wracają, a zamówienia rosną. Robię teraz dwa razy więcej kół niż przed rokiem.”","Dwa razy więcej."]]]
+  ]);
+  budynki("czerwien_wysoka", [
+    wnetrze({id:"czerwien_karczma", wejscie:"Zejdź do gospody Pod Czerwoną Ścianą", wraca:"czerwien_wysoka",
+      n:"Pod Czerwoną Ścianą", region:"gospoda w Czerwieni Wysokiej",
+      opis:"Izba wykuta w skale, bez okien. Ogień pali się na środku, a dym wychodzi szczeliną, którą ktoś wykuł trzysta lat temu i od tamtej pory nikt nie poprawiał.",
+      ludzie:[
+       ["sk_gniewosz","Gospodarz Gniewosz","Człowiek z blizną przez brew","gospodarz","kowal",
+        "„Wino albo piwo. Wina nie polecam, piwa nie chwalę. Wybieraj.”",
+        [["Kto tu pije?","„Chorążowie z dołu, nigdy z góry. Ci z góry mają własne piwnice i własne powody, żeby pić osobno.<br><br>Tu się pije, żeby zapomnieć rozkaz. Tam się pije, żeby go wymyślić.”","Rozumiem."],
+         ["Co mówią o wojnie?","„Że idzie źle i że nie wolno tego mówić. Więc mówią to szeptem, a szeptem mówi się głośniej niż głosem.<br><br>Trzecia chorągiew. Ciągle wraca to samo słowo i za każdym razem ktoś zmienia temat.”","Trzecia chorągiew."]]],
+       ["sk_rosa","Rosa","Kobieta grzejąca dłonie nad ogniem","śpiewaczka","kobieta",
+        "„Śpiewam za jedzenie i za to, żeby móc siedzieć przy ogniu. Drugie jest ważniejsze.”",
+        [["Zaśpiewasz coś?","„Nie tobie i nie tutaj. Śpiewam pieśń o pierwszym Ismaalu, a od pół roku za tę pieśń biją.<br><br>Bo jest w niej wers o tym, skąd przyszedł. Ktoś w górze uznał, że ten wers przestał być prawdziwy.”","Co to za wers?"],
+         ["Skąd przyszedł Ismaal?","„Z lasu. Tak było w pieśni przez trzysta lat i nikomu to nie przeszkadzało.<br><br>Teraz przeszkadza. Nie pytaj mnie dlaczego - ja tylko pamiętam melodię.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"czerwien_palac", wejscie:"Wejdź na dziedziniec kasztelański", wraca:"czerwien_wysoka",
+      n:"Dziedziniec Kasztelański", region:"siedziba władzy Ismaala",
+      opis:"Dziedziniec bez ozdób. Na ścianach wiszą chorągwie, jedna obok drugiej, a między drugą a czwartą jest pusty hak.",
+      ludzie:[
+       ["sk_wieslaw","Marszałek Dworu Wiesław","Człowiek stojący dokładnie pod pustym hakiem","marszałek dworu","urzednik",
+        "„Nie patrz na hak. Wszyscy patrzą na hak i wszystkim mówię to samo: chorągiew jest w naprawie.”",
+        [["Od jak dawna w naprawie?","„Od jedenastu miesięcy. Nikt nie pyta drugi raz, bo drugie pytanie zapisuje się w innej księdze niż pierwsze.<br><br>Pytasz pierwszy raz. Radzę na tym poprzestać.”","Poprzestanę."],
+         ["Kto rządzi w Czerwieni?","„Król, którego nikt nie widział od czterech lat, i kasztelan, którego widuje się codziennie.<br><br>Z tego wyciągnij wniosek sam. Ja go nie wyciągnę przy świadkach.”","Wyciągnąłem."]]],
+       ["sk_zofia","Ochmistrzyni Zofia","Kobieta z pękiem kluczy u pasa","ochmistrzyni","kobieta",
+        "„Klucze do wszystkiego poza tym, co ważne. Tak to urządzili i nie skarżę się.”",
+        [["Ile osób tu mieszka?","„Sto czterdzieści, z czego dziewięćdziesiąt służy, czterdzieści pilnuje, a dziesięć rządzi.<br><br>Tych dziesięciu je osobno i nie zna imion pozostałych stu trzydziestu. Ja znam wszystkie.”","Przydatne."],
+         ["Co się zmieniło w ostatnim roku?","„Zamówienia na płótno pogrzebowe. Wzrosły czterokrotnie, a bitew nie było więcej.<br><br>Zapytałam intendenta. Powiedział, że robimy zapas. Płótna pogrzebowego się nie robi na zapas.”","Nie robi się."]]]
+      ]}),
+    wnetrze({id:"czerwien_magowie", wejscie:"Wejdź do Wieży Żaru", wraca:"czerwien_wysoka",
+      n:"Wieża Żaru", region:"siedziba magów ognia Ismaala",
+      opis:"Okrągła sala z paleniskiem w podłodze. Ognia nikt nie dokłada i ogień nie gaśnie - to pierwsza rzecz, którą tu pokazują, i ostatnia, którą tłumaczą.",
+      ludzie:[
+       ["sk_wszebor_m","Mistrz Ognia Wszebor","Człowiek stojący boso na gorącym kamieniu","mistrz ognia","urzednik",
+        "„Stoję tu od rana. Nie dla popisu - dla pamięci. Kamień pamięta lepiej niż ja.”",
+        [["Dlaczego ten ogień nie gaśnie?","„Bo ktoś go przekonał trzysta lat temu i nikt od tamtej pory nie znalazł argumentu przeciw.<br><br>Nie wiemy kto. Wiemy, że po nim została jedna reguła: nie kreśl run na ludziach.”","Kreślono je?"],
+         ["Ismaal był magiem?","„Ismaal był kimś, kto potrafił przekonać ogień, żeby palił jednych, a drugich nie.<br><br>To nie jest magia ognia. To jest coś, czego u nas nie uczymy i o czym w tej wieży nie wolno mówić głośno.”","Zapamiętam."]]],
+       ["sk_lubomira","Adeptka Lubomira","Dziewczyna z osmaloną warkoczą","adeptka ognia","kobieta",
+        "„Trzeci rok i pierwsza, która została z siedmiu. Sześć odeszło, nie sześć zginęło. To ważna różnica.”",
+        [["Dlaczego odeszły?","„Bo tu się uczy palić, a nie leczyć, i po roku każdy to rozumie.<br><br>Ja zostałam, bo nie mam dokąd wrócić. To zła przyczyna, ale wystarczająca.”","Powodzenia."],
+         ["Co czytasz?","„Traktat o znakach, tom drugi. Tomu trzeciego nie ma w bibliotece i nikt nie umie powiedzieć, gdzie jest.<br><br>W spisie jest. Na półce nie ma. W spisie stoi przy nim jedno słowo: wypożyczony.”","Komu?"]]]
+      ]}),
+    wnetrze({id:"czerwien_klasztor", wejscie:"Wejdź do Kaplicy Pierwszego", wraca:"czerwien_wysoka",
+      n:"Kaplica Pierwszego", region:"świątynia Ismaala",
+      opis:"Nawa bez ołtarza. Zamiast ołtarza stoi kamień polny, nieobrobiony, a nad nim wisi tablica z wyskrobanym fragmentem.",
+      ludzie:[
+       ["sk_przybyslaw_k","Kapłan Przybysław","Człowiek klęczący przed polnym kamieniem","kapłan","urzednik",
+        "„Kamień jest z pola, nie z kamieniołomu. Pierwszy tak kazał i nikt nie ośmielił się poprawić.”",
+        [["Co wyskrobano z tablicy?","„Jedno zdanie. Skrobano je siedemdziesiąt lat temu, tępym narzędziem i w pośpiechu.<br><br>Pod światło da się odczytać trzy słowa: <em>a przyszedł z</em>. Reszty nie ma.”","A przyszedł z."],
+         ["Wierzysz w to, czego uczysz?","„Wierzę w kamień. Kamień jest z pola i nikt nie może temu zaprzeczyć.<br><br>W resztę wierzę tak, jak wierzy się w rzeczy, których nie da się sprawdzić, a od których zależy twój chleb.”","Uczciwie."]]],
+       ["sk_marcjanna","Siostra Marcjanna","Kobieta przepisująca coś przy świecy","kopistka kaplicy","kobieta",
+        "„Przepisuję to, co mi dają, i nie czytam tego, co przepisuję. Tak jest bezpieczniej dla obu stron.”",
+        [["A jednak coś przeczytałaś.","„Raz. Rejestr chrztów sprzed dwustu lat, a w nim rubryka <em>ród</em> i przy trzech wpisach to samo słowo, którego dziś się nie używa.<br><br>Słowo brzmiało: puszcza. Zamknęłam księgę i nie otworzyłam więcej.”","Rozumiem dlaczego."],
+         ["Kto ci daje te teksty?","„Kapłan, a jemu daje ktoś z góry. Od pół roku dostaję wyłącznie odpisy pieśni, w których poprawiono po jednym wersie.<br><br>Zawsze ten sam wers. Zawsze o pochodzeniu.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"czerwien_koszary", wejscie:"Wejdź do koszar chorągwianych", wraca:"czerwien_wysoka",
+      n:"Koszary Chorągwiane", region:"garnizon Czerwieni Wysokiej",
+      opis:"Długa sala z pryczami ustawionymi po czterdzieści. Trzy rzędy zajęte, czwarty zasłany i pusty, a pościel na nim jest świeża.",
+      ludzie:[
+       ["sk_miroslaw","Chorąży Mirosław","Człowiek chodzący wzdłuż pustego rzędu","chorąży","weteran",
+        "„Czwarty rząd ścielimy codziennie. Rozkaz. Nie pytaj czyj, bo nie wiem, a gdybym wiedział, tobym nie powiedział.”",
+        [["Kto tam spał?","„Czterdziestu. Poszli na wschód w sierpniu, mieli wrócić na Popielny.<br><br>Jest Głodny. Pościel jest świeża, bo dopóki się ściele, to znaczy, że się wraca.”","Kto wydał ten rozkaz?"],
+         ["Ilu was zostało?","„Stu dwudziestu z dwustu czterdziestu. Połowa. Z tej połowy trzydziestu nie nadaje się do niczego poza ścieleniem.<br><br>Ja też się do niczego nie nadaję. Chodzę tu i liczę prycze.”","Trzymaj się."]]],
+       ["sk_domarat_m","Puszkarz Domarat Młodszy","Chłopak czyszczący lont","puszkarz","kowal",
+        "„Nie jestem tamtym Domaratem z Ziem Niczyich. Wszyscy pytają. Nie znam go i nie chcę.”",
+        [["Czym się zajmujesz?","„Prochem i tym, co proch robi ze ścianami. Ismaal nie lubi prochu, bo proch nie pyta o urodzenie.<br><br>Trzymają mnie mimo to, bo Nowożytni prochu używają, a my musimy czymś odpowiadać.”","Logiczne."],
+         ["Co poszło z tamtą chorągwią?","„Cztery beczki mojego prochu. Sam pakowałem, sam liczyłem.<br><br>Wrócił jeden wóz i był pusty, a w środku były ślady. Nie po prochu. Po pazurach.”","Po pazurach."]]]
+      ]}),
+    wnetrze({id:"czerwien_kramy", wejscie:"Zejdź na targ pod murem", wraca:"czerwien_wysoka",
+      n:"Targ Pod Murem", region:"targ Czerwieni Wysokiej",
+      opis:"Kilkanaście straganów wciśniętych między mur a skałę. Handluje się głównie tym, co potrzebne, a rzadko tym, co ładne.",
+      ludzie:[
+       ["sk_ostoja_k","Kupiec Ostoja","Człowiek z wagą na sznurku","kupiec","urzednik",
+        "„Ceny sztywne, ustala je kasztelan. Nie targuj się ze mną - targuj się z murem, ma tyle samo do powiedzenia.”",
+        [["Sztywne ceny w czasie wojny?","„Sztywne i za niskie. Sprzedaję poniżej kosztu i dokładam z własnego, bo za podniesienie ceny idzie się na dół.<br><br>Trzech kupców poszło na dół w tym roku. Na dół to nie jest przenośnia.”","Rozumiem."],
+         ["Skąd bierzesz towar?","„Z Jarmarku Trzech Chorągwi, przez ludzi bez barw. Kasztelan wie i udaje, że nie wie.<br><br>Gdyby wiedział oficjalnie, musiałby coś zrobić, a wtedy zabrakłoby soli.”","Klasyka."]]],
+       ["sk_niedamira","Zielarka Niedamira","Stara kobieta z koszem korzeni","zielarka targowa","kobieta",
+        "„Korzenie, kora, susz. Bez zaklęć, bez błogosławieństw. Za zaklęcia u nas palą.”",
+        [["Palą za zielarstwo?","„Nie za zielarstwo. Za to, co niektórzy do zielarstwa dokładają.<br><br>Ja nie dokładam nic. Dlatego mam siedemdziesiąt lat, a moja mistrzyni miała trzydzieści cztery.”","Rozsądnie."],
+         ["Co kupują teraz najczęściej?","„Krwawnik i dziurawiec, na rany. Trzykrotnie więcej niż przed rokiem.<br><br>Ale kupują to matki, nie żołnierze. Żołnierze już nie wracają po opatrunek.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  /* ============ WIECZNIK - stolica Prastarego Ludu ============ */
+  ulica("wiecznik", [
+    ["pl_zerosz","Pomostowy Żerosz","Człowiek badający deski drągiem","pomostowy","kowal",
+     "„Idź środkiem. Brzegi wymieniamy co trzy lata, środek co dziesięć. Środek jest starszy i pewniejszy.”",
+     [["Całe miasto stoi na wodzie?","„Na palach z czarnego dębu. Dąb w wodzie twardnieje zamiast gnić - to jedyna rzecz, którą wzięliśmy od nizin, i wzięliśmy ją od nich siedemset lat temu.<br><br>Odtąd nie wzięliśmy nic.”","Rozumiem."],
+      ["Dlaczego nie na brzegu?","„Bo na brzegu przychodzi się do ciebie, a na wodę trzeba wejść.<br><br>Kto wchodzi na pomost, ten idzie gęsiego i widać go z daleka. Cała obrona tego miasta to jest ta jedna myśl.”","Skuteczna."]]],
+    ["pl_bogna_p","Tkaczka Bogna","Kobieta przy krosnach wystawionych na pomost","tkaczka","kobieta",
+     "„Tkam na powietrzu, bo w izbie nie widać splotu. Deszcz mi nie przeszkadza, wełna i tak była na owcy.”",
+     [["Co tkacie?","„Płaszcze dla strażników i pasy dla gońców. W pasie gońca jest wpleciony wzór, po którym poznaje się, z którego uroczyska idzie.<br><br>Od pół roku tkam więcej pasów niż zwykle. Nie pytam po co.”","A powinnaś?"],
+      ["Skąd bierzecie wełnę?","„Od nizin, przez Jarmark, bo owiec u nas nie ma. Puszcza nie znosi wypasu.<br><br>Starsza mówi, że to upokarzające. Ja mówię, że gorzej byłoby marznąć.”","Zgadzam się z tobą."]]],
+    ["pl_swiatopelk","Dziad Świątopełk","Starzec siedzący z nogami nad wodą","najstarszy w Wieczniku","weteran",
+     "„Sto pięć zim. Liczyli za mnie, bo ja przestałem przy osiemdziesiątej.”",
+     [["Co się zmieniło przez ten czas?","„Rzeka. Płynie o dwa kroki dalej niż w moim dzieciństwie i nikt poza mną tego nie widzi, bo nikt poza mną nie pamięta, gdzie płynęła.<br><br>Wszystko inne zostało takie samo. To jest nasza duma i nasza choroba.”","Rozumiem."],
+      ["Pamiętasz opowieści o Ismaalu?","„Pamiętam, że dziadek mój mówił o nim <em>ten, co odszedł</em>, a nie <em>ten, co przyszedł</em>.<br><br>Różnica jest w jednym słowie i cała reszta z niej wynika. Niziny mówią, że przyszedł. My mówimy, że odszedł. Obie strony mówią o tym samym człowieku.”","To ważne."]]],
+    ["pl_wierzba","Wierzba","Dziewczyna z sokołem na przedramieniu","sokolnica","kobieta",
+     "„Nie sięgaj. Ona nie gryzie - ona bierze i nie oddaje.”",
+     [["Do czego wam sokoły?","„Do wiadomości ponad puszczą. Goniec idzie trzy dni, sokół leci pół.<br><br>Ale sokół nie umie powiedzieć, że kogoś zabito. Sokół umie tylko wrócić albo nie wrócić.”","A ostatnio?"],
+      ["Ostatnio wracają?","„Z zachodu i z południa tak. Z północy - trzy z siedmiu.<br><br>Wracają bez obrączek i bez piór na skrzydle. Coś strąca je w locie i nie robi tego łuk.”","Zapamiętam."]]]
+  ]);
+  budynki("wiecznik", [
+    wnetrze({id:"wiecznik_karczma", wejscie:"Wejdź do Domu Ognia", wraca:"wiecznik",
+      n:"Dom Ognia", region:"dom wspólny Wiecznika",
+      opis:"Wielka izba na palach, z paleniskiem pośrodku i dziurą w dachu. Nie ma tu stołów - są kręgi mat, a im bliżej ognia, tym starszy człowiek siedzi.",
+      ludzie:[
+       ["pl_gospodyni","Gościnna Milena","Kobieta rozdzielająca miejsca przy ogniu","gospodyni domu","kobieta",
+        "„Siadaj w trzecim kręgu. Obcy zawsze w trzecim, dopóki ktoś nie poręczy.”",
+        [["Kto może poręczyć?","„Każdy z pierwszego kręgu. Jest ich siedmioro i sześcioro nie rozmawia z obcymi.<br><br>Siódma to Starsza. Ona rozmawia, ale nie ręczy. Rachunek wychodzi ci sam.”","Wychodzi."],
+         ["Czym karmicie?","„Rybą, korzeniem i chlebem z żołędzi. Mięsa nie podajemy przy ogniu - mięso je się osobno i cicho.<br><br>Tak jest od zawsze i nikt nie umie powiedzieć dlaczego. Podejrzewam, że powód był, tylko go zjedli.”","Podoba mi się to."]]],
+       ["pl_gosciec","Gościec","Człowiek śpiący przy trzecim kręgu","goniec na przepustce","weteran",
+        "„Spałem. Teraz nie śpię. Mów szybko, bo znów zasnę.”",
+        [["Skąd wracasz?","„Z północy, spod grani. Osiem dni w jedną stronę i jeden powrót, bo wracałem biegiem.<br><br>Nie gonili mnie ludzie. Ludzi bym poznał.”","Co cię goniło?"],
+         ["Co widziałeś?","„Ślady w piachu tam, gdzie piachu nie powinno być. Puszcza kończy się, a za nią jest pas suchej ziemi, który rośnie.<br><br>Cztery lata temu miał trzysta kroków. Teraz ma pół dnia marszu.”","Piach rośnie."]]]
+      ]}),
+    wnetrze({id:"wiecznik_kamien", wejscie:"Wejdź na Kamienny Krąg", wraca:"wiecznik",
+      n:"Kamienny Krąg", region:"siedziba starszyzny Prastarego Ludu",
+      opis:"Pomost szerszy od innych, a na nim jeden głaz przywieziony z lądu i deszczówka zebrana w wydrążeniu. Tu się nie siada. Tu się stoi.",
+      ludzie:[
+       ["pl_borzyslaw","Starszy Borzysław","Człowiek stojący plecami do wody","starszy kręgu","weteran",
+        "„Nie kłaniaj się. U nas kłania się tylko drzewom i to tylko wtedy, gdy się je ścina.”",
+        [["Jak podejmujecie decyzje?","„Siedmioro stoi wokół kamienia, dopóki wszyscy nie powiedzą tego samego. Czasem stoimy dwa dni.<br><br>Niziny nazywają to nieudolnością. My nazywamy to tak, żeby nikt potem nie mówił, że go nie pytano.”","Rozumiem."],
+         ["Wojna nizin was dotyczy?","„Nie. Dopóki krata stoi, nie dotyczy. Krata stoi od dwustu lat i przez dwieście lat mieliśmy rację.<br><br>Od pół roku nie jestem pewien, czy nadal mamy. To pierwszy raz.”","Co się zmieniło?"]]],
+       ["pl_dobrawa_s","Strażniczka Kręgu Dobrawa","Kobieta z łukiem opartym o głaz","strażniczka kręgu","kobieta",
+        "„Łuk stoi, nie leży. Leżący łuk to łuk, który się spóźni.”",
+        [["Kogo tu pilnujesz?","„Siedmiorga. To znaczy jednego kamienia i siedmiorga ludzi, którzy bez tego kamienia nie umieliby się dogadać.<br><br>Kamień jest ważniejszy. Ludzi da się zastąpić.”","Twarde."],
+         ["Kto tu przychodzi z zewnątrz?","„Prawie nikt. W tym roku dwoje: poseł z nizin i ktoś, kto przyszedł z północy i nie chciał podać, skąd.<br><br>Ten drugi rozmawiał ze Starszą przez pół nocy. Rano go nie było i łódź została na miejscu.”","Łódź została."]]]
+      ]}),
+    wnetrze({id:"wiecznik_gaj", wejscie:"Przejdź kładką do Gaju Druidów", wraca:"wiecznik",
+      n:"Gaj Druidów", region:"siedziba druidów Prastarego Ludu",
+      opis:"Kępa starych olch wyrastających prosto z wody. Między pniami rozpięte są pomosty tak wąskie, że idzie się bokiem.",
+      ludzie:[
+       ["pl_zyworad","Druid Żyworad","Człowiek z dłońmi w korze","druid gaju","urzednik",
+        "„Nie odrywaj mnie. Słucham drzewa, a drzewo mówi wolno i tylko raz.”",
+        [["Co mówi?","„Że woda pod nim jest cieplejsza niż w zeszłym roku o tyle, ile ja bym nie zmierzył, a ono zmierzyło.<br><br>Cieplejsza woda idzie z północy. Z północy nie powinno iść ciepło.”","To dziwne."],
+         ["Naprawdę zmieniacie się w zwierzęta?","„Arcydruidka tak. Ja nie i pewnie nie będę.<br><br>To nie jest sztuczka ani zaklęcie. To jest zgoda - drzewo albo zwierzę musi się zgodzić. Na mnie nie zgadza się nic.”","Przykro mi."]]],
+       ["pl_kalinka","Nowicjuszka Kalinka","Dziewczyna z workiem żołędzi","nowicjuszka natury","kobieta",
+        "„Zbieram, sadzę, liczę, ile wzeszło. Trzeci rok i trzeci raz to samo.”",
+        [["Nudzi cię to?","„Nudziło przez dwa lata. W trzecim policzyłam, że wschodzi mniej niż wschodziło, i przestało nudzić.<br><br>Osiemdziesiąt na sto w pierwszym roku. Pięćdziesiąt jeden w tym. Nikt starszy nie chce tego ode mnie usłyszeć.”","Ja usłyszałem."],
+         ["Powiedziałaś to Arcydruidce?","„Powiedziałam Ostromirowi. Kazał liczyć dalej i nikomu nie mówić, dopóki nie będzie czterech lat.<br><br>Nie doczekam czterech lat. Widzę to po żołędziach.”","Licz dalej."]]]
+      ]}),
+    wnetrze({id:"wiecznik_lucznia", wejscie:"Wejdź na Pomost Łuczniczy", wraca:"wiecznik",
+      n:"Pomost Łuczniczy", region:"szkoła strażników leśnych",
+      opis:"Sto kroków pomostu i na końcu tarcze zawieszone nad wodą. Kto chybi, ten wyławia strzałę sam, i to jest cała dyscyplina, jakiej tu potrzeba.",
+      ludzie:[
+       ["pl_dobieslaw_l","Łowczy Dobiesław","Człowiek zbierający strzały z wody","łowczy pomostu","weteran",
+        "„Chybiłem trzy razy w tym tygodniu i trzy razy wchodziłem po pas. Nikt mnie nie zwolnił z tej reguły i słusznie.”",
+        [["Kogo tu uczycie?","„Dzieci od siódmego roku i dorosłych, którzy przyszli z nizin i myślą, że umieją strzelać.<br><br>Dorośli odpadają szybciej. Dzieciom nie trzeba niczego oduczać.”","Mądre."],
+         ["Ilu waszych poszło na północ?","„Dwunastu w tym roku, z tego jeden wrócił i nie wrócił cały.<br><br>Mówił o czymś, co idzie po dwóch nogach, ale za daleko rozstawionych. Potem przestał mówić w ogóle.”","Żyje?"]]],
+       ["pl_zbroja","Zbrojna Leśna Rada","Kobieta ostrząca dwa krótkie ostrza","zbrojna leśna","kobieta",
+        "„Dwa ostrza, nie miecz. Miecz jest do stania w szeregu, a my nie stoimy w szeregach.”",
+        [["Dlaczego dwa?","„Bo w puszczy nie ma miejsca na zamach. Jest miejsce na krok i na pchnięcie, i na drugie pchnięcie, zanim tamten zrobi krok.<br><br>Kto rozumie to zdanie, ten się nauczy. Kto nie, ten wraca do łuku.”","Rozumiem."],
+         ["Co u was mówią o nizinach?","„Że biją się o kamienie i nazywają to wiarą. Że oba ich królestwa wyrosły z jednego pnia i oba udają, że nie.<br><br>Nas to nie obchodzi, dopóki nie zaczną wycinać drzew na machiny. Zaczęli w zeszłym miesiącu.”","Zaczęli?"]]]
+      ]}),
+    wnetrze({id:"wiecznik_susz", wejscie:"Wejdź do Suszarni", wraca:"wiecznik",
+      n:"Suszarnia", region:"zielarnia Wiecznika",
+      opis:"Izba, w której nie widać ścian - wszystko zasłonięte pękami suszu wiszącymi od podłogi po sufit. Powietrze jest tu gęstsze niż na zewnątrz.",
+      ludzie:[
+       ["pl_niegoslawa","Szeptucha Niegosława","Kobieta rozgarniająca susz jak zasłonę","szeptucha suszarni","kobieta",
+        "„Nie oddychaj głęboko. Połowa tego, co tu wisi, leczy, a druga połowa leczy tylko w odpowiedniej ilości.”",
+        [["Ile jest tu ziół?","„Dwieście czterdzieści rodzajów. Nazwy zna sześć osób, zastosowania - dwie, a przeciwwskazania jedna i to ja.<br><br>Kiedy umrę, zostanie dwieście czterdzieści pęków i nikt, kto wie, którego nie wolno.”","Zapisz to."],
+         ["Dlaczego nie zapiszesz?","„Bo zapisane trafia do nizin, a niziny robią z ziół rzeczy, których zioła nie chcą robić.<br><br>Wolę, żeby wiedza umarła ze mną, niż żeby ktoś zrobił z tojadu to, co zrobili z prochem.”","Rozumiem."]]],
+       ["pl_wiech","Zbieracz Wiech","Chłopak z poparzonymi dłońmi","zbieracz","kowal",
+        "„Nie od ognia. Od barszczu. Trzeba było słuchać, jak mówiła, żeby nie gołymi rękami.”",
+        [["Gdzie zbierasz?","„Na skraju, przy Ścieżce Mchowej i za Rosicą. Dalej nie chodzę.<br><br>Za Rosicą jest zapadlisko, w którym od zimy nic nie rośnie. Nic - nawet mech. Chodziłem tam trzy razy i za trzecim zawróciłem bez powodu.”","Bez powodu?"],
+         ["Co tam jest?","„Nie wiem. Nie doszedłem. Za każdym razem nogi same zawracają, a ja nie jestem strachliwy - łaziłem po drzewach nad wodą od szóstego roku.<br><br>Powiedz to Starszej, jak będziesz z nią mówił. Mnie nie wierzy.”","Powiem."]]]
+      ]}),
+    wnetrze({id:"wiecznik_przystan", wejscie:"Zejdź na Przystań Czółen", wraca:"wiecznik",
+      n:"Przystań Czółen", region:"przystań Wiecznika",
+      opis:"Czterdzieści czółen uwiązanych burta w burtę. Każde ma na dziobie inny znak i nikt tych znaków nie tłumaczy obcym.",
+      ludzie:[
+       ["pl_wiesz","Przewoźnik Wiesz","Człowiek wyczerpujący wodę z czółna","przewoźnik","kowal",
+        "„Nie wsiadaj. Wożę swoich i tych, za których ktoś swój poręczy.”",
+        [["Dokąd wozisz?","„Na wyspy, do Rosicy i do Lisiej Kępy. Na niziny nie - od nizin jest most i krata, i tak ma zostać.<br><br>Raz w życiu przewiozłem kogoś na drugą stronę bez kraty. Do dziś nie wiem, czy dobrze zrobiłem.”","Kogo?"],
+         ["Co znaczą te znaki na dziobach?","„Z którego rodu jest czółno i ile razy wróciło. Kreska za każdy powrót.<br><br>Trzy czółna stoją bez nowych kresek od jesieni. Nie zabieram ich stąd, bo dopóki stoją, ktoś może wrócić.”","Rozumiem."]]],
+       ["pl_lada","Sieciarka Łada","Kobieta naprawiająca sieć zębami i palcami","sieciarka","kobieta",
+        "„Zębami szybciej, choć wszyscy mówią, że nie wolno. Wszyscy mają całe sieci i braki w zębach.”",
+        [["Dobrze bierze?","„Ryba tak, ale nie ta co zwykle. Od wiosny idzie z północy sum i węgorz, a szczupak schodzi na południe.<br><br>Ryba ucieka przed czymś. Ryba nie ucieka przed niczym, więc coś tam jest.”","Zapamiętam."],
+         ["Kto to widzi poza tobą?","„Wszyscy rybacy i żaden ze starszyzny. Powiedziałam Borzysławowi, kiwnął głową i wrócił do stania przy kamieniu.<br><br>Kamień nie łowi ryb. Ja łowię.”","Ja słucham."]]]
+      ]})
+  ]);
+
+  /* ============ ZGORZEL - stolica Odeszłych ============ */
+  ulica("zgorzel", [
+    ["od_haczyk","Haczyk","Człowiek na linie nad wyrobiskiem","linowy","kowal",
+     "„Nie stój pod liną. Jak spadnę, to spadnę na ciebie, a nie chcę mieć tego na sumieniu.”",
+     [["Co robisz na tej linie?","„Wożę wszystko między poziomami, bo schodów tu nie ma. Schody musiałby ktoś wykuć, a nikt nie wykuwa niczego, czego nie da się zwinąć w jedną noc.<br><br>Całe miasto jest do zwinięcia w jedną noc. Tak je pomyśleli.”","Sprytnie."],
+      ["Kto tu rządzi naprawdę?","„Wilkosz mówi, że nikt. Grzebień mówi, że tabliczka. Ja mówię, że lina.<br><br>Kto trzyma linę, ten decyduje, co jedzie w górę i co w dół. Dziś trzymam ja i dlatego rozmawiasz ze mną uprzejmie.”","Uczciwie."]]],
+    ["od_szmata","Szmata","Kobieta w płaszczu z pięciu różnych płaszczy","szmuglerka","kobieta",
+     "„Płaszcz z pięciu. Każdy kawałek z innego trupa i każdy z innej frakcji. Wygodne - w każdym obozie ktoś rozpozna coś swojego.”",
+     [["Nie boisz się tego nosić?","„Boję się chodzić bez niego. To ostatnia rzecz, jaką bym zdjęła.<br><br>Trzy razy uratował mi życie, i to trzy razy w trzech różnych obozach.”","Praktyczne."],
+      ["Co przemycasz na wschód?","„Nic. Na wschód od trzech miesięcy nikt nic nie wozi, bo nikt nie wraca po zapłatę.<br><br>Wozi się na wschód tylko wtedy, gdy ktoś płaci z góry i podwójnie. Ostatnio ktoś płaci potrójnie.”","Kto?"]]],
+    ["od_kikut","Kikut","Człowiek bez trzech palców u lewej dłoni","dawny kopacz","weteran",
+     "„Trzy palce zostały w tym wyrobisku. Miasto je ma, ja mam resztę. Uczciwy podział jak na Zgorzel.”",
+     [["Wydobywacie tu jeszcze coś?","„Nic od czterdziestu lat. Wyrobisko jest puste i dlatego się w nim mieszka - nikt nie przyjdzie po to, czego nie ma.<br><br>Cała nasza obrona to jest to, że nie mamy nic wartego zabrania.”","A jednak ktoś przyjdzie."],
+      ["Skąd się tu bierze jedzenie?","„Z kontraktów, z przemytu i z Podkowy. Nic z tego nie jest pewne i wszyscy o tym wiedzą.<br><br>Dlatego u nas nie ma grubych. Nawet Wilkosz nie jest gruby.”","Zauważyłem."]]],
+    ["od_perla","Perła","Dziewczyna licząca coś na palcach","posłanka między poziomami","kobieta",
+     "„Noszę wiadomości między poziomami. Grosz za piętro, dwa za nocne.”",
+     [["Czytasz to, co nosisz?","„Nie umiem czytać i to jest cały mój kapitał. Dlatego dają mi to, czego nie dadzą nikomu innemu.<br><br>Uczę się liter po kryjomu. Jak się nauczę, stracę robotę i nie wiem, czy warto.”","Ucz się."],
+      ["Dużo wiadomości ostatnio?","„Cztery razy więcej niż latem i wszystkie na jeden poziom - do Grzebienia.<br><br>Grzebień nie odpowiada na żadną. Odkłada je na stos i patrzy na stos.”","Duży ten stos?"]]]
+  ]);
+  budynki("zgorzel", [
+    wnetrze({id:"zgorzel_szynk", wejscie:"Zejdź do Szynku Bez Nazwy", wraca:"zgorzel",
+      n:"Szynk Bez Nazwy", region:"szynk w Zgorzeli",
+      opis:"Wykuta w skale nisza z beczką zamiast szynkwasu. Szyldu nie ma, bo szyld trzeba by zdejmować przy przeprowadzce, a tu wszystko liczy się na przeprowadzkę.",
+      ludzie:[
+       ["od_beczka","Beczka","Człowiek szerszy niż wejście, przez które wszedł","szynkarz","kowal",
+        "„Jedno piwo na osobę i nie dlatego, że skąpię. Dlatego, że po drugim ludzie zaczynają mówić, a tu nie ma ścian.”",
+        [["Nie ma ścian?","„Są skały i skały niosą głos. Wszystko, co powiesz przy tej beczce, słychać dwa poziomy niżej.<br><br>Wiedzą o tym wszyscy poza nowymi, dlatego nowych poznaje się po tym, że mówią głośno.”","Będę cicho."],
+         ["Co się mówi cicho?","„Że ktoś skupuje ludzi bez rodziny. Płaci z góry, nie mówi po co, a warunek jest jeden: żeby nikt się nie upomniał.<br><br>Poszło już czternastu. Żaden się nie upomniał, bo nie miał kto.”","Kto skupuje?"]]],
+       ["od_szpila","Szpila","Kobieta czyszcząca paznokcie nożem","najemniczka bez kontraktu","kobieta",
+        "„Bez kontraktu od sześciu tygodni. Nie dlatego, że mnie nie chcą - dlatego, że nie biorę tego, co dają.”",
+        [["Co dają?","„Wschód. Wszystkie kontrakty idą teraz na wschód i płacą cztery razy stawkę.<br><br>Cztery razy stawka to nie premia. To cena za to, że nikt nie wróci po resztę.”","Rozsądnie liczysz."],
+         ["Kto stoi za tymi kontraktami?","„Nikt się nie podpisuje. Na tabliczce jest znak zamiast nazwy, i to nie jest znak żadnej z czterech frakcji.<br><br>Widziałam go raz wcześniej, w innym miejscu, i wolałabym nie pamiętać gdzie.”","Gdzie?"]]]
+      ]}),
+    wnetrze({id:"zgorzel_stol", wejscie:"Wejdź do Sali Kontraktów", wraca:"zgorzel",
+      n:"Sala Kontraktów", region:"siedziba władzy Odeszłych",
+      opis:"Nie sala, tylko poszerzony chodnik z jedną ścianą wygładzoną pod tabliczki. Nie ma tronu, stołu ani krzeseł. Kto chce coś załatwić, ten stoi.",
+      ludzie:[
+       ["od_rylec","Rylec","Człowiek żłobiący coś w kamieniu","pisarz tabliczek","urzednik",
+        "„Nie piszę atramentem. Atrament kłamie, bo można go zmyć. Rylec kłamie tylko raz i widać poprawkę.”",
+        [["Co tu żłobisz?","„Kontrakty, rachunki i imiona tych, którzy nie wrócili. Trzy kolumny na jednej ścianie, bo tak jest uczciwie.<br><br>Trzecia kolumna rośnie najszybciej i zaraz zabraknie mi ściany.”","Ile imion?"],
+         ["Kto decyduje, co trafia na ścianę?","„Nikt. Każdy może przyjść i podyktować, jeśli zapłaci za wykucie.<br><br>Dlatego nasza ściana jest prawdziwsza niż wszystkie księgi Nowożytnych. U nich pisze się to, co każą. U nas to, za co ktoś zapłacił z własnej kieszeni.”","Ładna różnica."]]],
+       ["od_wachlarz","Wachlarz","Kobieta z sześcioma pierścieniami na jednej dłoni","pośredniczka kontraktów","kobieta",
+        "„Sześć pierścieni, sześć układów. Zdejmuję po jednym, kiedy któryś się kończy. W tym roku zdjęłam trzy.”",
+        [["Kto był tym trzecim?","„Kontor Nowożytnych. Zerwali umowę o przewóz soli i nie podali powodu, a powód znam: przestali potrzebować soli, bo przestali karmić ludzi na wschodzie.<br><br>Nie przestali ich wysyłać. Przestali karmić.”","To znaczy?"],
+         ["Z kim wam się układa najlepiej?","„Z Prastarym Ludem, choć nas nie znoszą. Nie znoszą uczciwie i przewidywalnie, a to jest w handlu więcej warte niż sympatia.<br><br>Najgorzej z Ismaalem. Oni traktują umowę jak łaskę, a łaskę można cofnąć.”","Rozumiem."]]]
+      ]}),
+    wnetrze({id:"zgorzel_woda", wejscie:"Zejdź do Cysterny", wraca:"zgorzel",
+      n:"Cysterna", region:"siedziba magów wody Odeszłych",
+      opis:"Zalana dolna komora wyrobiska. Woda stoi tu tak nieruchomo, że odbija sufit jak lustro, i nikt nie wchodzi do niej butami.",
+      ludzie:[
+       ["od_kropla_st","Mistrzyni Wód Studnia","Kobieta stojąca po kostki w lustrze","mistrzyni wody","kobieta",
+        "„Zdejmij buty albo stój na kamieniu. Woda nie obraża się o wiele rzeczy, ale o błoto tak.”",
+        [["Dlaczego woda, a nie ogień?","„Bo ogień trzeba karmić, a wody wystarczy nie przeszkadzać.<br><br>Jesteśmy najsłabsi ze wszystkich szkół i nikt się z tym nie kryje. Za to jesteśmy jedyni, którzy nie stracili ani jednego ucznia.”","Uczciwa wymiana."],
+         ["Co widzisz w tej wodzie?","„Nic. Woda nie pokazuje przyszłości, to bajki dla nizin.<br><br>Pokazuje za to, co jest teraz gdzie indziej, jeśli tamto miejsce też ma wodę. Od trzech miesięcy na północy nie mam gdzie patrzeć. Cała woda tam wyschła.”","Wyschła?"]]],
+       ["od_mgla","Mgła","Chłopak siedzący z rękami w wodzie po łokcie","adept wody","urzednik",
+        "„Siedzę tak od świtu. To nie jest ćwiczenie, tylko kara. Zapytałem o coś, o co nie wolno.”",
+        [["O co zapytałeś?","„Czy wodą da się zamknąć bramę. Wyczytałem to słowo w księdze, której nie miałem czytać.<br><br>Studnia zbladła i kazała mi siedzieć. Siedzę czwartą godzinę i wciąż nie wiem, dlaczego to takie straszne słowo.”","Ja też chcę wiedzieć."],
+         ["Co było w tej księdze?","„Że przed Zamknięciem Bram magia wody służyła do jednej rzeczy i tę jedną rzecz opisano na wydartej stronie.<br><br>Została po niej rycina - łuk z kamienia i coś, co przez ten łuk wychodzi.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"zgorzel_kuznia", wejscie:"Wejdź do Kuźni Poziomu Trzeciego", wraca:"zgorzel",
+      n:"Kuźnia Poziomu Trzeciego", region:"kuźnia Zgorzeli",
+      opis:"Kuźnia bez komina - dym idzie starym szybem wentylacyjnym i wychodzi pół mili dalej, tak że z zewnątrz nie widać, że ktoś tu kuje.",
+      ludzie:[
+       ["od_obcegi","Obcęgi","Człowiek trzymający żelazo gołą ręką w rękawicy z trzech warstw","kowal wyrobiska","kowal",
+        "„Trzy warstwy skóry i i tak czuję. Kto mówi, że nie czuje, ten nie kuje - tylko stoi przy kowadle.”",
+        [["Kujecie broń?","„Kujemy wszystko, na co ktoś ma pieniądze, i nie pytamy, przeciw komu.<br><br>To brzmi podle i takie jest. Ale gdybyśmy pytali, nie mielibyśmy co jeść, a głód też jest podły.”","Rozumiem."],
+         ["Co zamawiają ostatnio?","„Kolce. Nie groty, nie ostrza - kolce do wbijania w ziemię, ostrzem do góry.<br><br>Zamówienie na cztery tysiące. Cztery tysiące kolców stawia się przeciw czemuś, co biegnie i nie ogląda się pod nogi.”","Kto zamówił?"]]],
+       ["od_iskra","Iskra","Dziewczyna przy miechu","uczennica kowalska","kobieta",
+        "„Miech, tylko miech, od dwóch lat. Obcęgi mówi, że kto nie umie dmuchać, ten nie umie kuć.”",
+        [["Wierzysz mu?","„Nauczyłam się rozpoznawać temperaturę po kolorze i po dźwięku miecha. Więc chyba wierzę.<br><br>Ale dwa lata to dwa lata, a on ma czterdzieści i mówi, że jest w połowie drogi.”","Bądź cierpliwa."],
+         ["Widziałaś te kolce?","„Wykuwałam je nocą, po sto na noc, i policzyłam wszystkie.<br><br>Odbierał je człowiek, który nie zdjął kaptura ani razu, płacił monetą, której nie znam, i nie targował się. Nikt się nie targuje o cztery tysiące sztuk.”","Zachowałaś tę monetę?"]]]
+      ]}),
+    wnetrze({id:"zgorzel_lazaret", wejscie:"Wejdź do Lazaretu", wraca:"zgorzel",
+      n:"Lazaret", region:"lecznica Odeszłych",
+      opis:"Komora z dziesięcioma pryczami i jedną świecą na wszystkie. Odeszli nie mają lekarzy - mają ludzi, którzy widzieli dużo ran i zapamiętali, co pomagało.",
+      ludzie:[
+       ["od_igla","Igła","Kobieta z nitką w zębach","felczerka","kobieta",
+        "„Nie zszywam pijanych i nie zszywam tych, co krzyczą. Pierwsi się ruszają, drudzy budzą resztę.”",
+        [["Kogo tu leczysz?","„Tych, co wracają. Coraz mniej, bo coraz mniej wraca.<br><br>Latem miałam osiem prycz zajętych. Teraz mam dwie i to nie znaczy, że jest lepiej.”","Rozumiem."],
+         ["Widziałaś nietypowe rany?","„Tylko takie od dwóch miesięcy. Rana wchodzi na wylot, ale kanał jest szerszy z tyłu niż z przodu, jakby coś się w środku rozłożyło.<br><br>Żadna broń tak nie robi. Sprawdziłam wszystkie, jakie znam.”","Pokaż mi kogoś takiego."]]],
+       ["od_niemowa","Niemowa","Człowiek leżący twarzą do ściany","ocalały z kontraktu","weteran",
+        "„...”",
+        [["Możesz mówić?","„...”<br><br>Odwraca się powoli. Ma otwarte oczy i porusza ustami bez dźwięku, a jego palec kreśli na ścianie ten sam kształt raz za razem: łuk oparty na dwóch nogach.","To brama."],
+         ["Skąd wróciłeś?","Podnosi rękę i wskazuje. Nie na wschód, gdzie leżą Ziemie Nieznane, tylko wyżej - w sufit, w skałę, w nic.<br><br>Potem opuszcza rękę i wraca do kreślenia łuku.","Odpocznij."]]]
+      ]}),
+    wnetrze({id:"zgorzel_sciana", wejscie:"Podejdź do Ściany Imion", wraca:"zgorzel",
+      n:"Ściana Imion", region:"pamięć Odeszłych",
+      opis:"Trzysta kroków gładkiej skały pokrytej imionami. Nie ma dat, nie ma nazwisk, nie ma rodów - tylko imię i kreska za każdą wykonaną robotę.",
+      ludzie:[
+       ["od_liczarz","Liczarz","Starzec z palcem na ścianie","strażnik ściany","weteran",
+        "„Nie dotykaj. Tłuszcz z palców zżera kamień, a to jest jedyny cmentarz, jaki mamy.”",
+        [["Ile tu imion?","„Cztery tysiące dwieście dziewięć. Wiem, bo liczę je co roku od pierwszego do ostatniego i zajmuje mi to jedenaście dni.<br><br>W tym roku doszło sto siedem. Rok wcześniej dziewiętnaście.”","Sto siedem."],
+         ["Twoje imię tu jest?","„Jest, i to od dwunastu lat. Wykuli mi je, kiedy nie wróciłem z kontraktu, a potem wróciłem.<br><br>Nie kazałem skuwać. Człowiek raz wykuty na tej ścianie jest już trochę martwy i to bardzo porządkuje myślenie.”","Rozumiem."]]],
+       ["od_wdowa","Wdowa Sowa","Kobieta stojąca przed jednym imieniem","wdowa","kobieta",
+        "„Stoję tu codziennie od Popielnego. Nie płaczę - płakałam we wrześniu i wystarczyło.”",
+        [["Czyje to imię?","„Mojego. To znaczy jego, ale nazywaliśmy się tak samo, bo tu się nie bierze cudzego nazwiska - bierze się cudze imię.<br><br>Poszedł na kontrakt, którego nie chciał, bo płacili z góry i podwójnie.”","Kto płacił?"],
+         ["Zostało po nim coś?","„Moneta z zaliczki. Nie wydałam jej i nie wydam.<br><br>Nikt tu nie umie powiedzieć, gdzie ją bito. Ani Nowożytni, ani Ismaal, ani my. A moneta jest nowa - widać po krawędzi.”","Pokaż mi ją."]]]
+      ]})
+  ]);
+
+  /* ============ MIASTA NOWOŻYTNYCH ============ */
+  ulica("miedziana_waga", [
+    ["nw_probierz","Probierz Sędziwoj Krzywy","Człowiek z okiem przy szkiełku","probierz mennicy","urzednik",
+     "„Nie zasłaniaj światła. Probuję srebro, a srebro kłamie w cieniu.”",
+     [["Ile srebra jest w waszej monecie?","„W naszej cztery części na dziesięć i tak jest od dwustu lat. W ismaalskiej trzy i pół, choć na stemplu stoi cztery.<br><br>Wiedzą o tym obie strony i obie milczą, bo ta różnica to jest dokładnie cło.”","Wygodne."],
+      ["Widziałeś kiedyś monetę, której nie znasz?","„Trzy w tym roku. Srebro czyste, prawie bez domieszki, i stempel, którego nie ma w żadnym katalogu.<br><br>Krawędź świeża. To znaczy, że gdzieś stoi mennica, o której nie wiemy, i bije lepszą monetę niż my.”","Zachowaj następną."]]],
+    ["nw_liczmanka","Liczmanka Rada","Dziewczyna przesypująca monety przez sito","liczmanka","kobieta",
+     "„Sito wychwytuje podrobione. Podrobione są lżejsze i przechodzą, prawdziwe zostają na wierzchu. Proste.”",
+     [["Dużo podrobionych?","„Latem jedna na sto. Teraz jedna na dwadzieścia i to nie są podróbki chałupnicze.<br><br>Podrobiona moneta jest zwykle gorsza. Te są lepsze od naszych i to mnie w tym najbardziej niepokoi.”","Lepsze?"],
+      ["Co robicie z tymi lepszymi?","„Odkładamy do skrzyni i nikt nie wie, co dalej. Skrzynia stoi w piwnicy i jest pełna.<br><br>Cechmistrz kazał liczyć i milczeć. Liczę. Milczę. Tobie mówię, bo nie jesteś stąd.”","Rozumiem."]]]
+  ]);
+  budynki("miedziana_waga", [
+    wnetrze({id:"waga_mennica", wejscie:"Wejdź do hali menniczej", wraca:"miedziana_waga",
+      n:"Hala Mennicza", region:"mennica Nowożytnych",
+      opis:"Osiem stempli, przy każdym dwóch ludzi i jeden strażnik. Bije się tu monetę dla obu stron wojny, na przemian, w tygodniowych zmianach.",
+      ludzie:[
+       ["nw_stempel","Mistrz Stempla Ninogniew","Człowiek z młotkiem lżejszym niż wygląda","mistrz stempla","kowal",
+        "„Cztery uderzenia na monetę. Piąte psuje, trzecie nie wystarcza. Uczyłem się tego jedenaście lat.”",
+        [["Bijecie dla Ismaala?","„W parzyste tygodnie. W nieparzyste dla nas, a stemple wiszą obok siebie na tej samej ścianie.<br><br>Raz w miesiącu ktoś się pomyli i wtedy w obiegu jest moneta ismaalska z naszą krawędzią. Nikt jej nigdy nie zwrócił.”","Ciekawe."],
+         ["Ktoś chciał u was bić własną monetę?","„W zeszłym miesiącu. Człowiek bez barw przyniósł rysunek stempla i worek czystego srebra.<br><br>Cechmistrz odmówił, ale trzymał ten rysunek w ręku bardzo długo. Widziałem, co na nim było: łuk na dwóch nogach.”","Łuk."]]],
+       ["nw_kruszec","Skarbniczka Wolimira","Kobieta z kluczem na łańcuchu przy szyi","skarbniczka","kobieta",
+        "„Klucz noszę przy szyi, bo u pasa się urywa. Urwał się raz i tego raz mi wystarczyło.”",
+        [["Ile srebra jest w tej piwnicy?","„Nie powiem, i nie dlatego, że tajemnica. Dlatego, że gdybym powiedziała, sam byś policzył, że nie starczy na trzy lata takiej wojny.<br><br>Wszyscy tu udają, że starczy. Ja tylko liczę.”","Rozumiem."],
+         ["Skrzynia z obcą monetą - widziałaś ją?","„Stoi w trzeciej niszy i jest pełna do brzegu. Trzysta czterdzieści sztuk, wszystkie z tym samym stemplem.<br><br>Napłynęły w ciągu pół roku. Ktoś płaci nimi w tym kraju i płaci dużo.”","Mogę ją zobaczyć?"]]]
+      ]}),
+    wnetrze({id:"waga_cech", wejscie:"Wejdź do Domu Cechu", wraca:"miedziana_waga",
+      n:"Dom Cechu", region:"cech mennicy",
+      opis:"Sala z jednym długim stołem i ośmioma tabliczkami z imionami. Przy trzech tabliczkach nikt nie siada od jesieni.",
+      ludzie:[
+       ["nw_starszy_cechu","Starszy Cechu Bogusław","Człowiek siedzący przy pierwszej tabliczce","starszy cechu","urzednik",
+        "„Trzy tabliczki puste. Nie pytaj, bo odpowiedź jest nudna i smutna, a ja wolę nudne bez smutnego.”",
+        [["A jednak pytam.","„Pojechali na wschód z kontraktem giełdy. Mieli ocenić rudę, o której ktoś napisał, że jest lepsza od naszej.<br><br>Wrócił jeden i nie usiadł już przy stole. Siedzi w Klasztorze Rachuby i liczy, bo tylko to potrafi robić po tym, co widział.”","Poszukam go."],
+         ["Czy ta ruda była lepsza?","„Przywieźli próbkę. Leży w hali w ołowianej skrzynce, bo probierz nie chce jej trzymać w gołych rękach.<br><br>Nie jest to ruda. Nikt tu nie wie, co to jest.”","Chcę ją zobaczyć."]]],
+       ["nw_zapisowa","Pisarka Cechowa Milena","Kobieta z trzema księgami otwartymi naraz","pisarka cechowa","kobieta",
+        "„Trzy księgi, bo trzy prawdy: co przyszło, co wyszło i co powiedziano, że przyszło i wyszło.”",
+        [["Które się zgadzają?","„Pierwsza z drugą nigdy. Trzecia z żadną.<br><br>Tak jest we wszystkich cechach i nikt tego nie nazywa kradzieżą. Nazywa się to różnicą naturalną.”","Zgrabnie."],
+         ["Co mówi trzecia księga o wschodzie?","„Że kontraktów na wschód nie było. W drugiej są trzy, w pierwszej pięć.<br><br>Pięć wyjazdów, zero powrotów, zero zapisów. Ktoś bardzo się starał, żeby to zniknęło.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  ulica("latarnica", [
+    ["nw_bosman","Bosman Chwalisz","Człowiek z liną zawiniętą wokół pięści","bosman portowy","weteran",
+     "„Trzymaj się z dala od krawędzi. Nie dlatego, że wpadniesz - dlatego, że jak wpadniesz, to ja muszę cię wyciągać.”",
+     [["Ruch w porcie?","„Mniejszy niż powinien. Statki wychodzą, wracają, ale ładunek jest lżejszy od zgłoszonego o jedną piątą.<br><br>Nie kradną. Sprawdzałem. Po prostu w porcie docelowym nie ma kto odebrać wszystkiego.”","Dziwne."],
+      ["Pływacie na południe?","„Do Prastarego Ludu i z powrotem, wzdłuż brzegu. Dalej nie.<br><br>Dalej jest woda bez brzegu i wyspa, o której gadają pijani. Nie znam nikogo, kto by tam był, i znam wielu, którzy twierdzą, że znają kogoś takiego.”","Wyspa."]]],
+    ["nw_kaper","Zbroja Kaper","Kobieta z hakiem zamiast lewej dłoni","szyprowa","kobieta",
+     "„Hak nie od abordażu. Od liny, która się zerwała pod ładunkiem. Nudniejsza historia, ale prawdziwsza.”",
+     [["Wozisz towar czy ludzi?","„Ludzi, którzy chcą być towarem, i towar, który chce być ludźmi. Kontor tego nie zapisuje.<br><br>Ostatnio wożę głównie w jedną stronę. Na południe pełno, na północ pusto.”","Uciekają?"],
+      ["Kto ucieka?","„Rodziny z Kuźnic. Płacą podwójnie za nocny rejs i nie mówią dlaczego.<br><br>Jedna kobieta powiedziała mi tylko tyle: że jej mąż wrócił z kontraktu i przestał spać, a potem przestał być mężem.”","Zapamiętam to."]]]
+  ]);
+  budynki("latarnica", [
+    wnetrze({id:"latarnica_wieza", wejscie:"Wejdź na Wieżę Latarni", wraca:"latarnica",
+      n:"Wieża Latarni", region:"latarnia Nowożytnych",
+      opis:"Sto osiemdziesiąt stopni i na górze misa z ogniem, którego nikt nigdy nie widział zgaszonego. Pod misą leży dziennik, w którym zapisuje się każdą noc od dwustu lat.",
+      ludzie:[
+       ["nw_lampiarz","Lampiarz Wojsław","Człowiek z sadzą wtartą w zmarszczki","lampiarz","kowal",
+        "„Ogień je pół beczki oleju na noc. Zimą całą. Kto tego nie policzy, ten myśli, że latarnia jest za darmo.”",
+        [["Zgasła kiedyś?","„Trzy razy w dwustu latach i za każdym razem jest o tym zapis. Zawsze przy sztormie z północy.<br><br>Czwarty raz był we wrześniu. Sztormu nie było. Zapisu też nie ma, bo kazali go nie robić.”","Kto kazał?"],
+         ["Co widać stąd nocą?","„Wodę i światła statków. A od lata jeszcze jedno światło, na północnym wschodzie, nisko nad horyzontem.<br><br>Nie miga jak latarnia i nie porusza się jak statek. Stoi. Świeci na czerwono i stoi.”","Od kiedy?"]]],
+       ["nw_dziennikarka","Zapisowa Nocy Ostoja","Kobieta z piórem przy otwartym dzienniku","zapisowa","kobieta",
+        "„Jedna linijka na noc: pogoda, statki, ogień. Dwieście lat, siedemdziesiąt trzy tysiące linijek.”",
+        [["Czytałaś stare?","„Wszystkie. To moja robota i moja kara.<br><br>Pierwszy tom zaczyna się od zdania, którego nikt nie umie wyjaśnić: <em>zapalono ponownie, po Zamknięciu</em>. Ponownie. Czyli była tu latarnia wcześniej.”","Ponownie."],
+         ["Zapisałaś to czerwone światło?","„Zapisałam sto dwadzieścia razy i sto dwadzieścia razy przekreślono mi to w odpisie, który idzie do kontoru.<br><br>Trzymam własny odpis, nieprzekreślony. Nie pytaj gdzie.”","Nie pytam."]]]
+      ]}),
+    wnetrze({id:"latarnica_stocznia", wejscie:"Wejdź do stoczni", wraca:"latarnica",
+      n:"Stocznia", region:"stocznia Latarnicy",
+      opis:"Pochylnia, na niej kadłub odwrócony dnem do góry, i zapach smoły tak gęsty, że czuć go w ustach.",
+      ludzie:[
+       ["nw_szkutnik2","Cieśla Okrętowy Racław","Człowiek mierzący coś sznurkiem z węzłami","cieśla okrętowy","kowal",
+        "„Sznurek z węzłami, nie miara. Miary się rozciągają, węzły nie.”",
+        [["Co budujecie?","„Ósmy w tym roku i wszystkie osiem to ten sam wzór: płytki, szybki, do dwudziestu ludzi.<br><br>Takich łodzi nie buduje się do handlu. Buduje się je, żeby przewieźć wojsko przez wodę i wrócić po następnych.”","Kto zamówił?"],
+         ["Nowożytni szykują desant?","„Nie wiem i nie chcę. Ale kontrakt podpisała giełda, a giełda nie kupuje ośmiu takich łodzi dla zabawy.<br><br>Zapytaj kapitana portu. On wie i on się boi, że wiem ja.”","Zapytam."]]],
+       ["nw_smolarka","Smolarka Dobrochna","Kobieta z rękami czarnymi po łokcie","smolarka stoczniowa","kobieta",
+        "„Nie podchodź do kotła. Smoła nie parzy - smoła się przykleja i dopiero potem parzy.”",
+        [["Skąd bierzecie smołę?","„Ze Smolarzy, wozami przez Kuźnice. Dwa razy więcej niż rok temu.<br><br>Radzim tam mielerzuje dzień i noc i wygląda jak człowiek, którego przestano pytać, czy da radę.”","Zajrzę do niego."],
+         ["Co się smołuje poza łodziami?","„Od miesiąca beczki. Duże, na jedną trzecią wypełnione czymś, co się przelewa, i uszczelniane potrójnie.<br><br>Odbiera je człowiek, który nie schodzi z konia. Płaci od beczki i nie targuje się.”","Ile beczek?"]]]
+      ]})
+  ]);
+
+  ulica("kuznice_wodne", [
+    ["nw_kolodziej_h","Młynarz Kołowy Bogdan","Człowiek nasłuchujący koła","młynarz kołowy","kowal",
+     "„Słucham koła. Zdrowe koło mruczy, chore stuka. To koło stuka od trzech tygodni i nikt nie daje na naprawę.”",
+     [["Ile tu kół?","„Czternaście, z czego dwa stoją. Napędzają młoty, miechy i jedną rzecz, o której hutmistrz nie mówi.<br><br>Ta jedna rzecz jest za trzecią ścianą i pracuje tylko nocą.”","Co to jest?"],
+      ["Byłeś tam?","„Raz, po naprawę. Widziałem koło, które napędza nie młot, tylko miech dmuchający w rurę idącą w ziemię.<br><br>W ziemię, rozumiesz. Nie do pieca. W ziemię.”","Zapamiętam."]]],
+    ["nw_wdowa_h","Wdowa Radomiła","Kobieta czekająca przy bramie huty","wdowa hutnicza","kobieta",
+     "„Czekam. Nie na niego - na wypłatę po nim. Trzeci miesiąc i za każdym razem mówią, że w przyszłym tygodniu.”",
+     [["Co się stało twojemu mężowi?","„Poszedł z kontraktem na wschód, bo płacili poczwórnie. Mówiłam, żeby nie szedł.<br><br>Giełda nie wypłaca, bo nie ma potwierdzenia zgonu. Nie ma zgonu, bo nie ma ciała. Nie ma ciała, bo nikt tam nie pojechał sprawdzić.”","To podłe."],
+      ["Ilu was tu czeka?","„Dziewiętnaście kobiet przy tej bramie. Przychodzimy w piątki, bo w piątki wypłacają.<br><br>W zeszłym roku było nas cztery.”","Dziewiętnaście."]]]
+  ]);
+  budynki("kuznice_wodne", [
+    wnetrze({id:"kuznice_huta", wejscie:"Wejdź do wielkiej huty", wraca:"kuznice_wodne",
+      n:"Wielka Huta", region:"huta Nowożytnych",
+      opis:"Trzy piece i przy każdym kolejka wózków. Gorąco jest tu takie, że ludzie pracują na zmiany po dwie godziny i nikt tego nie kwestionuje.",
+      ludzie:[
+       ["nw_wytapiacz","Wytapiacz Sulimir","Człowiek z osmalonymi rzęsami","wytapiacz","kowal",
+        "„Dwie godziny przy piecu i cztery odpoczynku. Kto wytrzyma trzy, ten nie wytrzyma dziesięciu lat.”",
+        [["Co topicie?","„Rudę darniową z kopalni i złom z pól bitewnych. Złomu przychodzi więcej niż rudy i to jest cała prawda o tej wojnie.<br><br>Przetapiam pancerze na pancerze. Te same żelazo chodzi w kółko i za każdym razem jest go trochę mniej.”","Ponuro."],
+         ["Co jest za trzecią ścianą?","„Nie wiem i nie chcę wiedzieć, bo ci, co wiedzieli, dostali podwyżkę i przestali z nami jeść.<br><br>Wiem tylko, że tam idzie powietrze rurą w dół i wraca gorące. Nie ogrzane. Gorące.”","Kto tam pracuje?"]]],
+       ["nw_hutmistrzowa","Nadzorczyni Wierzchosława","Kobieta z tabliczką zmian","nadzorczyni zmian","kobieta",
+        "„Zmiany prowadzę ja, nie hutmistrz. Hutmistrz prowadzi rachunki, a rachunki nie mdleją przy piecu.”",
+        [["Ilu ludzi zatrudniacie?","„Czterystu dwunastu na papierze, trzystu siedemdziesięciu naprawdę.<br><br>Czterdziestu dwóch jest na liście, ale nie przychodzą. Za nich też płacimy i nie mnie o to pytać.”","Komu płacicie?"],
+         ["Kto pracuje za trzecią ścianą?","„Dwunastu, wpisanych osobno, z osobnym wejściem i osobną wypłatą.<br><br>Żaden nie jest stąd i żaden nie mówi po naszemu bez akcentu. Nie umiem powiedzieć jakiego.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"kuznice_zbrojownia", wejscie:"Wejdź do zbrojowni", wraca:"kuznice_wodne",
+      n:"Zbrojownia Kuźnic", region:"zbrojownia Nowożytnych",
+      opis:"Stojaki po obu stronach, na nich broń poukładana według wagi, nie według rodzaju. Trzeci rząd od końca jest pusty i zamieciony.",
+      ludzie:[
+       ["nw_zbrojmistrzowa","Zbrojmistrzyni Nawoja Młodsza","Kobieta ważąca miecz na dłoni","zbrojmistrzyni","kobieta",
+        "„Ważę, nie oglądam. Broń, która waży tyle co trzeba, jest zrobiona jak trzeba. Zdobienia nie ważą nic i nic nie znaczą.”",
+        [["Co zniknęło z trzeciego rzędu?","„Sto dwadzieścia toporów i osiemdziesiąt tarcz, wydane w sierpniu na jeden podpis.<br><br>Podpis jest nieczytelny, a pieczęć giełdowa. Pytałam. Powiedziano mi, że to nie mój dział.”","Twój dział to zbrojownia."],
+         ["Czym najlepiej bić się z Ismaalem?","„Niczym. Ale skoro pytasz: krótkim i ciężkim. Oni noszą tarcze i uczą się je trzymać od dziecka.<br><br>Długa broń odbija się od tarczy. Ciężka łamie rękę, która ją trzyma.”","Rozsądnie."]]],
+       ["nw_puszkarz_nw","Puszkarz Gniewomir","Człowiek z opaską na jednym oku","puszkarz","weteran",
+        "„Oko zostało przy trzeciej próbie. Czwarta wyszła. Piąta też. To nazywam postępem.”",
+        [["Nowożytni używają prochu?","„Używamy i nie chwalimy się tym, bo Ismaal nazywa to bezbożnym, a my nie chcemy im dawać powodu do kazań.<br><br>Trzy działa. Wszystkie stoją w Grocie... to znaczy stały. Teraz nie wiem gdzie.”","Nie wiesz?"],
+         ["Zgubiliście działa?","„Wyjechały na wschód w sierpniu, tym samym transportem co topory. Trzy działa, sto dwadzieścia toporów, osiemdziesiąt tarcz.<br><br>To nie jest wyprawa handlowa. To jest wojsko, tylko nikt tego tak nie nazwał.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  /* ============ MIASTA ISMAALA ============ */
+  ulica("zarnowiec", [
+    ["sk_formierz","Formierz Świętomir","Człowiek ubijający glinę stopami","formierz","kowal",
+     "„Glina musi być ubita nogami, nie młotem. Młot zostawia w niej powietrze, a powietrze w formie to pęknięty dzwon.”",
+     [["Ile dzwonów odlaliście w tym roku?","„Dwa. W zeszłym czternaście.<br><br>Reszta pieca idzie na to, co dzwonem nie jest, i o tym się nie mówi przy formierzach, bo formierze plotkują.”","A jednak plotkujesz."],
+      ["Więc plotkuj.","„Lufy. Krótkie, grube, po cztery stopy. Ismaal nie używa prochu, więc po co nam lufy.<br><br>Chyba że przestaliśmy nie używać. Wtedy wszystko się zgadza i to jest gorsze.”","Zapamiętam."]]],
+    ["sk_dzwonnica","Dzwonniczka Bogumiła","Kobieta z watą w uszach","dzwonniczka","kobieta",
+     "„Głośniej. Nie zdejmę waty, bo bez niej ogłuchnę do reszty, a i tak już słyszę połowę.”",
+     [["Bijesz w dzwony?","„Cztery razy dziennie i piąty raz, kiedy ktoś umrze wysoko urodzony. W tym roku biłam piąty raz siedemnaście razy.<br><br>Wszystkie siedemnaście w ciągu dwóch tygodni w sierpniu.”","Siedemnaście naraz?"],
+      ["Kto to był?","„Nie mówią. Biję i nie pytam - taka umowa.<br><br>Ale liczyłam uderzenia. Za rycerza bije się dwanaście razy, za chorążego dwadzieścia cztery. Biłam dwadzieścia cztery siedemnaście razy z rzędu.”","Siedemnastu chorążych."]]]
+  ]);
+  budynki("zarnowiec", [
+    wnetrze({id:"zarnowiec_ludwisarnia", wejscie:"Wejdź do ludwisarni", wraca:"zarnowiec",
+      n:"Ludwisarnia", region:"ludwisarnia Ismaala",
+      opis:"Dół odlewniczy głęboki na dwa wzrosty, a nad nim rusztowanie z kadzią. Ściany są zakopcone tak równo, że wyglądają na pomalowane.",
+      ludzie:[
+       ["sk_kadziowy","Kadziowy Wszemir","Człowiek stojący przy dźwigni","kadziowy","kowal",
+        "„Kadź waży tyle co trzy konie i wisi na jednym łańcuchu. Dlatego stoję tu ja, a nie ktoś, kto się rozprasza.”",
+        [["Co dziś lejecie?","„Nie dzwon. Więcej ci nie powiem przy świetle.<br><br>Przyjdź po zmierzchu, jak nie będzie tu kanclerskiego pisarza. Wtedy pokażę ci formę i sam zobaczysz, co to jest.”","Przyjdę."],
+         ["Boisz się pisarza?","„Boję się tego, że pisarz przyszedł. Przez czternaście lat nikt nie pisał, co odlewamy.<br><br>Od sierpnia pisze codziennie i wysyła to nie do kanclerza, tylko gdzie indziej. Widziałem pieczęć. Nie jest nasza.”","Czyja?"]]],
+       ["sk_odlewnik","Mistrzyni Odlewu Racława Starsza","Kobieta z linijką z brązu","mistrzyni odlewu","kobieta",
+        "„Linijka z brązu, bo drewniana się kurczy przy piecu. Wszystko tu jest z brązu poza ludźmi.”",
+        [["Uczyłaś Prochmistrzynię Racławę?","„Uczyłam i żałuję. Uczyłam ją mierzyć, a ona nauczyła się mierzyć, ile prochu potrzeba na ścianę.<br><br>To ta sama umiejętność. Nie umiem powiedzieć, w którym momencie stała się czymś innym.”","Rozumiem."],
+         ["Co się zmieniło w Żarnowcu?","„Zamówienia. Przez trzysta lat to miasto odlewało dzwony i kotły, a od roku odlewa rzeczy, które nie mają nazwy w naszym cechowym spisie.<br><br>Wpisujemy je jako <em>wyrób szczególny</em>. Sto siedemdziesiąt wyrobów szczególnych w tym roku.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"zarnowiec_prochownia", wejscie:"Zejdź do prochowni", wraca:"zarnowiec",
+      n:"Prochownia", region:"prochownia Ismaala",
+      opis:"Piwnica z podłogą wysypaną piaskiem i zakazem wnoszenia żelaza. Beczki stoją w rzędach po dziesięć, oddzielone murkami.",
+      ludzie:[
+       ["sk_prochowa","Ważąca Proch Milesa","Kobieta w płóciennych trzewikach","ważąca proch","kobieta",
+        "„Zdejmij podkute buty albo stój w progu. Jedna iskra i nie będzie tu ani ciebie, ani mnie, ani Żarnowca.”",
+        [["Ile tu prochu?","„Czterysta beczek. Rok temu było czterdzieści.<br><br>Ismaal oficjalnie prochu nie używa. Czterysta beczek to jest bardzo dużo nieużywania.”","Bardzo dużo."],
+         ["Dokąd to idzie?","„Na wschód, wozami, nocą i bez chorągwi. Zapisuję każdą beczkę i co miesiąc oddaję zapis kanclerzowi.<br><br>Kanclerz oddaje mi go z powrotem z przekreślonymi liczbami i kazaniem, żebym się nie myliła.”","Nie mylisz się."]]],
+       ["sk_saletrnik","Saletrnik Wojmił","Człowiek pachnący uryną i wapnem","saletrnik","kowal",
+        "„Wiem, jak pachnę. Saletra się nie robi z powietrza, tylko z gnoju, uryny i cierpliwości.”",
+        [["Skąd bierzecie saletrę?","„Z gnojowisk całego Ismaala i to od roku nie wystarcza. Kupujemy przez Jarmark, od Odeszłych, po potrójnej cenie.<br><br>Odeszli kupują to od Nowożytnych. Więc kupujemy proch od tych, do których strzelamy.”","Idiotyczne."],
+         ["Ktoś jeszcze kupuje saletrę?","„Ktoś kupuje wszystko, co się da wysypać i podpalić, i płaci lepiej od nas.<br><br>Nie wiem kto. Wiem, że Odeszli boją się z nim targować, a Odeszli targują się ze wszystkimi.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  ulica("kruczyn", [
+    ["sk_zaloba","Płaczka Miłosława","Kobieta w czarnym, z zaczerwienionymi oczami","płaczka pogrzebowa","kobieta",
+     "„Płaczę na pogrzebach za zapłatą i nie wstydzę się. Ktoś musi, skoro rodziny są na wojnie.”",
+     [["Dużo pracy?","„Za dużo. Płakałam na osiemdziesięciu pogrzebach w tym roku, a na dwudziestu ośmiu nie było trumny, tylko płótno złożone w kostkę.<br><br>Puste płótno. Płaczę nad pustym płótnem i biorę za to pełną stawkę. To mnie zżera.”","Rozumiem."],
+      ["Kto zamawia te puste pogrzeby?","„Twierdza Grot. Płacą z góry za dwadzieścia osiem i mówią, że będzie więcej.<br><br>Zamawiają pogrzeby na zapas. Rozumiesz, co to znaczy?”","Rozumiem."]]],
+    ["sk_student","Żak Przecław","Chłopak z pękiem zwojów pod pachą","żak archiwum","urzednik",
+     "„Trzy lata w archiwum i wciąż nie mam prawa wejść na czwarty poziom. Mówią, że tam jest wilgoć.”",
+     [["Wierzysz w tę wilgoć?","„Wierzyłem przez dwa lata. W trzecim zauważyłem, że na czwarty poziom co miesiąc schodzi archiwista z lampą i wychodzi bez kurzu na rękawach.<br><br>W wilgotnym archiwum kurz nie lata. W pustym też nie.”","Sprytnie."],
+      ["Co tam jest?","„Regestry sprzed Zamknięcia Bram. Trzysta lat i starsze. Wiem, bo raz widziałem sygnaturę na grzbiecie, kiedy archiwista wychodził.<br><br>Sygnatura zaczynała się od litery, której nie używamy od dwustu lat.”","Poszukam tego."]]]
+  ]);
+  budynki("kruczyn", [
+    wnetrze({id:"kruczyn_archiwum", wejscie:"Wejdź do Archiwum Wysokiego", wraca:"kruczyn",
+      n:"Archiwum Wysokie", region:"archiwum Ismaala",
+      opis:"Cztery poziomy regałów, do trzeciego prowadzą schody, do czwartego drabina zamknięta na łańcuch. Powietrze jest suche i pachnie klejem.",
+      ludzie:[
+       ["sk_archiwistka","Archiwistka Dobrosława Stara","Kobieta z lampą osłoniętą szkłem","archiwistka","kobieta",
+        "„Lampa osłonięta, bo jedna iskra i trzysta lat idzie z dymem. Tak zginęło archiwum w Żarnowcu.”",
+        [["Co jest na czwartym poziomie?","„Rzeczy, których nie wolno mi opisać, ale wolno mi powiedzieć, że są. To jest ostrożnie sformułowane i nie przypadkiem.<br><br>Zapytaj mnie o coś konkretnego. Na konkretne pytanie muszę odpowiedzieć albo odmówić, a odmowa też jest odpowiedzią.”","Czy jest tam coś o Bramie?"],
+         ["Czy jest tam coś o Bramie?","Milczy przez cztery oddechy.<br><br><span class='mowa'>„Odmawiam odpowiedzi.”</span><br><br>Odkłada lampę i odwraca się do regału. Ręce jej drżą i nie ma to nic wspólnego z wiekiem.","Wystarczy mi to."]]],
+       ["sk_introligator","Introligator Ziemomysł","Człowiek z klejem zaschniętym na palcach","introligator","urzednik",
+        "„Nie oprawiam. Rozprawiam i oprawiam z powrotem, a to zupełnie inna robota i płacą za nią lepiej.”",
+        [["Po co rozprawiać księgę?","„Żeby wyjąć kartę i wszyć inną. Robię to od jedenastu lat i przez pierwsze dziewięć myślałem, że poprawiam błędy.<br><br>W dziesiątym policzyłem karty, które wyjąłem. Sto siedemdziesiąt. Same błędy nie zdarzają się sto siedemdziesiąt razy.”","Co było na tych kartach?"],
+         ["Zachowałeś którąś?","„Jedną. Nie umiem powiedzieć dlaczego akurat tę - może dlatego, że była z pieśni, a pieśni nikt nie poprawia bez powodu.<br><br>Jest na niej wers o tym, skąd przyszedł Ismaal. Trzymam ją w oprawie modlitewnika, którego nikt nie otwiera.”","Pokaż mi ją."]]]
+      ]}),
+    wnetrze({id:"kruczyn_cmentarz", wejscie:"Wejdź na Cmentarz Wysoki", wraca:"kruczyn",
+      n:"Cmentarz Wysoki", region:"cmentarz Ismaala",
+      opis:"Groby wykute w skale, jeden nad drugim, w dziewięciu piętrach. Im wyżej, tym starsze i tym trudniej odczytać imię.",
+      ludzie:[
+       ["sk_grabarz","Grabarz Niemir","Człowiek z kilofem zamiast łopaty","grabarz","kowal",
+        "„W skale nie kopie się łopatą. Jeden grób to trzy dni kilofa i dlatego u nas nie chowa się byle kogo.”",
+        [["Ile grobów wykułeś w tym roku?","„Dwadzieścia dwa, a zapłacono mi za pięćdziesiąt.<br><br>Dwadzieścia osiem jest opłaconych i nie wykutych, bo nie ma kogo w nie włożyć. Kazali czekać.”","Czekasz."],
+         ["Kto leży najwyżej?","„Nikt nie wie. Dziewiąte piętro jest sprzed rachuby i imion nie da się odczytać.<br><br>Poza jednym. Jeden grób na dziewiątym ma imię wykute głębiej niż inne i ktoś je odnawiał przez trzysta lat. Nie ma tam nazwiska ani rodu.”","Jakie imię?"]]],
+       ["sk_kamieniarka_c","Rytowniczka Nagrobna Zofia","Kobieta wykuwająca literę po literze","rytowniczka","kobieta",
+        "„Litera dziennie, jak dobrze idzie. Ludzie się dziwią, że tak wolno. Ludzie nie próbowali pisać w skale.”",
+        [["Co wykuwasz najczęściej?","„Imię, chorągiew i rok. Od sierpnia coraz częściej bez chorągwi, bo rodziny proszą, żeby nie wykuwać.<br><br>Nie chcą, żeby ktoś kiedyś policzył, ilu z jednej chorągwi leży tu obok siebie.”","Rozumiem."],
+         ["Wykuwałaś to imię z dziewiątego piętra?","„Odnawiałam. Moja matka odnawiała przed mną, a jej matka przed nią.<br><br>Płaci za to kaplica i płaci zawsze na czas. Imię brzmi krótko i nie jest ismaalskie. Brzmi jak imię z puszczy.”","Powiedz mi je."]]]
+      ]})
+  ]);
+
+  ulica("grot", [
+    ["sk_intendent","Intendent Wszebor","Człowiek z tabliczką i ołówkiem","intendent twierdzy","urzednik",
+     "„Licz szybko, mów wolno. U mnie odwrotnie niż u ludzi.”",
+     [["Ile ludzi żywisz?","„Osiemset według rozkazu, czterysta sześćdziesiąt naprawdę, a wydaję na siedemset.<br><br>Różnica idzie wozami na wschód. Nie pytaj, komu - podpisuję i nie czytam, bo tak jest zdrowiej.”","Zdrowiej."],
+      ["Wozy wracają?","„Wozy tak, ludzie nie. Wracają puste, z jednym woźnicą zamiast czterech.<br><br>Ten sam woźnica, za każdym razem. Nie mówi nic i nie chce jeść. Widziałem go osiem razy i za ósmym miał te same buty co za pierwszym, nieznoszone.”","Nieznoszone."]]],
+    ["sk_rekrut","Rekrut Częstobor","Chłopak w za dużym kaftanie","rekrut","weteran",
+     "„Trzeci tydzień. Uczą mnie stać. Trzeci tydzień samego stania.”",
+     [["Ilu was jest w naborze?","„Sześćdziesięciu. Z Sępnicy, Wrzosów i Kamionki, sami tacy, po których nikt nie zapyta.<br><br>Sierżant mówi, że idziemy na wschód za miesiąc. Mówi to tak, jakby nas przepraszał.”","Nie idź."],
+      ["Możesz odmówić?","„Mogę uciec. Trzech uciekło w zeszłym tygodniu i dwóch przyprowadzono z powrotem.<br><br>Trzeciego nie. Sierżant powiedział, że dotarł do Ziem Niczyich. Powiedział to głośno i chyba specjalnie.”","Idź na zachód."]]]
+  ]);
+  budynki("grot", [
+    wnetrze({id:"grot_arsenal", wejscie:"Wejdź do arsenału twierdzy", wraca:"grot",
+      n:"Arsenał Grotu", region:"arsenał Ismaala",
+      opis:"Sklepiona hala z bronią ustawioną w kozłach. Pod ścianą stoją trzy puste podstawy z odciśniętymi w kurzu śladami czegoś ciężkiego i okrągłego.",
+      ludzie:[
+       ["sk_arsenalowy","Arsenałowy Domasz","Człowiek liczący kozły z bronią","arsenałowy","weteran",
+        "„Licz ze mną albo nie przeszkadzaj. Zgubię rachubę i zacznę od pierwszego kozła.”",
+        [["Co stało na tych podstawach?","„Nic. Zawsze były puste.<br><br>Kazano mi tak mówić i powiedziałem. Zapytaj mnie jeszcze raz, a powiem to samo, tylko wolniej.”","Zapytam jeszcze raz."],
+         ["Zapytam jeszcze raz.","Odkłada tabliczkę.<br><br><span class='mowa'>„Trzy działa nowożytnej roboty, zdobyte pod Kruczynem cztery lata temu. Stały tu i nikt ich nie ruszał, bo Ismaal prochu nie używa.<br><br>W sierpniu przyjechał wóz i wyjechał z nimi. Papieru nie było. Był tylko człowiek, któremu kasztelanka nie śmiała odmówić.”</span>","Kto to był?"]]],
+       ["sk_cieciwiarz","Cięciwiarz Milobrat Młodszy","Człowiek skręcający ścięgno","cięciwiarz","kowal",
+        "„Cięciwa ze ścięgna, nie z konopi. Konopna pęka na mrozie, a na wschodzie jest mróz nawet latem.”",
+        [["Skąd wiesz, jaki jest mróz na wschodzie?","„Z reklamacji. Wróciło do mnie osiemdziesiąt kusz z pękniętymi cięciwami i wszystkie pękły tak samo - w miejscu, gdzie ścięgno przymarza.<br><br>Osiemdziesiąt kusz wróciło. Ludzi, którzy je nieśli, nie widziałem.”","Ktoś je przywiózł."],
+         ["Kto przywiózł te kusze?","„Ten sam woźnica co zawsze. Zdjął je z wozu jedną ręką, po osiem naraz, a osiem kusz waży tyle co człowiek.<br><br>Podziękowałem mu. Nie odpowiedział. Nie sądzę, żeby mógł.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"grot_kaplica", wejscie:"Wejdź do kaplicy garnizonowej", wraca:"grot",
+      n:"Kaplica Garnizonowa", region:"kaplica Twierdzy Grot",
+      opis:"Ciasna izba z polnym kamieniem i ławą na dwadzieścia osób. Na ścianie wiszą tabliczki poległych, ostatnie osiemnaście jeszcze bez dat śmierci.",
+      ludzie:[
+       ["sk_kapelan","Kapelan Ziemowit Cichy","Człowiek wieszający kolejną tabliczkę","kapelan garnizonu","urzednik",
+        "„Wieszam z datą urodzenia. Datę drugą dopisuję, jak przyjdzie potwierdzenie. Osiemnaście czeka.”",
+        [["Ile czekają?","„Najstarsza od sierpnia. Sto dwadzieścia trzy dni.<br><br>Po roku wolno dopisać datę zaginięcia zamiast śmierci. Nie dopiszę. Wolę, żeby wisiały bez daty i żeby ktoś pytał.”","Pytam."],
+         ["Modlisz się za nich?","„Modlę się o to, żeby to, co ich spotkało, nie było tym, o czym myślę.<br><br>To nie jest modlitwa, której uczą w Czerwieni. To jest modlitwa, której człowiek uczy się sam, kiedy przestaje wierzyć w tamtą.”","Rozumiem."]]],
+       ["sk_wdowa_g","Sierota Rada","Dziewczynka siedząca pod tabliczkami","sierota garnizonowa","kobieta",
+        "„Nie jestem sierotą. Tata nie ma daty, więc jeszcze nie.”",
+        [["Jak długo tu siedzisz?","„Od sierpnia. Kapelan daje mi jeść i mówi, żebym poszła do ciotki do Sępnicy.<br><br>Nie pójdę. Jak przyjdzie, to przyjdzie tutaj, a nie do Sępnicy.”","Rozumiem."],
+         ["Jak wygląda twój tata?","„Wysoki i ma bliznę tu, przy uchu. Nazywa się Wojsław, nie ten sierżant, inny.<br><br>Jak go zobaczysz, powiedz mu, że siedzę pod tabliczkami i że nie poszłam do Sępnicy.”","Powiem mu."]]]
+      ]})
+  ]);
+
+  /* ============ MIASTA PRASTAREGO LUDU ============ */
+  ulica("borowe_wrota", [
+    ["pl_wrotny","Wrotny Dobrogost","Człowiek stojący między dwoma żywymi dębami","wrotny","weteran",
+     "„Brama jest z dwóch drzew, które rosną. Nie zamyka się jej - ona zarasta, jak trzeba.”",
+     [["Zarasta sama?","„Sama, jeśli druidzi poproszą. Trwa to trzy dni i przez trzy dni nikt nie wejdzie ani nie wyjdzie.<br><br>Zarosła dwa razy w moim życiu. Pierwszy raz przy zarazie. Drugi raz w zeszłym miesiącu.”","Dlaczego w zeszłym?"],
+      ["Więc dlaczego zarosła?","„Nie powiedziano nam. Zarosła na jedną noc i rano była otwarta.<br><br>Rano znaleźliśmy pod nią ślady, które wchodziły i nie wychodziły. Ślady dwunożne, ale krok za szeroki na człowieka.”","Zapamiętam."]]],
+    ["pl_strzelec","Strzelczyni Dobroniega","Kobieta z trzema strzałami między palcami","strzelczyni wrót","kobieta",
+     "„Trzy strzały w dłoni, czwarta na cięciwie. Kto potrzebuje piątej, ten już nie żyje.”",
+     [["Uczysz tu?","„Uczę dzieci trzymać, a dorosłych oduczam wszystkiego, co umieli.<br><br>Najgorsi są zbrojni z nizin. Chcą celować. W puszczy się nie celuje - w puszczy się wie, gdzie strzała ma być, zanim się ją wypuści.”","Rozumiem."],
+      ["Strzelałaś kiedyś do człowieka?","„Do człowieka nie. Do czegoś, co szło jak człowiek, tak.<br><br>Trafiłam trzy razy w pierś i nie zwolniło kroku. Odeszło samo, kiedy zrobiło się jasno. Od tamtej nocy śpię z łukiem.”","Kiedy to było?"]]]
+  ]);
+  budynki("borowe_wrota", [
+    wnetrze({id:"wrota_lucznia", wejscie:"Wejdź na strzelnicę pod dębami", wraca:"borowe_wrota",
+      n:"Strzelnica pod Dębami", region:"szkoła łuczników Prastarego Ludu",
+      opis:"Polana z tarczami rozstawionymi co dwadzieścia kroków, aż po sto sześćdziesiąt. Za setką stoi już tylko jedna tarcza i jest cała.",
+      ludzie:[
+       ["pl_mistrz_luku","Mistrz Cięciwy Wojsław Leśny","Człowiek z przedramieniem grubszym po jednej stronie","mistrz cięciwy","weteran",
+        "„Ręka nierówna od trzydziestu lat naciągania. Wszyscy tutejsi łucznicy tak wyglądają. Poznasz nas po tym w tłumie.”",
+        [["Kto trafia w tarczę za setką?","„Trzech żyjących. Wielki Łowczy, ja i jedna dziewczyna z Rosicy, która o tym nie wie, bo nikt jej jeszcze nie zmierzył.<br><br>Tarcza jest cała, bo nie strzelamy do niej dla popisu. Strzelamy, jak jest po co.”","Kiedy ostatnio było po co?"],
+         ["Więc kiedy?","„W zeszłym miesiącu, w nocy, przy zarośniętej bramie. Strzelaliśmy we trzech i trafiliśmy we trzech.<br><br>To coś zabrało wszystkie trzy strzały ze sobą. Nie wyciągnęło ich. Odeszło z nimi w środku.”","Zapamiętam."]]],
+       ["pl_drzewiec","Drzewiec Radomił","Człowiek wybierający pnie na łuki","drzewiec","kowal",
+        "„Cis z północnego stoku, nie z południowego. Południowy rośnie szybciej i pęka. Rzeczy, które rosną szybko, zawsze pękają.”",
+        [["Ile trwa zrobienie łuku?","„Cztery lata suszenia i osiem dni roboty. Ludzie się dziwią, że łuk kosztuje tyle co koń.<br><br>Koń rośnie sam. Łuk trzeba czekać.”","Uczciwie."],
+         ["Ktoś zamawiał u ciebie ostatnio dużo?","„Wielki Łowczy. Sto łuków na wiosnę i wszystkie ciężkie, na sześćdziesiąt funtów naciągu.<br><br>Sześćdziesiąt funtów nie jest na zwierzynę i nie jest na człowieka. Człowieka kładzie się czterdziestką.”","Na co więc?"]]]
+      ]}),
+    wnetrze({id:"wrota_warsztat", wejscie:"Wejdź do warsztatu ciesielskiego", wraca:"borowe_wrota",
+      n:"Warsztat Ciesielski", region:"warsztat Borowych Wrót",
+      opis:"Wiór po kostki i zapach żywicy. Na kozłach leżą drzewce w różnych stopniach obróbki, a pod ścianą stoi coś dużego przykrytego płótnem.",
+      ludzie:[
+       ["pl_ciesla2","Cieśla Mścisz","Człowiek strugający bez patrzenia na dłonie","cieśla","kowal",
+        "„Patrzę na słój, nie na nóż. Kto patrzy na nóż, ten się tnie.”",
+        [["Co jest pod płótnem?","„Kładka składana, na dwadzieścia kroków, do przerzucenia przez wodę w pół godziny.<br><br>Robimy trzy takie. Prastary Lud nie buduje mostów od dwustu lat, bo mosty działają w obie strony.”","Więc po co teraz?"],
+         ["Po co teraz mosty?","„Bo starszyzna liczy się z tym, że będziemy musieli przejść na drugą stronę szybko i całym ludem.<br><br>Nikt tego nie powiedział głośno. Ale kładek nie robi się na wycieczkę.”","Zapamiętam."]]],
+       ["pl_tokarz","Tokarka Lubomira","Kobieta przy tokarce nożnej","tokarka","kobieta",
+        "„Noga napędza, ręce prowadzą. Kto ma słabą nogę, ten toczy krzywo, i to jest wszystko, co trzeba wiedzieć o moim fachu.”",
+        [["Co toczysz?","„Drzewca, trzonki i to, czego nikt nie zamawiał przez dwieście lat: kołki do palisady.<br><br>Sześć tysięcy kołków. Policzyłam, bo płacą od sztuki.”","Sześć tysięcy."],
+         ["Gdzie stanie ta palisada?","„Nie mówią. Ale kołki są krótkie, na dwie stopy, i zaostrzone z obu końców.<br><br>Palisady nie robi się z takich. Z takich robi się coś, co się wbija gęsto w ziemię przed linią. Coś przeciw temu, co biegnie.”","Znam to."]]]
+      ]})
+  ]);
+
+  ulica("mchowiec", [
+    ["pl_grzybiarz","Grzybiarz Sulisz","Człowiek z koszem wyścielonym mchem","grzybiarz","kowal",
+     "„Mech w koszu, nie płótno. Płótno poci grzyba i grzyb gnije, zanim dojdziesz.”",
+     [["Dobry rok na grzyby?","„Zły. Najgorszy od jedenastu lat i to bez suszy.<br><br>Grzyb rośnie z tego, co się rozkłada. Jak nie ma grzyba, to znaczy, że w ziemi coś przestało się rozkładać.”","Co to znaczy?"],
+      ["Więc co to znaczy?","„Nie wiem. Wiem tylko, że na wschodzie puszczy jest pas, w którym leżą pnie sprzed dziesięciu lat i wyglądają jak wczoraj ścięte.<br><br>Nie próchnieją. Powiedziałem to druidom. Kazali nie chodzić tam więcej.”","Poszedłeś?"]]],
+    ["pl_zabiarz","Bagienna Żywia","Kobieta z żabą na dłoni","zbieraczka bagienna","kobieta",
+     "„Nie krzyw się. Żaba w bagnie jest jak ptak w kopalni - dopóki skacze, można wejść.”",
+     [["A jak przestanie skakać?","„Wtedy się wychodzi i nie wraca przez rok. Bagno wypuszcza czasem powietrze, od którego się zasypia i nie budzi.<br><br>Od wiosny żaby przestały skakać w trzech miejscach naraz. Wcześniej zdarzało się to raz na dekadę.”","Trzy miejsca."],
+      ["Gdzie te miejsca?","„Wszystkie po wschodniej stronie i wszystkie na jednej linii, jakby ktoś przeciągnął sznurek.<br><br>Pokazałam to Ostromirowi. Popatrzył na tę linię dłużej, niż powinien, i powiedział, żebym nikomu nie mówiła. Mówię tobie, bo ty stąd odejdziesz.”","Zapamiętam."]]]
+  ]);
+  budynki("mchowiec", [
+    wnetrze({id:"mchowiec_krag", wejscie:"Wejdź w Krąg Druidów", wraca:"mchowiec",
+      n:"Krąg Druidów", region:"krąg druidzki Mchowca",
+      opis:"Dziewięć drzew rosnących w okrąg tak równo, że nie mogły wyrosnąć same. Środek jest wydeptany do gołej ziemi i nic tam nie rośnie od stuleci.",
+      ludzie:[
+       ["pl_druid_st","Druid Trzebor","Człowiek z korą wrośniętą w skórę przedramienia","druid kręgu","urzednik",
+        "„Kora nie wrasta. Kora się przyjmuje, jeśli drzewo się zgodzi, i wtedy człowiek przestaje być całkiem człowiekiem. Ja jestem w jednej ósmej drzewem.”",
+        [["Boli to?","„Nie. Za to nie czuję zimna po tej stronie i nie czuję też, kiedy się skaleczę.<br><br>Za każdą ósmą coś się oddaje. Arcydruidka jest w połowie i nie pamięta imion swoich dzieci.”","Warto było?"],
+         ["Co mówi wam puszcza?","„Że coś ssie. Nie zabija, nie pali, nie tnie - ssie.<br><br>Woda ucieka, grzyb nie rośnie, drewno nie próchnieje. Wszystko, co potrzebuje rozkładu, żeby żyć, zatrzymało się na wschodzie. Jakby ktoś tam zabrał samą śmierć.”","Zabrał śmierć."]]],
+       ["pl_zwierzeca","Odmieniec Wilcza","Kobieta o źrenicach zbyt wąskich w dzień","odmieniec","kobieta",
+        "„Patrz w oczy albo nie patrz wcale. Odwracanie wzroku to u wilków wyzwanie, a ja nie chcę cię wyzywać.”",
+        [["Zmieniasz się w wilka?","„Zmieniam się z wilka. To ważniejsza kolejność i nikt na nizinach jej nie rozumie.<br><br>Urodziłam się jako wilk i puszcza zgodziła się, żebym chodziła też tak. Kiedyś przestanie się zgadzać.”","Kiedy?"],
+         ["Chodzisz na wschód?","„Chodziłam. Jako wilk, bo wilk czuje więcej.<br><br>Ostatni raz w Popielnym. Zawróciłam po dwóch dniach, bo przestałam czuć zapachy. Wszystkie. Zapach nie znika w lesie - chyba że nie ma czemu pachnieć.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"mchowiec_zielarnia", wejscie:"Wejdź do zielarni Mchowca", wraca:"mchowiec",
+      n:"Zielarnia Mchowca", region:"zielarnia druidów",
+      opis:"Izba wrośnięta w pień olbrzymiej olchy. Półki nie są przybite - wyrastają ze ściany, bo ktoś poprosił drzewo, żeby wyrosły.",
+      ludzie:[
+       ["pl_zielarz_m","Zielarz Miłowit","Człowiek rozcierający coś w dłoni zamiast w moździerzu","zielarz","urzednik",
+        "„Moździerz miażdży, dłoń rozciera. Różnica jest w tym, ile z ziela zostaje żywego, a to widać dopiero po tygodniu.”",
+        [["Czym się różni wasze zielarstwo od nizinnego?","„Tym, że pytamy roślinę, zanim ją zerwiemy, i czasem dostajemy odpowiedź, że nie.<br><br>Niziny nazywają to zabobonem. Zabobon czy nie, mamy o połowę mniej zatruć niż oni.”","Trudno się kłócić."],
+         ["Co przestało rosnąć?","„Sześć gatunków w tym roku, wszystkie z rodzaju, który lubi wilgoć i próchno.<br><br>Zapisałem je na korze i schowałem, bo Milina mówi, że zapisane trafia na niziny. Wolę, żeby trafiło i przetrwało, niż żeby zginęło czyste.”","Rozsądnie."]]],
+       ["pl_uczen_z","Uczennica Ziela Kalina Mała","Dziewczynka z poparzonym nosem","uczennica zielarska","kobieta",
+        "„Powąchałam, czego nie wolno. Miłowit mówi, że to lepsza nauka niż dziesięć wykładów, a mnie nos boli.”",
+        [["Co powąchałaś?","„Korzeń, którego nazwy nie wolno mi powtarzać, bo nazwa jest częścią przepisu.<br><br>Rośnie tylko w jednym miejscu w całej puszczy i Miłowit chodzi tam raz w roku. W tym roku wrócił z pustym koszem.”","Wrócił z niczym?"],
+         ["Co powiedział, kiedy wrócił?","„Nic. Siedział całą noc przy ogniu i patrzył w kosz.<br><br>Rano poszedł do Ostromira i wrócił jeszcze bardziej milczący. Od tamtej pory uczy mnie szybciej, jakby mu się spieszyło.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  ulica("jodlogrod", [
+    ["pl_ostrzarz","Ostrzarz Wszerad","Człowiek z kamieniem ostrzącym na sznurku u pasa","ostrzarz","kowal",
+     "„Ostrzę na mokro, nie na sucho. Sucho szybciej, mokro dłużej trzyma. U nas nikomu się nie spieszy.”",
+     [["Ile ostrzysz dziennie?","„Czterdzieści ostrzy. Rok temu dwanaście.<br><br>Zbrojni ćwiczą teraz dwa razy dłużej i ostrza tępią się dwa razy szybciej. Reszty domyśl się sam.”","Domyśliłem się."],
+      ["Co ćwiczą?","„Walkę z czymś, co nie ma tarczy i nie robi uników. Ustawiają słupy i tną je w pełnym biegu.<br><br>Człowiek robi uniki. Ćwiczą przeciw czemuś, co ich nie robi.”","Zapamiętam."]]],
+    ["pl_kucharka_j","Kucharka Obozowa Milena Starsza","Kobieta mieszająca w kotle wielkości beczki","kucharka obozowa","kobieta",
+     "„Kocioł na osiemdziesiąt porcji i wszystkie się rozejdą. Nie chwalę się - martwię.”",
+     [["Dlaczego martwisz?","„Bo rok temu gotowałam na czterdzieści i to był cały Jodłogród.<br><br>Teraz jest osiemdziesiąt i nie przybyło mieszkańców. Przybyło zbrojnych z innych osad, których tu ściągnięto.”","Ściągnięto po co?"],
+      ["Więc po co?","„Nikt nie mówi. Ale gotuję też suchary, a suchary robi się na drogę.<br><br>Cztery tysiące sucharów. To jest osiemdziesiąt ludzi na pięćdziesiąt dni marszu.”","Pięćdziesiąt dni."]]]
+  ]);
+  budynki("jodlogrod", [
+    wnetrze({id:"jodlogrod_dwor", wejscie:"Wejdź na Dwór Zbrojnych", wraca:"jodlogrod",
+      n:"Dwór Zbrojnych", region:"dwór ćwiczebny Prastarego Ludu",
+      opis:"Wydeptany placyk otoczony słupami z drewna, wszystkie pocięte na wysokości piersi i szyi. Żaden nie jest pocięty niżej.",
+      ludzie:[
+       ["pl_zbrojmistrz","Zbrojmistrz Leśny Ninogniew","Człowiek z dwoma ostrzami wetkniętymi w ziemię","zbrojmistrz leśny","weteran",
+        "„Ostrza w ziemi, nie u pasa. U pasa kuszą. W ziemi trzeba się po nie schylić i przez ten jeden ruch człowiek zdąży pomyśleć.”",
+        [["Dlaczego tniecie tylko wysoko?","„Bo tak trzeba, jak przeciwnik nie ma tarczy i nie ma zamiaru się bronić.<br><br>Uczyliśmy nóg przez dwieście lat. Od pół roku uczę szyi i piersi.”","Kto tak wygląda?"],
+         ["Kto nie broni się przy ataku?","„Coś, czego nie widziałem, i mam nadzieję, że nie zobaczę. Opisał mi to Wielki Łowczy, a Wielki Łowczy nie opisuje rzeczy, których nie widział.<br><br>Powiedział jedno zdanie: <em>ono idzie na ostrze</em>. Nie ucieka przed ostrzem. Idzie na nie.”","Idzie na ostrze."]]],
+       ["pl_tancerka_u","Uczennica Dwóch Ostrzy Zbrosława","Dziewczyna z bandażem na obu przedramionach","uczennica","kobieta",
+        "„Bandaże od własnych ostrzy. Pierwszy rok tak wygląda u każdego, kto się uczy dwóch naraz.”",
+        [["Warto się tego uczyć?","„Warto, jeśli chcesz przeżyć w puszczy. Nie warto, jeśli chcesz stanąć w szeregu.<br><br>Ludmiła mówi, że jedno wyklucza drugie i że mam wybrać. Wybrałam i teraz mam bandaże.”","Powodzenia."],
+         ["Ludmiła was przygotowuje do czegoś?","„Do marszu. Nie mówi dokąd, ale kazała każdemu zszyć własne buty na nowo i sprawdzić, czy trzymają w wodzie i w piachu.<br><br>W puszczy nie ma piachu.”","Nie ma."]]]
+      ]}),
+    wnetrze({id:"jodlogrod_platnernia", wejscie:"Wejdź do płatnerni leśnej", wraca:"jodlogrod",
+      n:"Płatnernia Leśna", region:"płatnernia Prastarego Ludu",
+      opis:"Warsztat pod okapem z kory. Zbroje wiszą tu na kołkach i żadna nie jest z pełnej blachy - wszystkie z płytek naszytych na skórę.",
+      ludzie:[
+       ["pl_platnerz2","Płatnerka Wisława","Kobieta naszywająca płytki drewnianą igłą","płatnerka","kobieta",
+        "„Igła z rogu, nie ze stali. Stalowa rozcina rzemień, rogowa go rozpycha. Nizinni tego nie rozumieją i dlatego ich zbroje się pruja.”",
+        [["Dlaczego nie robicie pełnych zbroi?","„Bo w pełnej zbroi nie da się biec, a u nas walka to bieganie z przerwami na cięcie.<br><br>Poza tym pełna zbroja tonie. Połowa naszych bitew kończy się w wodzie i to zwykle my w niej kończymy.”","Rozsądnie."],
+         ["Zmieniłaś coś w tych zbrojach ostatnio?","„Dodałam kołnierz. Sztywny, wysoki, na płytkach zachodzących na siebie.<br><br>Nikt mnie o to nie prosił. Zrobiłam to, jak zobaczyłam ranę, którą przyniósł jeden z gońców. Rana była na karku i szła w dół.”","Zapamiętam."]]],
+       ["pl_garbarz","Garbarz Chwalimir","Człowiek pachnący korą dębową","garbarz","kowal",
+        "„Garbuję korą, nie moczem jak niziny. Dłużej, drożej, ale skóra żyje dwa razy tyle.”",
+        [["Skąd bierzesz skóry?","„Z traperów z Lisiej Kępy i od tego, co sami ubijemy. Od jesieni mniej niż zwykle.<br><br>Zwierzyna schodzi z północy na południe całymi stadami i traperzy mówią, że idzie nie na żer, tylko na oślep.”","Na oślep."],
+         ["Ubijacie tę uciekającą zwierzynę?","„Nie ubijamy. Zwierzę, które ucieka przed czymś, ma mięso gorzkie i skórę cienką ze strachu.<br><br>Poza tym byłoby to niegodne. Ono ucieka od czegoś, przed czym my za chwilę też będziemy uciekać.”","Rozumiem."]]]
+      ]})
+  ]);
+
+  /* ============ MIASTA ODESZŁYCH ============ */
+  ulica("suchy_brod", [
+    ["od_tabliczkarz","Wywieszacz Kres","Człowiek wieszający tabliczki na ścianie kontraktów","wywieszacz","kowal",
+     "„Wieszam, nie czytam. Za czytanie nie płacą, a za powieszenie nie na tym haku płacą karę.”",
+     [["Ile kontraktów wisi?","„Sto dwanaście. Osiemdziesiąt dziewięć na wschód, dwadzieścia trzy na resztę świata.<br><br>Rok temu było odwrotnie i wieszałem dwa razy mniej.”","Kto je przynosi?"],
+      ["Więc kto?","„Na wschodnie zawsze ten sam człowiek, w kapturze, i płaci za wywieszenie z góry na miesiąc.<br><br>Nie targuje się i nie zabiera tabliczki, kiedy kontrakt zostanie wzięty. Zostawia ją i przynosi następną.”","Zapamiętam."]]],
+    ["od_kaleka_n","Wracający Sowa","Człowiek siedzący z dłońmi na kolanach, nieruchomo","najemnik po powrocie","weteran",
+     "„Wróciłem. Ludzie mówią, że mi się udało. Ludzie mówią dużo rzeczy.”",
+     [["Skąd wróciłeś?","„Ze wschodu, dwanaście dni temu, sam z ośmiu.<br><br>Nie pytaj, jak wyglądali tamci na końcu. Powiem ci, a potem będziesz to widział tak jak ja, a ja nie życzę tego nikomu.”","Zapytam o co innego."],
+      ["Co tam widziałeś na ziemi?","„Piach. Sam piach, tam gdzie na mapie jest step.<br><br>I ślady. Idą kręgiem, jakby coś krążyło wokół jednego punktu i nigdy się od niego nie oddalało. My szliśmy w ten punkt.”","Doszliście?"]]]
+  ]);
+  budynki("suchy_brod", [
+    wnetrze({id:"brod_sciana", wejscie:"Podejdź do Ściany Kontraktów", wraca:"suchy_brod",
+      n:"Ściana Kontraktów", region:"giełda najemników Odeszłych",
+      opis:"Ściana z desek, cała w tabliczkach zawieszonych na hakach. Lewa strona to zlecenia zwykłe, prawa te, które płacą wielokrotność stawki.",
+      ludzie:[
+       ["od_maklerka","Pośredniczka Zgrzyt","Kobieta zdejmująca tabliczkę z prawej strony","pośredniczka kontraktów","kobieta",
+        "„Prawa strona płaci cztery razy więcej. Zastanów się, dlaczego ktoś płaci cztery razy więcej za tę samą robotę.”",
+        [["Dlaczego płaci?","„Bo stawka to nie zapłata za pracę. Stawka to cena zgody na ryzyko.<br><br>Czterokrotność znaczy, że wraca jeden na czterech. Tak to się liczy u nas od stu lat i nikt jeszcze tej reguły nie złamał.”","Ponuro, ale uczciwie."],
+         ["Bierze ktoś te kontrakty?","„Bierze. Ci, co mają długi, i ci, co nie mają nikogo.<br><br>Ostatnio też ci, co mają rodziny, bo z góry płacą tyle, że rodzina przeżyje dwa lata. To jest nowe i to mi się nie podoba.”","Mnie też nie."]]],
+       ["od_wyceniacz","Wyceniacz Krzywy Bogdan","Człowiek z linijką i tabliczką","wyceniacz ryzyka","urzednik",
+        "„Wyceniam, ile warte jest cudze życie w danym tygodniu. Praca jak każda inna, tylko wszyscy udają, że nie.”",
+        [["Ile warte jest moje?","„Bez barw, bez rodziny, bez rangi - osiemdziesiąt złotych na tydzień, ale tylko dlatego, że wyglądasz na kogoś, kto wraca.<br><br>Ci, co nie wyglądają, dostają czterdzieści. Różnica to nie zapłata. To zakład.”","Elegancko."],
+         ["Kto ustala stawki wschodnie?","„Nie ja i to jest w tym najgorsze. Przychodzą gotowe, wykute na tabliczce, z liczbą, której bym nie wystawił.<br><br>Ktoś tam liczy inaczej niż my. Ktoś, kto nie liczy, ile wróci - tylko ile wystarczy, żeby poszli.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"brod_szkola", wejscie:"Wejdź na dziedziniec ćwiczebny", wraca:"suchy_brod",
+      n:"Dziedziniec Ćwiczebny", region:"szkoła najemników Odeszłych",
+      opis:"Klepisko obwiedzione belką. Nie ma tu stylów ani szkół - są ludzie, którzy przeżyli, i pokazują to, co ich uratowało.",
+      ludzie:[
+       ["od_belka","Belka","Kobieta z drewnianym kijem zamiast miecza","instruktorka","kobieta",
+        "„Kij, nie miecz. Kto nie umie kijem, ten mieczem tylko szybciej się zabije.”",
+        [["Czego uczysz?","„Trzech rzeczy: jak uderzyć pierwszy, jak upaść i jak biec.<br><br>Uczę biegania najdłużej, bo to jest najważniejsze i wszyscy się tego wstydzą.”","Rozsądnie."],
+         ["Zmieniłaś czegoś w nauce?","„Uczę teraz biec w piachu. Sprowadziliśmy piach wozami z północy, żeby ludzie poczuli, jak to jest.<br><br>Kto biegał tylko po kamieniu, ten w piachu pada po stu krokach. Sto kroków wystarczy, żeby coś cię dogoniło.”","Kto kazał?"]]],
+       ["od_krzywousty","Krzywousty","Człowiek z zapadniętym policzkiem","weteran szkoły","weteran",
+        "„Szczęka z jednej strony nie wróciła na miejsce. Mówię dziwnie, słyszę dobrze. Mów.”",
+        [["Ile kontraktów masz za sobą?","„Sześćdziesiąt siedem i wszystkie na zachód, południe albo w miejscu. Ani jednego na wschód.<br><br>Odmawiam od jedenastu lat i przez jedenaście lat wyśmiewali mnie za to. Od pół roku przestali.”","Dlaczego odmawiasz?"],
+         ["Więc dlaczego?","„Bo byłem tam raz, przed jedenastu laty, jako chłopak, z wyprawą Odeszłych na step.<br><br>Wróciło nas dwóch. Drugi powiesił się po roku. Ja mam krzywą szczękę i wolę ją niż jego sznur.”","Co tam było?"]]]
+      ]})
+  ]);
+
+  ulica("mgielnik", [
+    ["od_mglarz","Mglarz Cisz","Człowiek prawie niewidoczny w odległości dziesięciu kroków","przewodnik po mgle","weteran",
+     "„Stój przy mnie albo stój w miejscu. W tej mgle człowiek gubi się przy własnym progu i to nie jest przenośnia.”",
+     [["Zawsze tu tak jest?","„Od zawsze. Woda z podziemi jest cieplejsza niż powietrze i mgła nie opada.<br><br>Ale od wiosny jest gęstsza i zimniejsza. Zimniejsza mgła nad ciepłą wodą to jest coś, czego mi nikt nie umie wyjaśnić.”","Pytałeś magów?"],
+      ["Więc pytałeś?","„Pytałem Ślepej Nawki. Odpowiedziała, że mgła robi się gęstsza tam, gdzie woda przestaje płynąć.<br><br>Woda tu płynie od zawsze. Chyba że przestała i my tego jeszcze nie widzimy.”","Zapamiętam."]]],
+    ["od_dziecko_m","Chłopiec Mgiełka","Dziecko bawiące się kamykami przy wodzie","dziecko z Mgielnika","kobieta",
+     "„Nie jestem mgiełka, tylko mnie tak wołają, bo jak byłem mały, to mnie ciągle gubili.”",
+     [["Co robisz nad wodą?","„Liczę kamyki, które da się przerzucić na drugą stronę. Dziś dwadzieścia trzy.<br><br>Rok temu było dwanaście. Woda się zwęża i nikt tego nie zauważył poza mną.”","To ważne."],
+      ["Powiedziałeś komuś?","„Mamie. Powiedziała, żebym nie wymyślał.<br><br>Nie wymyślam. Mam kamyk z każdego dnia od wiosny i wszystkie leżą pod moim posłaniem po kolei.”","Zachowaj je."]]]
+  ]);
+  budynki("mgielnik", [
+    wnetrze({id:"mgielnik_szkola", wejscie:"Wejdź do Szkoły Wody", wraca:"mgielnik",
+      n:"Szkoła Wody", region:"szkoła magów wody Odeszłych",
+      opis:"Izba z podłogą wyłożoną płaskimi misami, każda pełna po brzeg. Uczniowie chodzą między nimi i żadna nie drgnie - to jest pierwszy egzamin.",
+      ludzie:[
+       ["od_wykladowca","Wykładowca Cichowoda","Człowiek mówiący ciszej, niż wypada","wykładowca","urzednik",
+        "„Mów ciszej. Głos marszczy wodę, a marszczona woda nie odpowiada.”",
+        [["Czego uczycie tu naprawdę?","„Cierpliwości pod pozorem magii. Pierwsze dwa lata to chodzenie między misami.<br><br>Kto po dwóch latach jeszcze chce, ten dostaje pierwszy znak. Z dwudziestu zostaje trzech i to jest dobry rocznik.”","Rozumiem."],
+         ["Woda naprawdę odpowiada?","„Woda pokazuje inną wodę. Nie odpowiada, nie doradza i nie kłamie - tylko pokazuje.<br><br>Od trzech miesięcy pokazuje na północy suche dno tam, gdzie było jezioro. Sprawdziliśmy w trzech misach osobno. To samo dno.”","Zapamiętam."]]],
+       ["od_uczen_w","Uczennica Rosa Mokra","Dziewczyna z mokrymi rękawami po łokcie","uczennica wody","kobieta",
+        "„Rękawy mokre, bo się przewróciłam do misy. Trzeci raz w tym tygodniu.”",
+        [["Zostaniesz tu?","„Zostanę, bo nie mam gdzie indziej. Ojciec wziął kontrakt na wschód i zapłacili z góry, żeby mnie tu umieścić.<br><br>To był warunek. Zapłata za jego życie to moja nauka.”","Przykro mi."],
+         ["Widziałaś coś w misie?","„Raz. Nie wodę - kamień, łuk z kamienia, i przez ten łuk płynęło coś, co nie było wodą.<br><br>Powiedziałam wykładowcy. Kazał zapomnieć i przez tydzień nie dopuszczał mnie do mis. Nie zapomniałam.”","Nie zapominaj."]]]
+      ]}),
+    wnetrze({id:"mgielnik_cysterna2", wejscie:"Zejdź do Zbiornika", wraca:"mgielnik",
+      n:"Zbiornik", region:"zbiornik Mgielnika",
+      opis:"Podziemna komora z wodą po pas i pomostem biegnącym wzdłuż ściany. Na ścianie widać poziomy wody z ostatnich stu lat, wyryte co roku.",
+      ludzie:[
+       ["od_poziomowy","Poziomowy Znak","Starzec wyrywający nową kreskę w ścianie","strażnik poziomu","weteran",
+        "„Kreska raz w roku, na wiosnę. Sto trzy kreski i wszystkie moją ręką albo ręką mojego ojca.”",
+        [["Jak wyglądały ostatnie lata?","„Chodź i zobacz. Do dziewięćdziesiątej kreski wszystkie mieszczą się w dwóch dłoniach.<br><br>Ostatnie trzy są niżej o pół łokcia każda. Woda schodzi i schodzi coraz szybciej.”","Trzy lata."],
+         ["Skąd bierze się ta woda?","„Z północy, spod grani, szczelinami w skale. Zawsze tak było i zawsze wystarczało.<br><br>Jeśli schodzi tu, to znaczy, że tam jej nie ma. A jak nie ma wody pod granią, to nie ma też Mgielnika za dziesięć lat.”","Mówiłeś o tym komuś?"]]],
+       ["od_czerpaczka","Czerpaczka Struga Młodsza","Kobieta z wiadrem na długim drążku","czerpaczka","kobieta",
+        "„Czerpię z dna, nie z wierzchu. Na wierzchu jest to, co spadło z sufitu, a sufit tu nie jest czysty.”",
+        [["Co spada z sufitu?","„Kurz, kamień i od wiosny coś jeszcze. Drobne, czarne, twarde jak żużel i nie rozpuszcza się.<br><br>Zbieram to sitem i mam już pół garnca. Nikt nie umie powiedzieć, co to jest.”","Pokaż mi to."],
+         ["Skąd to się bierze?","„Z góry, przez szczeliny, razem z wodą z północy. Więc gdzieś na północy coś się pali albo coś się kruszy.<br><br>Pod granią nie ma czego palić. Tam jest sam kamień i lód.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  ulica("podkowa", [
+    ["od_koniuszy","Koniuszy Ryk","Człowiek stojący między dwoma końmi i trzymający oba","koniuszy","kowal",
+     "„Nie z tyłu. Z boku i głośno, żeby wiedziały, że idziesz. Koń kopie ze strachu, nie ze złości.”",
+     [["Ile macie koni?","„Dwieście czterdzieści i wszystkie sprzedane, choć jeszcze stoją.<br><br>Kupiec zapłacił z góry za wszystkie i kazał trzymać do wiosny. Nikt nie kupuje dwustu czterdziestu koni na raz.”","Kto kupił?"],
+      ["Więc kto?","„Nie podał się. Płacił monetą, której tu nikt nie zna, i to nie garść, tylko trzy skrzynie.<br><br>Bosa Wanda przyjęła zapłatę i od tamtego dnia mniej mówi. Zapytaj ją, jeśli ci odpowie.”","Zapytam."]]],
+    ["od_rymarz","Rymarz Pas","Człowiek z ustami pełnymi gwoździ","rymarz","kowal",
+     "„Mmm. Poczekaj.” Wypluwa gwoździe na dłoń.<br><br>„Teraz mów.”",
+     [["Co szyjesz?","„Uprzęże i popręgi, dwieście czterdzieści kompletów, ten sam zamawiający co konie.<br><br>Ale nie na siodła. Na zaprzęg. Dwieście czterdzieści koni w zaprzęgu to jest sto dwadzieścia wozów.”","Sto dwadzieścia wozów."],
+      ["Czego się wozi sto dwudziestoma wozami?","„Wojska nie, bo wojsko idzie pieszo. Zboża nie, bo nie ma tyle zboża.<br><br>Tyloma wozami wywozi się ludzi albo przywozi coś ciężkiego. Nie wiem, które jest gorsze.”","Zapamiętam."]]]
+  ]);
+  budynki("podkowa", [
+    wnetrze({id:"podkowa_stajnie", wejscie:"Wejdź do Wielkich Stajni", wraca:"podkowa",
+      n:"Wielkie Stajnie", region:"stajnie Podkowy",
+      opis:"Cztery rzędy boksów pod jednym dachem, a między nimi przejście szerokie na wóz. Konie stoją spokojnie, ale żaden nie je z pełnego żłobu.",
+      ludzie:[
+       ["od_masztalerz","Masztalerz Wędzidło","Człowiek z siwym zarostem i jasnymi oczami","masztalerz","weteran",
+        "„Nie karmię do syta. Koń najedzony do syta nie pobiegnie, a te mają biec.”",
+        [["Dokąd mają biec?","„Nikt mi nie powiedział, ale karmię je tak, jak karmi się przed daleką drogą po złej ziemi.<br><br>Robię to od czterdziestu lat i ręce wiedzą wcześniej niż głowa. Ręce mówią: piach.”","Piach."],
+         ["Konie coś czują?","„Konie czują wszystko i te są niespokojne od jesieni. Nie od hałasu - od kierunku.<br><br>Postaw je łbem na północ i przestają jeść. Sprawdzałem to dwadzieścia razy, bo sam sobie nie wierzyłem.”","Zapamiętam."]]],
+       ["od_kowalka_p","Podkuwaczka Iskierka","Kobieta z fartuchem przepalonym w trzech miejscach","podkuwaczka","kobieta",
+        "„Podkuwam czterdzieści koni dziennie i mam na to dwa tygodnie. Policz sama, czy zdążę.”",
+        [["Nie zdążysz.","„Nie zdążę i powiedziałam to Wandzie. Kazała podkuwać dalej.<br><br>Wanda nigdy tak nie mówiła. Wanda zawsze mówiła, że lepiej zrobić mniej i dobrze.”","Coś się zmieniło."],
+         ["Jakie podkowy każą robić?","„Szerokie, płaskie, z rantem. Takie robi się na miękki grunt, na bagno albo na piach.<br><br>U nas jest kamień. Na kamieniu taka podkowa zdziera się w miesiąc.”","Więc nie na kamień."]]]
+      ]}),
+    wnetrze({id:"podkowa_kuznia2", wejscie:"Wejdź do Kuźni Wielkiej", wraca:"podkowa",
+      n:"Kuźnia Wielka", region:"kuźnia Podkowy",
+      opis:"Sześć palenisk pod jednym dachem i sześć par ludzi przy nich. Praca idzie tu w rytmie, w którym młot jednej pary wpada w przerwę drugiej.",
+      ludzie:[
+       ["od_starszy_kowal","Starszy Kuźni Żużel","Człowiek z uchem zniekształconym od odprysku","starszy kuźni","kowal",
+        "„Ucho od odprysku, trzydzieści lat temu. Odtąd noszę czapkę i odtąd wszyscy tu noszą czapki.”",
+        [["Ile kujecie dziennie?","„Sto dwadzieścia podków i osiemdziesiąt okuć do wozów. To trzy razy więcej niż normalnie.<br><br>Kujemy na trzy zmiany i i tak nie nadążamy z zamówieniem.”","Kto zamawia?"],
+         ["Ktoś sprawdza tę robotę?","„Sprawdza, i to jest najdziwniejsze. Przychodzi człowiek raz na tydzień, bierze do ręki po jednej sztuce z każdej setki i zgina ją w palcach.<br><br>W palcach, gołymi rękami. Okucie wozowe. Nie widziałem, żeby któremuś nie dał rady.”","Zapamiętam."]]],
+       ["od_uczen_k","Uczeń Kuźni Klin","Chłopak z opuchniętą dłonią","uczeń kowalski","kowal",
+        "„Trafiłem się młotem. Nie pierwszy raz i nie ostatni. Żużel mówi, że ręka mądrzeje szybciej niż głowa.”",
+        [["Podoba ci się ta robota?","„Podobała. Teraz kujemy w nocy i przez to nie widzę słońca od trzech tygodni.<br><br>Płacą podwójnie i to jest jedyny powód, dla którego nikt nie odchodzi.”","Skąd te pieniądze?"],
+         ["Kto płaci podwójnie?","„Ten sam, co odbiera. Widziałem go raz z bliska, jak podawałem mu skrzynkę.<br><br>Rękawice miał na obu dłoniach, w środku lata, i między rękawicą a rękawem nie było widać skóry. Nic tam nie było widać.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+
+})();
+
+/* ================= STOLICE: WNĘTRZA I LUDZIE =================
+   Stolica ma być miastem, nie przystankiem. Każda dostaje sześć budynków,
+   do których się wchodzi, i kilkunastu ludzi, z których każdy coś wie. --- */
+(function(){
+
+  /* --- narzędzia: budowanie postaci i wnętrz bez powtarzania szablonu --- */
+  function osoba(spec){
+    /* spec: [id, imie, nieznany, rola, portret, mowa, [[etykieta, odpowiedz], ...]] */
+    var id = spec[0], imie = spec[1], nieznany = spec[2], rola = spec[3],
+        portret = spec[4], mowa = spec[5], tematy = spec[6] || [];
+    var opcje = [];
+    tematy.forEach(function(t, i){
+      var pod = id + "_t" + i;
+      SCENY[pod] = {portret:portret, kto:imie, npc:id,
+        tekst:"<span class='mowa'>" + t[1] + "</span>",
+        opcje:[{l:t[2] || "Zapamiętam.", idz:id}]};
+      opcje.push({l:t[0], idz:pod, raz:true});
+    });
+    opcje.push({l:spec[7] || "Bywaj.", idz:"__wyjscie"});
+    SCENY[id] = {portret:portret, kto:imie, npc:id,
+      ktoNieznany:nieznany,
+      tekst:"<span class='mowa'>" + mowa + "</span>",
+      opcje:opcje};
+    return {n:imie, id:id, nieznany:nieznany, rola:rola, scena:id, portret:portret};
+  }
+
+  function wnetrze(spec){
+    /* spec: {id, n, region, opis, wraca, ludzie:[...], miejsca:[...]} */
+    var post = spec.ludzie.map(osoba);
+    post.forEach(function(p){
+      /* wyjście z rozmowy prowadzi z powrotem do wnętrza */
+      SCENY[p.scena].opcje.forEach(function(o){ if(o.idz === "__wyjscie") o.idz = "__lok_" + spec.id; });
+      spec.ludzie.forEach(function(sp){
+        (sp[6]||[]).forEach(function(t, i){
+          var pod = sp[0] + "_t" + i;
+          if(SCENY[pod]) SCENY[pod].opcje.forEach(function(o){ if(o.idz === "__wyjscie") o.idz = sp[0]; });
+        });
+      });
+    });
+    LOKACJE[spec.id] = {
+      n: spec.n, region: spec.region, opis: spec.opis,
+      postacie: post,
+      miejsca: spec.miejsca || [],
+      drogi: [{n:"Wyjdź na ulicę", lok:spec.wraca, min:0}]
+    };
+    return {n: spec.wejscie, lok: spec.id, min:0};
+  }
+
+  function ulica(lokId, ludzie){
+    var L = LOKACJE[lokId];
+    ludzie.map(osoba).forEach(function(p){
+      SCENY[p.scena].opcje.forEach(function(o){ if(o.idz === "__wyjscie") o.idz = "__lok_" + lokId; });
+      L.postacie.push(p);
+    });
+  }
+
+  function budynki(lokId, lista){
+    var L = LOKACJE[lokId];
+    L.miejsca = L.miejsca || [];
+    lista.forEach(function(b){ L.miejsca.push(b); });
+  }
+
+  /* ============ NOWY OSTRÓW - stolica Nowożytnych ============ */
+  ulica("nowy_ostrow", [
+    ["nw_milesa","Poborczyni Milesa","Kobieta ze skrzynką na rzemieniu","poborczyni wjazdowa","kobieta",
+     "„Wchodzisz pieszo, więc płacisz najmniej. Za wóz brałabym dwadzieścia, za konia osiem, za ciebie dwa.”",
+     [["Dwa złote za wejście do miasta?","„Za wejście nic. Dwa złote za to, że przez ciebie ktoś będzie musiał posprzątać ulicę.<br><br>Tak to jest zapisane w taryfie i nikt tego nie czytał od dwunastu lat.”","Zapłacę."],
+      ["Kto ustala tę taryfę?","„Giełda. To znaczy Bożydar, to znaczy ci, którzy siedzą przy końcu jego stołu.<br><br>Ja tylko zbieram i oddaję co do grosza. Sprawdzają.”","Rozumiem."]]],
+    ["nw_ninomysl","Tragarz Ninomysł","Człowiek z odciskiem od pasa na barku","tragarz","kowal",
+     "„Dwanaście lat noszę cudze skrzynie i wiem o tym mieście więcej niż syndyk. Tylko mnie nikt nie pyta.”",
+     [["To pytam. Co wiozą przez Ostrów?","„Sól z zachodu, choć zachód nam wojnę wypowiedział. Żelazo z Kuźnic. I skrzynie, których nie wolno przechylać, a które nie brzęczą.<br><br>Nie brzęczą, bo w środku jest coś przełożonego słomą. Nie pytałem czym.”","Ciekawe."],
+      ["Bolą cię te plecy?","„Bolą od dziewiątego roku. Cech tragarski płaci za to trzy złote miesięcznie i nazywa to zapomogą.<br><br>Wystarcza na wódkę, a wódka wystarcza na plecy. Wszystko się zgadza.”","Trzymaj się."]]],
+    ["nw_dobieslaw","Skryba Dobiesław","Człowiek z przenośnym pulpitem","pisarz uliczny","urzednik",
+     "„Piszę listy dla tych, co nie umieją. Grosz za linijkę, dwa za kłamstwo.”",
+     [["Dlaczego kłamstwo drożej?","„Bo trzeba je wymyślić i zapamiętać. Prawdę wystarczy przepisać.<br><br>Połowa listów, które piszę, idzie na wojnę do ludzi, którzy już nie żyją. Za to nie biorę.”","Uczciwie."],
+      ["Napisz coś dla mnie.","„Do kogo? Nie masz nikogo - widzę to po tym, jak stoisz.<br><br>Wróć, jak będziesz miał komu. Wtedy napiszę za darmo, bo pierwszy list zawsze piszę za darmo.”","Wrócę."]]],
+    ["nw_tomil","Zbieg Tomił","Człowiek w za dużym płaszczu","zbieg z Ismaala","weteran",
+     "„Nie patrz tak. Uciekłem i nie wstydzę się tego. Wstydziłbym się, gdybym został.”",
+     [["Przed czym uciekłeś?","„Przed trzecią czarną chorągwią. Wcielają do niej tych, co nie mają rodziny, bo po takich nikt nie pyta.<br><br>Wciągnęli mnie na listę w marcu. W kwietniu przeszedłem przez góry.”","Rozumiem."],
+      ["Nowożytni cię przyjęli?","„Wpisali. To nie to samo, ale wystarczy. Tu nie pytają, czyim jesteś synem - pytają, co umiesz i za ile.<br><br>Umiem kuć. Nie pytali o nic więcej.”","Powodzenia."]]]
+  ]);
+  budynki("nowy_ostrow", [
+    wnetrze({id:"ostrow_karczma", wejscie:"Wejdź do karczmy Pod Trzema Mostami", wraca:"nowy_ostrow",
+      n:"Pod Trzema Mostami", region:"karczma w Nowym Ostrowie",
+      opis:"Nisko, ciepło i głośno. Pod ścianą stoją skrzynie, których nikt nie odbiera, a przy każdej siedzi ktoś, kto twierdzi, że pilnuje.",
+      ludzie:[
+       ["nw_wojmil","Karczmarz Wojmił","Człowiek z ręcznikiem na ramieniu","karczmarz","kowal",
+        "„Piwo, polewka, izba na górze. Trzecie najdroższe, bo najciszej.”",
+        [["Kto tu przychodzi?","„Tragarze przed świtem, pisarze po południu, giełdziarze po zmroku. Trzy różne miasta w jednej izbie.<br><br>Nie mieszają się. Jedyne, co ich łączy, to że wszyscy płacą z góry.”","Rozsądnie."],
+         ["Co jest w tych skrzyniach?","„Nie moje, nie wiem, nie pytam i tobie też nie radzę.<br><br>Stoją tu od trzech tygodni. Kiedy stoją cztery, wysyłam po straż. Taka umowa.”","Nie pytam."]]],
+       ["nw_lubka","Szulerka Lubka","Kobieta tasująca coś pod stołem","szulerka","kobieta",
+        "„Siadaj albo idź, tylko nie stój nade mną. Zasłaniasz światło, a ja przy złym świetle przegrywam.”",
+        [["Ty przegrywasz?","„Przegrywam dokładnie tyle, żeby przychodzili drugi raz. To jest cała sztuka i nie jest to sztuka o kartach.<br><br>W tym mieście wszyscy tak robią. Ja tylko robię to szybciej.”","Ładnie."],
+         ["Co się mówi przy stole?","„Że giełda pożyczyła obu stronom wojny i obie strony mają jej oddać. Że wygra ta, która przegra wolniej.<br><br>I że ktoś skupuje stare mapy. Płaci głupio dużo za takie, na których jest morze na południu.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"ostrow_palac", wejscie:"Wejdź do Pałacu Giełdowego", wraca:"nowy_ostrow",
+      n:"Pałac Giełdowy", region:"siedziba władzy Nowożytnych",
+      opis:"Sala bez tronu. Zamiast tronu jest stół długi na trzydzieści kroków, a przy nim krzesła ponumerowane od jednego do czterdziestu ośmiu. Zajętych jest dziewięć.",
+      ludzie:[
+       ["nw_zbigniew","Wielki Syndyk Zbigniew","Starzec przy krześle numer jeden","wielki syndyk","urzednik",
+        "„Krzesło pierwsze. Nie dlatego, że najważniejsze - dlatego, że najbliżej drzwi. Kto siedzi przy drzwiach, ten wychodzi pierwszy.”",
+        [["Kto rządzi Nowożytnymi?","„Czterdziestu ośmiu. Dziewięciu przychodzi, trzech czyta, jeden decyduje.<br><br>Nie powiem ci który. Sam nie jestem pewien i to jest w tym najlepsze.”","Sprytne."],
+         ["Wojna z Ismaalem - opłaca się wam?","„Wojna nie opłaca się nikomu. Opłaca się długi czas przed nią i długi czas po niej.<br><br>My jesteśmy dobrzy w obu. Dlatego nie spieszymy się ani z wygraną, ani z przegraną.”","Zimno to brzmi."],
+         ["Co wiecie o wschodzie?","„Że przestały stamtąd wracać rachunki. Nie ludzie - rachunki.<br><br>Człowiek może zdezerterować. Rachunek nie ma dokąd. Jeżeli rachunek nie wraca, to znaczy, że nie ma komu go przywieźć.”","To niepokojące."]]],
+       ["nw_milostryj","Sekretarz Miłostryj","Człowiek z czterema piórami za uchem","sekretarz giełdy","urzednik",
+        "„Mów wolno. Zapisuję wszystko, także to, czego nie chciałeś powiedzieć.”",
+        [["Wszystko trafia do ksiąg?","„Wszystko. Twoje imię też, gdybyś je miał.<br><br>Nie masz, więc wpisałem: mężczyzna, bez barw, wszedł od południa. Trzy słowa i już istniejesz w rejestrze.”","Wolałbym nie istnieć."],
+         ["Co robicie z tymi księgami?","„Nic. Leżą. W tym cały sens - nikt ich nie czyta, dopóki ktoś nie potrzebuje, żeby ktoś inny miał kłopoty.<br><br>Wtedy okazuje się, że wszystko jest zapisane.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"ostrow_kolegium", wejscie:"Wejdź do Kolegium Ognia", wraca:"nowy_ostrow",
+      n:"Kolegium Ognia", region:"szkoła magów Nowożytnych",
+      opis:"Sala wykładowa z osmalonym sufitem i podłogą wyłożoną kamieniem. Pod ścianą stoją wiadra z piaskiem, ustawione co pięć kroków.",
+      ludzie:[
+       ["nw_dobrogniewa","Rektorka Dobrogniewa","Kobieta z opalonymi brwiami","rektorka kolegium","kobieta",
+        "„Wiadra są co pięć kroków, bo tyle wynosi zasięg pomyłki nowicjusza. Zmierzyliśmy to na siedmiu nowicjuszach.”",
+        [["Czego uczycie?","„Powtarzalności. Ognia nie uczymy - ogień każdy potrafi wywołać raz.<br><br>My uczymy, jak wywołać go dwa razy tak samo i przeżyć oba.”","Rozsądnie."],
+         ["Cech płaci za tę szkołę?","„Cech płaci i cech odbiera. Każdy, kto tu skończy, ma siedem lat służby w kontraktach giełdy.<br><br>Nazywają to stypendium. Ja to nazywam tak, jak się nazywa.”","Wiem, jak się nazywa."]]],
+       ["nw_wierzchoslaw","Adept Wierzchosław","Chłopak z zabandażowaną dłonią","adept ognia","urzednik",
+        "„Trzeci rok. Dłoń z drugiego. Nie pytaj, bo opowiem, a nie chcesz tego słuchać przed jedzeniem.”",
+        [["Warto było?","„Nie wiem. Zapytaj mnie za cztery lata, jak skończę służbę.<br><br>Wtedy będę wiedział, czy siedem lat cudzych kontraktów jest warte jednej dłoni.”","Powodzenia."],
+         ["Co czytacie o Ziemiach Nieznanych?","„Nic. To znaczy jest jedna karta, ale rektorka trzyma ją zamkniętą i mówi, że to zabobon.<br><br>Widziałem ją raz. Nie było na niej zabobonu. Był rysunek bramy.”","Bramy?"]]]
+      ]}),
+    wnetrze({id:"ostrow_klasztor", wejscie:"Wejdź do Klasztoru Rachuby", wraca:"nowy_ostrow",
+      n:"Klasztor Rachuby", region:"zakon liczących",
+      opis:"Cele bez okien, w każdej pulpit i liczydło. Bracia nie modlą się głosem - liczą, a liczenie u nich jest modlitwą.",
+      ludzie:[
+       ["nw_cichoslaw","Przeor Cichosław","Starzec z liczydłem na kolanach","przeor","urzednik",
+        "„U nas nie ma boga. Jest równanie, które musi się zgadzać, i wiara, że kiedyś się zgodzi.”",
+        [["Co liczycie?","„Wszystko, co da się policzyć, i to od trzystu lat. Urodzenia, śmierci, zbiory, pożary.<br><br>Od dziewięciu lat kolumna śmierci rośnie szybciej niż kolumna urodzeń. Po raz pierwszy w całym rejestrze.”","To wojna."],
+         ["I co z tego wynika?","„Że jeżeli tak zostanie, za sto czterdzieści lat nie będzie kogo liczyć.<br><br>Powiedziałem to giełdzie. Odpowiedzieli, że sto czterdzieści lat to nie jest termin, który ich obowiązuje.”","Trudno się z tym kłócić."]]],
+       ["nw_godzisz","Brat Godzisz","Zakonnik z atramentem na palcach","brat rachmistrz","urzednik",
+        "„Cicho. Zgubię linijkę i będę liczył ten rok od początku.”",
+        [["Co to za rok?","„Tysiąc czterdziesty trzeci od Zamknięcia Bram. Liczę go od jesieni i wciąż mi się nie zgadza o dwieście czterdzieści.<br><br>Dwieście czterdzieści ludzi, których nie ma ani wśród żywych, ani wśród zmarłych. Poszli na wschód.”","Na wschód."],
+         ["Skąd nazwa - Zamknięcie Bram?","„Nie wiadomo. Rachuba zaczyna się od tego wydarzenia i nikt nie zapisał, czym ono było.<br><br>Trzysta lat liczymy od czegoś, o czym nie mamy jednej linijki. To mnie budzi w nocy.”","Mnie też."]]]
+      ]}),
+    wnetrze({id:"ostrow_koszary", wejscie:"Wejdź do koszar straży miejskiej", wraca:"nowy_ostrow",
+      n:"Koszary Straży", region:"straż miejska Nowego Ostrowa",
+      opis:"Podwórzec z ubitej gliny. Na stojaku wiszą kaftany z numerami zamiast herbów - straż w tym mieście też jest pozycją w rachunku.",
+      ludzie:[
+       ["nw_bogumil","Setnik Bogumił","Człowiek liczący kaftany","setnik straży","weteran",
+        "„Sto kaftanów, siedemdziesięciu ludzi. Trzydzieści wisi, bo giełda płaci za kaftany, nie za ludzi.”",
+        [["Kogo pilnujecie?","„Kramów, mostów i skrzyń. Ludzi pilnujemy przy okazji, jeśli akurat stoją obok czegoś wartościowego.<br><br>Tak to jest zapisane w kontrakcie. Czytałem, zanim podpisałem.”","Szczerze."],
+         ["Kradzieże w mieście?","„Codziennie. Łapiemy co dziesiątego i to nam wystarcza, bo za każdego złapanego jest premia, a za każdego niezłapanego nie ma kary.<br><br>Kontrakt jest zły. Ale to nie ja go pisałem.”","Rozumiem."]]],
+       ["nw_halina","Strażniczka Halina","Kobieta z drzewcem opartym o ramię","strażniczka","kobieta",
+        "„Stój, gdzie stoisz. Nie dlatego, że coś zrobiłeś - dlatego, że tak mam mówić do każdego bez barw.”",
+        [["A gdybym miał barwy?","„Wtedy mówiłabym to samo, tylko ciszej. Czerwonym z Ismaala mówię przez zaciśnięte zęby, bo mam brata pod Kruczynem.<br><br>Nie wiem, czy żyje. Wiem, że tam poszedł.”","Przykro mi."],
+         ["Co się dzieje w nocy?","„Zaułki pod mostami. Wchodzimy tam po dwóch, nigdy po jednym, i wychodzimy zawsze po dwóch.<br><br>Od miesiąca ktoś zostawia tam rzeczy. Nie kradnie - zostawia. To gorsze.”","Sprawdzę to."]]]
+      ]}),
+    wnetrze({id:"ostrow_kramy", wejscie:"Wejdź w Rząd Kramów", wraca:"nowy_ostrow",
+      n:"Rząd Kramów", region:"targ Nowego Ostrowa",
+      opis:"Sto kroków dachu na słupach i pod nim wszystko, co da się sprzedać. Ceny wywieszone, a pod każdą ceną druga, mniejsza - dla wpisanych do ksiąg.",
+      ludzie:[
+       ["nw_sulimir","Kupiec Sulimir","Człowiek stojący za dwiema cenami","kupiec kramowy","urzednik",
+        "„Górna cena dla ciebie, dolna dla wpisanych. Nie obrażaj się - sam byłem kiedyś górną ceną.”",
+        [["Jak się wpisać?","„Podpisem u Sędziwoja w kontorze albo służbą u kogoś, kto już jest wpisany.<br><br>Pierwsze jest szybsze, drugie tańsze. Trzeciej drogi nie ma i nie szukaj.”","Zapamiętam."],
+         ["Skąd bierzesz towar?","„Zewsząd, także stamtąd, skąd nie wolno. Sól ismaalska idzie przez Jarmark i przez ludzi, którzy nie mają barw.<br><br>Giełda o tym wie i pobiera od tego cło. Nazywają to opłatą za szczególne trudności.”","Oczywiście."]]],
+       ["nw_dobroniega_ml","Płatnerka Dobroniega","Kobieta klepiąca blachę na kolanie","płatnerka","kobieta",
+        "„Naprawiam, nie robię. Nowe robią w Kuźnicach, a tam nie wpuszczają nikogo bez wpisu.”",
+        [["Dlaczego nie robisz nowych?","„Bo cech płatnerski wykupił prawo do nowych i sprzedał je Kuźnicom. Ja mam prawo do naprawiania i do niczego więcej.<br><br>Robię więc najlepsze naprawy w mieście. Czasem z naprawy zostaje nowa rzecz, ale wtedy nazywam ją naprawą.”","Sprytnie."],
+         ["Widzisz, w czym ludzie wracają?","„Widzę i wolałabym nie. Ostatnio przynieśli mi napierśnik z dziurą, której nie zrobiła broń.<br><br>Brzegi były stopione i wygięte do środka. Do środka, rozumiesz. Coś wchodziło, nie wychodziło.”","Zachowaj go."]]]
+      ]})
+  ]);
+
+  /* ============ CZERWIEŃ WYSOKA - stolica Ismaala ============ */
+  ulica("czerwien_wysoka", [
+    ["sk_wojciech","Odźwierny Wojciech","Człowiek z laską okutą na czerwono","odźwierny bramy górnej","weteran",
+     "„Do góry nie wejdziesz. Do góry wchodzą ci, których ojcowie tam wchodzili.”",
+     [["A ja?","„A ty wejdziesz tam, dokąd cię wpuszczą, czyli na dół i na bok.<br><br>Nie mam nic do ciebie. Mam rozkaz i laskę. Laska jest starsza ode mnie i od rozkazu.”","Rozumiem."],
+      ["Kiedy ostatnio kogoś wpuściłeś?","„Cztery lata temu. Posła Nowożytnych, i to na kolanach, i to nie do końca.<br><br>Wyszedł po godzinie bez czapki. Czapkę zatrzymali.”","Ładny zwyczaj."]]],
+    ["sk_dobrochna","Praczka Dobrochna","Kobieta z rękami czerwonymi od ługu","praczka garnizonowa","kobieta",
+     "„Piorę dla trzeciej chorągwi. To znaczy prałam, bo trzecia chorągiew nie przysyła już nic do prania.”",
+     [["Od kiedy nie przysyła?","„Od jesieni. Wcześniej co tydzień szedł wóz z płótnem, teraz nic.<br><br>Pytałam intendenta. Powiedział, że trzecia chorągiew pierze sobie sama. Chorągiew nie pierze sobie sama. Nigdy.”","To dziwne."],
+      ["Widziałaś, co przychodziło?","„Widziałam. Ostatni transport miał krew na wszystkim, ale nie w tych miejscach, gdzie zwykle.<br><br>Krew była na plecach i na podeszwach. Ludzie uciekali i coś ich brało od tyłu.”","Zapamiętam to."]]],
+    ["sk_bartosz","Kaleka Bartosz","Człowiek o jednej ręce siedzący pod murem","weteran spod Kruczyna","weteran",
+     "„Nie żebrzę. Siedzę. Za siedzenie nikt nie płaci i to mi odpowiada.”",
+     [["Straciłeś ją pod Kruczynem?","„Straciłem ją trzy dni po Kruczynie, u felczera, który nie umiał czyścić ran.<br><br>Bitwę przeżyłem. Leczenie nie.”","Marnie."],
+      ["Za co się bijecie z Nowożytnymi?","„Nam mówią, że o wiarę. Im mówią, że o cło. Obie strony kłamią i obie strony w to wierzą.<br><br>Bijemy się o to, że dziewięć lat temu ktoś się nie ukłonił i nikt już nie pamięta który.”","Głupio."]]],
+    ["sk_zbyszka","Zbyszka Kołodziejówna","Dziewczyna z naręczem szprych","kołodziejka","kobieta",
+     "„Ojciec robił koła. Ojca wzięli do wojska. Teraz ja robię koła i nikt nie ma z tym problemu, dopóki koła się kręcą.”",
+     [["Wzięli go siłą?","„Wzięli go z chorągwią, muzyką i przemową kasztelana o urodzeniu.<br><br>Ojciec urodził się kołodziejem. Kasztelan mówił, że urodził się rycerzem. Ojciec nie umiał zaprzeczyć kasztelanowi.”","Rozumiem."],
+      ["Dokąd idą twoje koła?","„Na wozy, wozy na wschód, a co dalej, tego mi nie mówią.<br><br>Wiem tylko, że wozy nie wracają, a zamówienia rosną. Robię teraz dwa razy więcej kół niż przed rokiem.”","Dwa razy więcej."]]]
+  ]);
+  budynki("czerwien_wysoka", [
+    wnetrze({id:"czerwien_karczma", wejscie:"Zejdź do gospody Pod Czerwoną Ścianą", wraca:"czerwien_wysoka",
+      n:"Pod Czerwoną Ścianą", region:"gospoda w Czerwieni Wysokiej",
+      opis:"Izba wykuta w skale, bez okien. Ogień pali się na środku, a dym wychodzi szczeliną, którą ktoś wykuł trzysta lat temu i od tamtej pory nikt nie poprawiał.",
+      ludzie:[
+       ["sk_gniewosz","Gospodarz Gniewosz","Człowiek z blizną przez brew","gospodarz","kowal",
+        "„Wino albo piwo. Wina nie polecam, piwa nie chwalę. Wybieraj.”",
+        [["Kto tu pije?","„Chorążowie z dołu, nigdy z góry. Ci z góry mają własne piwnice i własne powody, żeby pić osobno.<br><br>Tu się pije, żeby zapomnieć rozkaz. Tam się pije, żeby go wymyślić.”","Rozumiem."],
+         ["Co mówią o wojnie?","„Że idzie źle i że nie wolno tego mówić. Więc mówią to szeptem, a szeptem mówi się głośniej niż głosem.<br><br>Trzecia chorągiew. Ciągle wraca to samo słowo i za każdym razem ktoś zmienia temat.”","Trzecia chorągiew."]]],
+       ["sk_rosa","Rosa","Kobieta grzejąca dłonie nad ogniem","śpiewaczka","kobieta",
+        "„Śpiewam za jedzenie i za to, żeby móc siedzieć przy ogniu. Drugie jest ważniejsze.”",
+        [["Zaśpiewasz coś?","„Nie tobie i nie tutaj. Śpiewam pieśń o pierwszym Ismaalu, a od pół roku za tę pieśń biją.<br><br>Bo jest w niej wers o tym, skąd przyszedł. Ktoś w górze uznał, że ten wers przestał być prawdziwy.”","Co to za wers?"],
+         ["Skąd przyszedł Ismaal?","„Z lasu. Tak było w pieśni przez trzysta lat i nikomu to nie przeszkadzało.<br><br>Teraz przeszkadza. Nie pytaj mnie dlaczego - ja tylko pamiętam melodię.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"czerwien_palac", wejscie:"Wejdź na dziedziniec kasztelański", wraca:"czerwien_wysoka",
+      n:"Dziedziniec Kasztelański", region:"siedziba władzy Ismaala",
+      opis:"Dziedziniec bez ozdób. Na ścianach wiszą chorągwie, jedna obok drugiej, a między drugą a czwartą jest pusty hak.",
+      ludzie:[
+       ["sk_wieslaw","Marszałek Dworu Wiesław","Człowiek stojący dokładnie pod pustym hakiem","marszałek dworu","urzednik",
+        "„Nie patrz na hak. Wszyscy patrzą na hak i wszystkim mówię to samo: chorągiew jest w naprawie.”",
+        [["Od jak dawna w naprawie?","„Od jedenastu miesięcy. Nikt nie pyta drugi raz, bo drugie pytanie zapisuje się w innej księdze niż pierwsze.<br><br>Pytasz pierwszy raz. Radzę na tym poprzestać.”","Poprzestanę."],
+         ["Kto rządzi w Czerwieni?","„Król, którego nikt nie widział od czterech lat, i kasztelan, którego widuje się codziennie.<br><br>Z tego wyciągnij wniosek sam. Ja go nie wyciągnę przy świadkach.”","Wyciągnąłem."]]],
+       ["sk_zofia","Ochmistrzyni Zofia","Kobieta z pękiem kluczy u pasa","ochmistrzyni","kobieta",
+        "„Klucze do wszystkiego poza tym, co ważne. Tak to urządzili i nie skarżę się.”",
+        [["Ile osób tu mieszka?","„Sto czterdzieści, z czego dziewięćdziesiąt służy, czterdzieści pilnuje, a dziesięć rządzi.<br><br>Tych dziesięciu je osobno i nie zna imion pozostałych stu trzydziestu. Ja znam wszystkie.”","Przydatne."],
+         ["Co się zmieniło w ostatnim roku?","„Zamówienia na płótno pogrzebowe. Wzrosły czterokrotnie, a bitew nie było więcej.<br><br>Zapytałam intendenta. Powiedział, że robimy zapas. Płótna pogrzebowego się nie robi na zapas.”","Nie robi się."]]]
+      ]}),
+    wnetrze({id:"czerwien_magowie", wejscie:"Wejdź do Wieży Żaru", wraca:"czerwien_wysoka",
+      n:"Wieża Żaru", region:"siedziba magów ognia Ismaala",
+      opis:"Okrągła sala z paleniskiem w podłodze. Ognia nikt nie dokłada i ogień nie gaśnie - to pierwsza rzecz, którą tu pokazują, i ostatnia, którą tłumaczą.",
+      ludzie:[
+       ["sk_wszebor_m","Mistrz Ognia Wszebor","Człowiek stojący boso na gorącym kamieniu","mistrz ognia","urzednik",
+        "„Stoję tu od rana. Nie dla popisu - dla pamięci. Kamień pamięta lepiej niż ja.”",
+        [["Dlaczego ten ogień nie gaśnie?","„Bo ktoś go przekonał trzysta lat temu i nikt od tamtej pory nie znalazł argumentu przeciw.<br><br>Nie wiemy kto. Wiemy, że po nim została jedna reguła: nie kreśl run na ludziach.”","Kreślono je?"],
+         ["Ismaal był magiem?","„Ismaal był kimś, kto potrafił przekonać ogień, żeby palił jednych, a drugich nie.<br><br>To nie jest magia ognia. To jest coś, czego u nas nie uczymy i o czym w tej wieży nie wolno mówić głośno.”","Zapamiętam."]]],
+       ["sk_lubomira","Adeptka Lubomira","Dziewczyna z osmaloną warkoczą","adeptka ognia","kobieta",
+        "„Trzeci rok i pierwsza, która została z siedmiu. Sześć odeszło, nie sześć zginęło. To ważna różnica.”",
+        [["Dlaczego odeszły?","„Bo tu się uczy palić, a nie leczyć, i po roku każdy to rozumie.<br><br>Ja zostałam, bo nie mam dokąd wrócić. To zła przyczyna, ale wystarczająca.”","Powodzenia."],
+         ["Co czytasz?","„Traktat o znakach, tom drugi. Tomu trzeciego nie ma w bibliotece i nikt nie umie powiedzieć, gdzie jest.<br><br>W spisie jest. Na półce nie ma. W spisie stoi przy nim jedno słowo: wypożyczony.”","Komu?"]]]
+      ]}),
+    wnetrze({id:"czerwien_klasztor", wejscie:"Wejdź do Kaplicy Pierwszego", wraca:"czerwien_wysoka",
+      n:"Kaplica Pierwszego", region:"świątynia Ismaala",
+      opis:"Nawa bez ołtarza. Zamiast ołtarza stoi kamień polny, nieobrobiony, a nad nim wisi tablica z wyskrobanym fragmentem.",
+      ludzie:[
+       ["sk_przybyslaw_k","Kapłan Przybysław","Człowiek klęczący przed polnym kamieniem","kapłan","urzednik",
+        "„Kamień jest z pola, nie z kamieniołomu. Pierwszy tak kazał i nikt nie ośmielił się poprawić.”",
+        [["Co wyskrobano z tablicy?","„Jedno zdanie. Skrobano je siedemdziesiąt lat temu, tępym narzędziem i w pośpiechu.<br><br>Pod światło da się odczytać trzy słowa: <em>a przyszedł z</em>. Reszty nie ma.”","A przyszedł z."],
+         ["Wierzysz w to, czego uczysz?","„Wierzę w kamień. Kamień jest z pola i nikt nie może temu zaprzeczyć.<br><br>W resztę wierzę tak, jak wierzy się w rzeczy, których nie da się sprawdzić, a od których zależy twój chleb.”","Uczciwie."]]],
+       ["sk_marcjanna","Siostra Marcjanna","Kobieta przepisująca coś przy świecy","kopistka kaplicy","kobieta",
+        "„Przepisuję to, co mi dają, i nie czytam tego, co przepisuję. Tak jest bezpieczniej dla obu stron.”",
+        [["A jednak coś przeczytałaś.","„Raz. Rejestr chrztów sprzed dwustu lat, a w nim rubryka <em>ród</em> i przy trzech wpisach to samo słowo, którego dziś się nie używa.<br><br>Słowo brzmiało: puszcza. Zamknęłam księgę i nie otworzyłam więcej.”","Rozumiem dlaczego."],
+         ["Kto ci daje te teksty?","„Kapłan, a jemu daje ktoś z góry. Od pół roku dostaję wyłącznie odpisy pieśni, w których poprawiono po jednym wersie.<br><br>Zawsze ten sam wers. Zawsze o pochodzeniu.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"czerwien_koszary", wejscie:"Wejdź do koszar chorągwianych", wraca:"czerwien_wysoka",
+      n:"Koszary Chorągwiane", region:"garnizon Czerwieni Wysokiej",
+      opis:"Długa sala z pryczami ustawionymi po czterdzieści. Trzy rzędy zajęte, czwarty zasłany i pusty, a pościel na nim jest świeża.",
+      ludzie:[
+       ["sk_miroslaw","Chorąży Mirosław","Człowiek chodzący wzdłuż pustego rzędu","chorąży","weteran",
+        "„Czwarty rząd ścielimy codziennie. Rozkaz. Nie pytaj czyj, bo nie wiem, a gdybym wiedział, tobym nie powiedział.”",
+        [["Kto tam spał?","„Czterdziestu. Poszli na wschód w sierpniu, mieli wrócić na Popielny.<br><br>Jest Głodny. Pościel jest świeża, bo dopóki się ściele, to znaczy, że się wraca.”","Kto wydał ten rozkaz?"],
+         ["Ilu was zostało?","„Stu dwudziestu z dwustu czterdziestu. Połowa. Z tej połowy trzydziestu nie nadaje się do niczego poza ścieleniem.<br><br>Ja też się do niczego nie nadaję. Chodzę tu i liczę prycze.”","Trzymaj się."]]],
+       ["sk_domarat_m","Puszkarz Domarat Młodszy","Chłopak czyszczący lont","puszkarz","kowal",
+        "„Nie jestem tamtym Domaratem z Ziem Niczyich. Wszyscy pytają. Nie znam go i nie chcę.”",
+        [["Czym się zajmujesz?","„Prochem i tym, co proch robi ze ścianami. Ismaal nie lubi prochu, bo proch nie pyta o urodzenie.<br><br>Trzymają mnie mimo to, bo Nowożytni prochu używają, a my musimy czymś odpowiadać.”","Logiczne."],
+         ["Co poszło z tamtą chorągwią?","„Cztery beczki mojego prochu. Sam pakowałem, sam liczyłem.<br><br>Wrócił jeden wóz i był pusty, a w środku były ślady. Nie po prochu. Po pazurach.”","Po pazurach."]]]
+      ]}),
+    wnetrze({id:"czerwien_kramy", wejscie:"Zejdź na targ pod murem", wraca:"czerwien_wysoka",
+      n:"Targ Pod Murem", region:"targ Czerwieni Wysokiej",
+      opis:"Kilkanaście straganów wciśniętych między mur a skałę. Handluje się głównie tym, co potrzebne, a rzadko tym, co ładne.",
+      ludzie:[
+       ["sk_ostoja_k","Kupiec Ostoja","Człowiek z wagą na sznurku","kupiec","urzednik",
+        "„Ceny sztywne, ustala je kasztelan. Nie targuj się ze mną - targuj się z murem, ma tyle samo do powiedzenia.”",
+        [["Sztywne ceny w czasie wojny?","„Sztywne i za niskie. Sprzedaję poniżej kosztu i dokładam z własnego, bo za podniesienie ceny idzie się na dół.<br><br>Trzech kupców poszło na dół w tym roku. Na dół to nie jest przenośnia.”","Rozumiem."],
+         ["Skąd bierzesz towar?","„Z Jarmarku Trzech Chorągwi, przez ludzi bez barw. Kasztelan wie i udaje, że nie wie.<br><br>Gdyby wiedział oficjalnie, musiałby coś zrobić, a wtedy zabrakłoby soli.”","Klasyka."]]],
+       ["sk_niedamira","Zielarka Niedamira","Stara kobieta z koszem korzeni","zielarka targowa","kobieta",
+        "„Korzenie, kora, susz. Bez zaklęć, bez błogosławieństw. Za zaklęcia u nas palą.”",
+        [["Palą za zielarstwo?","„Nie za zielarstwo. Za to, co niektórzy do zielarstwa dokładają.<br><br>Ja nie dokładam nic. Dlatego mam siedemdziesiąt lat, a moja mistrzyni miała trzydzieści cztery.”","Rozsądnie."],
+         ["Co kupują teraz najczęściej?","„Krwawnik i dziurawiec, na rany. Trzykrotnie więcej niż przed rokiem.<br><br>Ale kupują to matki, nie żołnierze. Żołnierze już nie wracają po opatrunek.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  /* ============ WIECZNIK - stolica Prastarego Ludu ============ */
+  ulica("wiecznik", [
+    ["pl_zerosz","Pomostowy Żerosz","Człowiek badający deski drągiem","pomostowy","kowal",
+     "„Idź środkiem. Brzegi wymieniamy co trzy lata, środek co dziesięć. Środek jest starszy i pewniejszy.”",
+     [["Całe miasto stoi na wodzie?","„Na palach z czarnego dębu. Dąb w wodzie twardnieje zamiast gnić - to jedyna rzecz, którą wzięliśmy od nizin, i wzięliśmy ją od nich siedemset lat temu.<br><br>Odtąd nie wzięliśmy nic.”","Rozumiem."],
+      ["Dlaczego nie na brzegu?","„Bo na brzegu przychodzi się do ciebie, a na wodę trzeba wejść.<br><br>Kto wchodzi na pomost, ten idzie gęsiego i widać go z daleka. Cała obrona tego miasta to jest ta jedna myśl.”","Skuteczna."]]],
+    ["pl_bogna_p","Tkaczka Bogna","Kobieta przy krosnach wystawionych na pomost","tkaczka","kobieta",
+     "„Tkam na powietrzu, bo w izbie nie widać splotu. Deszcz mi nie przeszkadza, wełna i tak była na owcy.”",
+     [["Co tkacie?","„Płaszcze dla strażników i pasy dla gońców. W pasie gońca jest wpleciony wzór, po którym poznaje się, z którego uroczyska idzie.<br><br>Od pół roku tkam więcej pasów niż zwykle. Nie pytam po co.”","A powinnaś?"],
+      ["Skąd bierzecie wełnę?","„Od nizin, przez Jarmark, bo owiec u nas nie ma. Puszcza nie znosi wypasu.<br><br>Starsza mówi, że to upokarzające. Ja mówię, że gorzej byłoby marznąć.”","Zgadzam się z tobą."]]],
+    ["pl_swiatopelk","Dziad Świątopełk","Starzec siedzący z nogami nad wodą","najstarszy w Wieczniku","weteran",
+     "„Sto pięć zim. Liczyli za mnie, bo ja przestałem przy osiemdziesiątej.”",
+     [["Co się zmieniło przez ten czas?","„Rzeka. Płynie o dwa kroki dalej niż w moim dzieciństwie i nikt poza mną tego nie widzi, bo nikt poza mną nie pamięta, gdzie płynęła.<br><br>Wszystko inne zostało takie samo. To jest nasza duma i nasza choroba.”","Rozumiem."],
+      ["Pamiętasz opowieści o Ismaalu?","„Pamiętam, że dziadek mój mówił o nim <em>ten, co odszedł</em>, a nie <em>ten, co przyszedł</em>.<br><br>Różnica jest w jednym słowie i cała reszta z niej wynika. Niziny mówią, że przyszedł. My mówimy, że odszedł. Obie strony mówią o tym samym człowieku.”","To ważne."]]],
+    ["pl_wierzba","Wierzba","Dziewczyna z sokołem na przedramieniu","sokolnica","kobieta",
+     "„Nie sięgaj. Ona nie gryzie - ona bierze i nie oddaje.”",
+     [["Do czego wam sokoły?","„Do wiadomości ponad puszczą. Goniec idzie trzy dni, sokół leci pół.<br><br>Ale sokół nie umie powiedzieć, że kogoś zabito. Sokół umie tylko wrócić albo nie wrócić.”","A ostatnio?"],
+      ["Ostatnio wracają?","„Z zachodu i z południa tak. Z północy - trzy z siedmiu.<br><br>Wracają bez obrączek i bez piór na skrzydle. Coś strąca je w locie i nie robi tego łuk.”","Zapamiętam."]]]
+  ]);
+  budynki("wiecznik", [
+    wnetrze({id:"wiecznik_karczma", wejscie:"Wejdź do Domu Ognia", wraca:"wiecznik",
+      n:"Dom Ognia", region:"dom wspólny Wiecznika",
+      opis:"Wielka izba na palach, z paleniskiem pośrodku i dziurą w dachu. Nie ma tu stołów - są kręgi mat, a im bliżej ognia, tym starszy człowiek siedzi.",
+      ludzie:[
+       ["pl_gospodyni","Gościnna Milena","Kobieta rozdzielająca miejsca przy ogniu","gospodyni domu","kobieta",
+        "„Siadaj w trzecim kręgu. Obcy zawsze w trzecim, dopóki ktoś nie poręczy.”",
+        [["Kto może poręczyć?","„Każdy z pierwszego kręgu. Jest ich siedmioro i sześcioro nie rozmawia z obcymi.<br><br>Siódma to Starsza. Ona rozmawia, ale nie ręczy. Rachunek wychodzi ci sam.”","Wychodzi."],
+         ["Czym karmicie?","„Rybą, korzeniem i chlebem z żołędzi. Mięsa nie podajemy przy ogniu - mięso je się osobno i cicho.<br><br>Tak jest od zawsze i nikt nie umie powiedzieć dlaczego. Podejrzewam, że powód był, tylko go zjedli.”","Podoba mi się to."]]],
+       ["pl_gosciec","Gościec","Człowiek śpiący przy trzecim kręgu","goniec na przepustce","weteran",
+        "„Spałem. Teraz nie śpię. Mów szybko, bo znów zasnę.”",
+        [["Skąd wracasz?","„Z północy, spod grani. Osiem dni w jedną stronę i jeden powrót, bo wracałem biegiem.<br><br>Nie gonili mnie ludzie. Ludzi bym poznał.”","Co cię goniło?"],
+         ["Co widziałeś?","„Ślady w piachu tam, gdzie piachu nie powinno być. Puszcza kończy się, a za nią jest pas suchej ziemi, który rośnie.<br><br>Cztery lata temu miał trzysta kroków. Teraz ma pół dnia marszu.”","Piach rośnie."]]]
+      ]}),
+    wnetrze({id:"wiecznik_kamien", wejscie:"Wejdź na Kamienny Krąg", wraca:"wiecznik",
+      n:"Kamienny Krąg", region:"siedziba starszyzny Prastarego Ludu",
+      opis:"Pomost szerszy od innych, a na nim jeden głaz przywieziony z lądu i deszczówka zebrana w wydrążeniu. Tu się nie siada. Tu się stoi.",
+      ludzie:[
+       ["pl_borzyslaw","Starszy Borzysław","Człowiek stojący plecami do wody","starszy kręgu","weteran",
+        "„Nie kłaniaj się. U nas kłania się tylko drzewom i to tylko wtedy, gdy się je ścina.”",
+        [["Jak podejmujecie decyzje?","„Siedmioro stoi wokół kamienia, dopóki wszyscy nie powiedzą tego samego. Czasem stoimy dwa dni.<br><br>Niziny nazywają to nieudolnością. My nazywamy to tak, żeby nikt potem nie mówił, że go nie pytano.”","Rozumiem."],
+         ["Wojna nizin was dotyczy?","„Nie. Dopóki krata stoi, nie dotyczy. Krata stoi od dwustu lat i przez dwieście lat mieliśmy rację.<br><br>Od pół roku nie jestem pewien, czy nadal mamy. To pierwszy raz.”","Co się zmieniło?"]]],
+       ["pl_dobrawa_s","Strażniczka Kręgu Dobrawa","Kobieta z łukiem opartym o głaz","strażniczka kręgu","kobieta",
+        "„Łuk stoi, nie leży. Leżący łuk to łuk, który się spóźni.”",
+        [["Kogo tu pilnujesz?","„Siedmiorga. To znaczy jednego kamienia i siedmiorga ludzi, którzy bez tego kamienia nie umieliby się dogadać.<br><br>Kamień jest ważniejszy. Ludzi da się zastąpić.”","Twarde."],
+         ["Kto tu przychodzi z zewnątrz?","„Prawie nikt. W tym roku dwoje: poseł z nizin i ktoś, kto przyszedł z północy i nie chciał podać, skąd.<br><br>Ten drugi rozmawiał ze Starszą przez pół nocy. Rano go nie było i łódź została na miejscu.”","Łódź została."]]]
+      ]}),
+    wnetrze({id:"wiecznik_gaj", wejscie:"Przejdź kładką do Gaju Druidów", wraca:"wiecznik",
+      n:"Gaj Druidów", region:"siedziba druidów Prastarego Ludu",
+      opis:"Kępa starych olch wyrastających prosto z wody. Między pniami rozpięte są pomosty tak wąskie, że idzie się bokiem.",
+      ludzie:[
+       ["pl_zyworad","Druid Żyworad","Człowiek z dłońmi w korze","druid gaju","urzednik",
+        "„Nie odrywaj mnie. Słucham drzewa, a drzewo mówi wolno i tylko raz.”",
+        [["Co mówi?","„Że woda pod nim jest cieplejsza niż w zeszłym roku o tyle, ile ja bym nie zmierzył, a ono zmierzyło.<br><br>Cieplejsza woda idzie z północy. Z północy nie powinno iść ciepło.”","To dziwne."],
+         ["Naprawdę zmieniacie się w zwierzęta?","„Arcydruidka tak. Ja nie i pewnie nie będę.<br><br>To nie jest sztuczka ani zaklęcie. To jest zgoda - drzewo albo zwierzę musi się zgodzić. Na mnie nie zgadza się nic.”","Przykro mi."]]],
+       ["pl_kalinka","Nowicjuszka Kalinka","Dziewczyna z workiem żołędzi","nowicjuszka natury","kobieta",
+        "„Zbieram, sadzę, liczę, ile wzeszło. Trzeci rok i trzeci raz to samo.”",
+        [["Nudzi cię to?","„Nudziło przez dwa lata. W trzecim policzyłam, że wschodzi mniej niż wschodziło, i przestało nudzić.<br><br>Osiemdziesiąt na sto w pierwszym roku. Pięćdziesiąt jeden w tym. Nikt starszy nie chce tego ode mnie usłyszeć.”","Ja usłyszałem."],
+         ["Powiedziałaś to Arcydruidce?","„Powiedziałam Ostromirowi. Kazał liczyć dalej i nikomu nie mówić, dopóki nie będzie czterech lat.<br><br>Nie doczekam czterech lat. Widzę to po żołędziach.”","Licz dalej."]]]
+      ]}),
+    wnetrze({id:"wiecznik_lucznia", wejscie:"Wejdź na Pomost Łuczniczy", wraca:"wiecznik",
+      n:"Pomost Łuczniczy", region:"szkoła strażników leśnych",
+      opis:"Sto kroków pomostu i na końcu tarcze zawieszone nad wodą. Kto chybi, ten wyławia strzałę sam, i to jest cała dyscyplina, jakiej tu potrzeba.",
+      ludzie:[
+       ["pl_dobieslaw_l","Łowczy Dobiesław","Człowiek zbierający strzały z wody","łowczy pomostu","weteran",
+        "„Chybiłem trzy razy w tym tygodniu i trzy razy wchodziłem po pas. Nikt mnie nie zwolnił z tej reguły i słusznie.”",
+        [["Kogo tu uczycie?","„Dzieci od siódmego roku i dorosłych, którzy przyszli z nizin i myślą, że umieją strzelać.<br><br>Dorośli odpadają szybciej. Dzieciom nie trzeba niczego oduczać.”","Mądre."],
+         ["Ilu waszych poszło na północ?","„Dwunastu w tym roku, z tego jeden wrócił i nie wrócił cały.<br><br>Mówił o czymś, co idzie po dwóch nogach, ale za daleko rozstawionych. Potem przestał mówić w ogóle.”","Żyje?"]]],
+       ["pl_zbroja","Zbrojna Leśna Rada","Kobieta ostrząca dwa krótkie ostrza","zbrojna leśna","kobieta",
+        "„Dwa ostrza, nie miecz. Miecz jest do stania w szeregu, a my nie stoimy w szeregach.”",
+        [["Dlaczego dwa?","„Bo w puszczy nie ma miejsca na zamach. Jest miejsce na krok i na pchnięcie, i na drugie pchnięcie, zanim tamten zrobi krok.<br><br>Kto rozumie to zdanie, ten się nauczy. Kto nie, ten wraca do łuku.”","Rozumiem."],
+         ["Co u was mówią o nizinach?","„Że biją się o kamienie i nazywają to wiarą. Że oba ich królestwa wyrosły z jednego pnia i oba udają, że nie.<br><br>Nas to nie obchodzi, dopóki nie zaczną wycinać drzew na machiny. Zaczęli w zeszłym miesiącu.”","Zaczęli?"]]]
+      ]}),
+    wnetrze({id:"wiecznik_susz", wejscie:"Wejdź do Suszarni", wraca:"wiecznik",
+      n:"Suszarnia", region:"zielarnia Wiecznika",
+      opis:"Izba, w której nie widać ścian - wszystko zasłonięte pękami suszu wiszącymi od podłogi po sufit. Powietrze jest tu gęstsze niż na zewnątrz.",
+      ludzie:[
+       ["pl_niegoslawa","Szeptucha Niegosława","Kobieta rozgarniająca susz jak zasłonę","szeptucha suszarni","kobieta",
+        "„Nie oddychaj głęboko. Połowa tego, co tu wisi, leczy, a druga połowa leczy tylko w odpowiedniej ilości.”",
+        [["Ile jest tu ziół?","„Dwieście czterdzieści rodzajów. Nazwy zna sześć osób, zastosowania - dwie, a przeciwwskazania jedna i to ja.<br><br>Kiedy umrę, zostanie dwieście czterdzieści pęków i nikt, kto wie, którego nie wolno.”","Zapisz to."],
+         ["Dlaczego nie zapiszesz?","„Bo zapisane trafia do nizin, a niziny robią z ziół rzeczy, których zioła nie chcą robić.<br><br>Wolę, żeby wiedza umarła ze mną, niż żeby ktoś zrobił z tojadu to, co zrobili z prochem.”","Rozumiem."]]],
+       ["pl_wiech","Zbieracz Wiech","Chłopak z poparzonymi dłońmi","zbieracz","kowal",
+        "„Nie od ognia. Od barszczu. Trzeba było słuchać, jak mówiła, żeby nie gołymi rękami.”",
+        [["Gdzie zbierasz?","„Na skraju, przy Ścieżce Mchowej i za Rosicą. Dalej nie chodzę.<br><br>Za Rosicą jest zapadlisko, w którym od zimy nic nie rośnie. Nic - nawet mech. Chodziłem tam trzy razy i za trzecim zawróciłem bez powodu.”","Bez powodu?"],
+         ["Co tam jest?","„Nie wiem. Nie doszedłem. Za każdym razem nogi same zawracają, a ja nie jestem strachliwy - łaziłem po drzewach nad wodą od szóstego roku.<br><br>Powiedz to Starszej, jak będziesz z nią mówił. Mnie nie wierzy.”","Powiem."]]]
+      ]}),
+    wnetrze({id:"wiecznik_przystan", wejscie:"Zejdź na Przystań Czółen", wraca:"wiecznik",
+      n:"Przystań Czółen", region:"przystań Wiecznika",
+      opis:"Czterdzieści czółen uwiązanych burta w burtę. Każde ma na dziobie inny znak i nikt tych znaków nie tłumaczy obcym.",
+      ludzie:[
+       ["pl_wiesz","Przewoźnik Wiesz","Człowiek wyczerpujący wodę z czółna","przewoźnik","kowal",
+        "„Nie wsiadaj. Wożę swoich i tych, za których ktoś swój poręczy.”",
+        [["Dokąd wozisz?","„Na wyspy, do Rosicy i do Lisiej Kępy. Na niziny nie - od nizin jest most i krata, i tak ma zostać.<br><br>Raz w życiu przewiozłem kogoś na drugą stronę bez kraty. Do dziś nie wiem, czy dobrze zrobiłem.”","Kogo?"],
+         ["Co znaczą te znaki na dziobach?","„Z którego rodu jest czółno i ile razy wróciło. Kreska za każdy powrót.<br><br>Trzy czółna stoją bez nowych kresek od jesieni. Nie zabieram ich stąd, bo dopóki stoją, ktoś może wrócić.”","Rozumiem."]]],
+       ["pl_lada","Sieciarka Łada","Kobieta naprawiająca sieć zębami i palcami","sieciarka","kobieta",
+        "„Zębami szybciej, choć wszyscy mówią, że nie wolno. Wszyscy mają całe sieci i braki w zębach.”",
+        [["Dobrze bierze?","„Ryba tak, ale nie ta co zwykle. Od wiosny idzie z północy sum i węgorz, a szczupak schodzi na południe.<br><br>Ryba ucieka przed czymś. Ryba nie ucieka przed niczym, więc coś tam jest.”","Zapamiętam."],
+         ["Kto to widzi poza tobą?","„Wszyscy rybacy i żaden ze starszyzny. Powiedziałam Borzysławowi, kiwnął głową i wrócił do stania przy kamieniu.<br><br>Kamień nie łowi ryb. Ja łowię.”","Ja słucham."]]]
+      ]})
+  ]);
+
+  /* ============ ZGORZEL - stolica Odeszłych ============ */
+  ulica("zgorzel", [
+    ["od_haczyk","Haczyk","Człowiek na linie nad wyrobiskiem","linowy","kowal",
+     "„Nie stój pod liną. Jak spadnę, to spadnę na ciebie, a nie chcę mieć tego na sumieniu.”",
+     [["Co robisz na tej linie?","„Wożę wszystko między poziomami, bo schodów tu nie ma. Schody musiałby ktoś wykuć, a nikt nie wykuwa niczego, czego nie da się zwinąć w jedną noc.<br><br>Całe miasto jest do zwinięcia w jedną noc. Tak je pomyśleli.”","Sprytnie."],
+      ["Kto tu rządzi naprawdę?","„Wilkosz mówi, że nikt. Grzebień mówi, że tabliczka. Ja mówię, że lina.<br><br>Kto trzyma linę, ten decyduje, co jedzie w górę i co w dół. Dziś trzymam ja i dlatego rozmawiasz ze mną uprzejmie.”","Uczciwie."]]],
+    ["od_szmata","Szmata","Kobieta w płaszczu z pięciu różnych płaszczy","szmuglerka","kobieta",
+     "„Płaszcz z pięciu. Każdy kawałek z innego trupa i każdy z innej frakcji. Wygodne - w każdym obozie ktoś rozpozna coś swojego.”",
+     [["Nie boisz się tego nosić?","„Boję się chodzić bez niego. To ostatnia rzecz, jaką bym zdjęła.<br><br>Trzy razy uratował mi życie, i to trzy razy w trzech różnych obozach.”","Praktyczne."],
+      ["Co przemycasz na wschód?","„Nic. Na wschód od trzech miesięcy nikt nic nie wozi, bo nikt nie wraca po zapłatę.<br><br>Wozi się na wschód tylko wtedy, gdy ktoś płaci z góry i podwójnie. Ostatnio ktoś płaci potrójnie.”","Kto?"]]],
+    ["od_kikut","Kikut","Człowiek bez trzech palców u lewej dłoni","dawny kopacz","weteran",
+     "„Trzy palce zostały w tym wyrobisku. Miasto je ma, ja mam resztę. Uczciwy podział jak na Zgorzel.”",
+     [["Wydobywacie tu jeszcze coś?","„Nic od czterdziestu lat. Wyrobisko jest puste i dlatego się w nim mieszka - nikt nie przyjdzie po to, czego nie ma.<br><br>Cała nasza obrona to jest to, że nie mamy nic wartego zabrania.”","A jednak ktoś przyjdzie."],
+      ["Skąd się tu bierze jedzenie?","„Z kontraktów, z przemytu i z Podkowy. Nic z tego nie jest pewne i wszyscy o tym wiedzą.<br><br>Dlatego u nas nie ma grubych. Nawet Wilkosz nie jest gruby.”","Zauważyłem."]]],
+    ["od_perla","Perła","Dziewczyna licząca coś na palcach","posłanka między poziomami","kobieta",
+     "„Noszę wiadomości między poziomami. Grosz za piętro, dwa za nocne.”",
+     [["Czytasz to, co nosisz?","„Nie umiem czytać i to jest cały mój kapitał. Dlatego dają mi to, czego nie dadzą nikomu innemu.<br><br>Uczę się liter po kryjomu. Jak się nauczę, stracę robotę i nie wiem, czy warto.”","Ucz się."],
+      ["Dużo wiadomości ostatnio?","„Cztery razy więcej niż latem i wszystkie na jeden poziom - do Grzebienia.<br><br>Grzebień nie odpowiada na żadną. Odkłada je na stos i patrzy na stos.”","Duży ten stos?"]]]
+  ]);
+  budynki("zgorzel", [
+    wnetrze({id:"zgorzel_szynk", wejscie:"Zejdź do Szynku Bez Nazwy", wraca:"zgorzel",
+      n:"Szynk Bez Nazwy", region:"szynk w Zgorzeli",
+      opis:"Wykuta w skale nisza z beczką zamiast szynkwasu. Szyldu nie ma, bo szyld trzeba by zdejmować przy przeprowadzce, a tu wszystko liczy się na przeprowadzkę.",
+      ludzie:[
+       ["od_beczka","Beczka","Człowiek szerszy niż wejście, przez które wszedł","szynkarz","kowal",
+        "„Jedno piwo na osobę i nie dlatego, że skąpię. Dlatego, że po drugim ludzie zaczynają mówić, a tu nie ma ścian.”",
+        [["Nie ma ścian?","„Są skały i skały niosą głos. Wszystko, co powiesz przy tej beczce, słychać dwa poziomy niżej.<br><br>Wiedzą o tym wszyscy poza nowymi, dlatego nowych poznaje się po tym, że mówią głośno.”","Będę cicho."],
+         ["Co się mówi cicho?","„Że ktoś skupuje ludzi bez rodziny. Płaci z góry, nie mówi po co, a warunek jest jeden: żeby nikt się nie upomniał.<br><br>Poszło już czternastu. Żaden się nie upomniał, bo nie miał kto.”","Kto skupuje?"]]],
+       ["od_szpila","Szpila","Kobieta czyszcząca paznokcie nożem","najemniczka bez kontraktu","kobieta",
+        "„Bez kontraktu od sześciu tygodni. Nie dlatego, że mnie nie chcą - dlatego, że nie biorę tego, co dają.”",
+        [["Co dają?","„Wschód. Wszystkie kontrakty idą teraz na wschód i płacą cztery razy stawkę.<br><br>Cztery razy stawka to nie premia. To cena za to, że nikt nie wróci po resztę.”","Rozsądnie liczysz."],
+         ["Kto stoi za tymi kontraktami?","„Nikt się nie podpisuje. Na tabliczce jest znak zamiast nazwy, i to nie jest znak żadnej z czterech frakcji.<br><br>Widziałam go raz wcześniej, w innym miejscu, i wolałabym nie pamiętać gdzie.”","Gdzie?"]]]
+      ]}),
+    wnetrze({id:"zgorzel_stol", wejscie:"Wejdź do Sali Kontraktów", wraca:"zgorzel",
+      n:"Sala Kontraktów", region:"siedziba władzy Odeszłych",
+      opis:"Nie sala, tylko poszerzony chodnik z jedną ścianą wygładzoną pod tabliczki. Nie ma tronu, stołu ani krzeseł. Kto chce coś załatwić, ten stoi.",
+      ludzie:[
+       ["od_rylec","Rylec","Człowiek żłobiący coś w kamieniu","pisarz tabliczek","urzednik",
+        "„Nie piszę atramentem. Atrament kłamie, bo można go zmyć. Rylec kłamie tylko raz i widać poprawkę.”",
+        [["Co tu żłobisz?","„Kontrakty, rachunki i imiona tych, którzy nie wrócili. Trzy kolumny na jednej ścianie, bo tak jest uczciwie.<br><br>Trzecia kolumna rośnie najszybciej i zaraz zabraknie mi ściany.”","Ile imion?"],
+         ["Kto decyduje, co trafia na ścianę?","„Nikt. Każdy może przyjść i podyktować, jeśli zapłaci za wykucie.<br><br>Dlatego nasza ściana jest prawdziwsza niż wszystkie księgi Nowożytnych. U nich pisze się to, co każą. U nas to, za co ktoś zapłacił z własnej kieszeni.”","Ładna różnica."]]],
+       ["od_wachlarz","Wachlarz","Kobieta z sześcioma pierścieniami na jednej dłoni","pośredniczka kontraktów","kobieta",
+        "„Sześć pierścieni, sześć układów. Zdejmuję po jednym, kiedy któryś się kończy. W tym roku zdjęłam trzy.”",
+        [["Kto był tym trzecim?","„Kontor Nowożytnych. Zerwali umowę o przewóz soli i nie podali powodu, a powód znam: przestali potrzebować soli, bo przestali karmić ludzi na wschodzie.<br><br>Nie przestali ich wysyłać. Przestali karmić.”","To znaczy?"],
+         ["Z kim wam się układa najlepiej?","„Z Prastarym Ludem, choć nas nie znoszą. Nie znoszą uczciwie i przewidywalnie, a to jest w handlu więcej warte niż sympatia.<br><br>Najgorzej z Ismaalem. Oni traktują umowę jak łaskę, a łaskę można cofnąć.”","Rozumiem."]]]
+      ]}),
+    wnetrze({id:"zgorzel_woda", wejscie:"Zejdź do Cysterny", wraca:"zgorzel",
+      n:"Cysterna", region:"siedziba magów wody Odeszłych",
+      opis:"Zalana dolna komora wyrobiska. Woda stoi tu tak nieruchomo, że odbija sufit jak lustro, i nikt nie wchodzi do niej butami.",
+      ludzie:[
+       ["od_kropla_st","Mistrzyni Wód Studnia","Kobieta stojąca po kostki w lustrze","mistrzyni wody","kobieta",
+        "„Zdejmij buty albo stój na kamieniu. Woda nie obraża się o wiele rzeczy, ale o błoto tak.”",
+        [["Dlaczego woda, a nie ogień?","„Bo ogień trzeba karmić, a wody wystarczy nie przeszkadzać.<br><br>Jesteśmy najsłabsi ze wszystkich szkół i nikt się z tym nie kryje. Za to jesteśmy jedyni, którzy nie stracili ani jednego ucznia.”","Uczciwa wymiana."],
+         ["Co widzisz w tej wodzie?","„Nic. Woda nie pokazuje przyszłości, to bajki dla nizin.<br><br>Pokazuje za to, co jest teraz gdzie indziej, jeśli tamto miejsce też ma wodę. Od trzech miesięcy na północy nie mam gdzie patrzeć. Cała woda tam wyschła.”","Wyschła?"]]],
+       ["od_mgla","Mgła","Chłopak siedzący z rękami w wodzie po łokcie","adept wody","urzednik",
+        "„Siedzę tak od świtu. To nie jest ćwiczenie, tylko kara. Zapytałem o coś, o co nie wolno.”",
+        [["O co zapytałeś?","„Czy wodą da się zamknąć bramę. Wyczytałem to słowo w księdze, której nie miałem czytać.<br><br>Studnia zbladła i kazała mi siedzieć. Siedzę czwartą godzinę i wciąż nie wiem, dlaczego to takie straszne słowo.”","Ja też chcę wiedzieć."],
+         ["Co było w tej księdze?","„Że przed Zamknięciem Bram magia wody służyła do jednej rzeczy i tę jedną rzecz opisano na wydartej stronie.<br><br>Została po niej rycina - łuk z kamienia i coś, co przez ten łuk wychodzi.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"zgorzel_kuznia", wejscie:"Wejdź do Kuźni Poziomu Trzeciego", wraca:"zgorzel",
+      n:"Kuźnia Poziomu Trzeciego", region:"kuźnia Zgorzeli",
+      opis:"Kuźnia bez komina - dym idzie starym szybem wentylacyjnym i wychodzi pół mili dalej, tak że z zewnątrz nie widać, że ktoś tu kuje.",
+      ludzie:[
+       ["od_obcegi","Obcęgi","Człowiek trzymający żelazo gołą ręką w rękawicy z trzech warstw","kowal wyrobiska","kowal",
+        "„Trzy warstwy skóry i i tak czuję. Kto mówi, że nie czuje, ten nie kuje - tylko stoi przy kowadle.”",
+        [["Kujecie broń?","„Kujemy wszystko, na co ktoś ma pieniądze, i nie pytamy, przeciw komu.<br><br>To brzmi podle i takie jest. Ale gdybyśmy pytali, nie mielibyśmy co jeść, a głód też jest podły.”","Rozumiem."],
+         ["Co zamawiają ostatnio?","„Kolce. Nie groty, nie ostrza - kolce do wbijania w ziemię, ostrzem do góry.<br><br>Zamówienie na cztery tysiące. Cztery tysiące kolców stawia się przeciw czemuś, co biegnie i nie ogląda się pod nogi.”","Kto zamówił?"]]],
+       ["od_iskra","Iskra","Dziewczyna przy miechu","uczennica kowalska","kobieta",
+        "„Miech, tylko miech, od dwóch lat. Obcęgi mówi, że kto nie umie dmuchać, ten nie umie kuć.”",
+        [["Wierzysz mu?","„Nauczyłam się rozpoznawać temperaturę po kolorze i po dźwięku miecha. Więc chyba wierzę.<br><br>Ale dwa lata to dwa lata, a on ma czterdzieści i mówi, że jest w połowie drogi.”","Bądź cierpliwa."],
+         ["Widziałaś te kolce?","„Wykuwałam je nocą, po sto na noc, i policzyłam wszystkie.<br><br>Odbierał je człowiek, który nie zdjął kaptura ani razu, płacił monetą, której nie znam, i nie targował się. Nikt się nie targuje o cztery tysiące sztuk.”","Zachowałaś tę monetę?"]]]
+      ]}),
+    wnetrze({id:"zgorzel_lazaret", wejscie:"Wejdź do Lazaretu", wraca:"zgorzel",
+      n:"Lazaret", region:"lecznica Odeszłych",
+      opis:"Komora z dziesięcioma pryczami i jedną świecą na wszystkie. Odeszli nie mają lekarzy - mają ludzi, którzy widzieli dużo ran i zapamiętali, co pomagało.",
+      ludzie:[
+       ["od_igla","Igła","Kobieta z nitką w zębach","felczerka","kobieta",
+        "„Nie zszywam pijanych i nie zszywam tych, co krzyczą. Pierwsi się ruszają, drudzy budzą resztę.”",
+        [["Kogo tu leczysz?","„Tych, co wracają. Coraz mniej, bo coraz mniej wraca.<br><br>Latem miałam osiem prycz zajętych. Teraz mam dwie i to nie znaczy, że jest lepiej.”","Rozumiem."],
+         ["Widziałaś nietypowe rany?","„Tylko takie od dwóch miesięcy. Rana wchodzi na wylot, ale kanał jest szerszy z tyłu niż z przodu, jakby coś się w środku rozłożyło.<br><br>Żadna broń tak nie robi. Sprawdziłam wszystkie, jakie znam.”","Pokaż mi kogoś takiego."]]],
+       ["od_niemowa","Niemowa","Człowiek leżący twarzą do ściany","ocalały z kontraktu","weteran",
+        "„...”",
+        [["Możesz mówić?","„...”<br><br>Odwraca się powoli. Ma otwarte oczy i porusza ustami bez dźwięku, a jego palec kreśli na ścianie ten sam kształt raz za razem: łuk oparty na dwóch nogach.","To brama."],
+         ["Skąd wróciłeś?","Podnosi rękę i wskazuje. Nie na wschód, gdzie leżą Ziemie Nieznane, tylko wyżej - w sufit, w skałę, w nic.<br><br>Potem opuszcza rękę i wraca do kreślenia łuku.","Odpocznij."]]]
+      ]}),
+    wnetrze({id:"zgorzel_sciana", wejscie:"Podejdź do Ściany Imion", wraca:"zgorzel",
+      n:"Ściana Imion", region:"pamięć Odeszłych",
+      opis:"Trzysta kroków gładkiej skały pokrytej imionami. Nie ma dat, nie ma nazwisk, nie ma rodów - tylko imię i kreska za każdą wykonaną robotę.",
+      ludzie:[
+       ["od_liczarz","Liczarz","Starzec z palcem na ścianie","strażnik ściany","weteran",
+        "„Nie dotykaj. Tłuszcz z palców zżera kamień, a to jest jedyny cmentarz, jaki mamy.”",
+        [["Ile tu imion?","„Cztery tysiące dwieście dziewięć. Wiem, bo liczę je co roku od pierwszego do ostatniego i zajmuje mi to jedenaście dni.<br><br>W tym roku doszło sto siedem. Rok wcześniej dziewiętnaście.”","Sto siedem."],
+         ["Twoje imię tu jest?","„Jest, i to od dwunastu lat. Wykuli mi je, kiedy nie wróciłem z kontraktu, a potem wróciłem.<br><br>Nie kazałem skuwać. Człowiek raz wykuty na tej ścianie jest już trochę martwy i to bardzo porządkuje myślenie.”","Rozumiem."]]],
+       ["od_wdowa","Wdowa Sowa","Kobieta stojąca przed jednym imieniem","wdowa","kobieta",
+        "„Stoję tu codziennie od Popielnego. Nie płaczę - płakałam we wrześniu i wystarczyło.”",
+        [["Czyje to imię?","„Mojego. To znaczy jego, ale nazywaliśmy się tak samo, bo tu się nie bierze cudzego nazwiska - bierze się cudze imię.<br><br>Poszedł na kontrakt, którego nie chciał, bo płacili z góry i podwójnie.”","Kto płacił?"],
+         ["Zostało po nim coś?","„Moneta z zaliczki. Nie wydałam jej i nie wydam.<br><br>Nikt tu nie umie powiedzieć, gdzie ją bito. Ani Nowożytni, ani Ismaal, ani my. A moneta jest nowa - widać po krawędzi.”","Pokaż mi ją."]]]
+      ]})
+  ]);
+
+  /* ============ MIASTA NOWOŻYTNYCH ============ */
+  ulica("miedziana_waga", [
+    ["nw_probierz","Probierz Sędziwoj Krzywy","Człowiek z okiem przy szkiełku","probierz mennicy","urzednik",
+     "„Nie zasłaniaj światła. Probuję srebro, a srebro kłamie w cieniu.”",
+     [["Ile srebra jest w waszej monecie?","„W naszej cztery części na dziesięć i tak jest od dwustu lat. W ismaalskiej trzy i pół, choć na stemplu stoi cztery.<br><br>Wiedzą o tym obie strony i obie milczą, bo ta różnica to jest dokładnie cło.”","Wygodne."],
+      ["Widziałeś kiedyś monetę, której nie znasz?","„Trzy w tym roku. Srebro czyste, prawie bez domieszki, i stempel, którego nie ma w żadnym katalogu.<br><br>Krawędź świeża. To znaczy, że gdzieś stoi mennica, o której nie wiemy, i bije lepszą monetę niż my.”","Zachowaj następną."]]],
+    ["nw_liczmanka","Liczmanka Rada","Dziewczyna przesypująca monety przez sito","liczmanka","kobieta",
+     "„Sito wychwytuje podrobione. Podrobione są lżejsze i przechodzą, prawdziwe zostają na wierzchu. Proste.”",
+     [["Dużo podrobionych?","„Latem jedna na sto. Teraz jedna na dwadzieścia i to nie są podróbki chałupnicze.<br><br>Podrobiona moneta jest zwykle gorsza. Te są lepsze od naszych i to mnie w tym najbardziej niepokoi.”","Lepsze?"],
+      ["Co robicie z tymi lepszymi?","„Odkładamy do skrzyni i nikt nie wie, co dalej. Skrzynia stoi w piwnicy i jest pełna.<br><br>Cechmistrz kazał liczyć i milczeć. Liczę. Milczę. Tobie mówię, bo nie jesteś stąd.”","Rozumiem."]]]
+  ]);
+  budynki("miedziana_waga", [
+    wnetrze({id:"waga_mennica", wejscie:"Wejdź do hali menniczej", wraca:"miedziana_waga",
+      n:"Hala Mennicza", region:"mennica Nowożytnych",
+      opis:"Osiem stempli, przy każdym dwóch ludzi i jeden strażnik. Bije się tu monetę dla obu stron wojny, na przemian, w tygodniowych zmianach.",
+      ludzie:[
+       ["nw_stempel","Mistrz Stempla Ninogniew","Człowiek z młotkiem lżejszym niż wygląda","mistrz stempla","kowal",
+        "„Cztery uderzenia na monetę. Piąte psuje, trzecie nie wystarcza. Uczyłem się tego jedenaście lat.”",
+        [["Bijecie dla Ismaala?","„W parzyste tygodnie. W nieparzyste dla nas, a stemple wiszą obok siebie na tej samej ścianie.<br><br>Raz w miesiącu ktoś się pomyli i wtedy w obiegu jest moneta ismaalska z naszą krawędzią. Nikt jej nigdy nie zwrócił.”","Ciekawe."],
+         ["Ktoś chciał u was bić własną monetę?","„W zeszłym miesiącu. Człowiek bez barw przyniósł rysunek stempla i worek czystego srebra.<br><br>Cechmistrz odmówił, ale trzymał ten rysunek w ręku bardzo długo. Widziałem, co na nim było: łuk na dwóch nogach.”","Łuk."]]],
+       ["nw_kruszec","Skarbniczka Wolimira","Kobieta z kluczem na łańcuchu przy szyi","skarbniczka","kobieta",
+        "„Klucz noszę przy szyi, bo u pasa się urywa. Urwał się raz i tego raz mi wystarczyło.”",
+        [["Ile srebra jest w tej piwnicy?","„Nie powiem, i nie dlatego, że tajemnica. Dlatego, że gdybym powiedziała, sam byś policzył, że nie starczy na trzy lata takiej wojny.<br><br>Wszyscy tu udają, że starczy. Ja tylko liczę.”","Rozumiem."],
+         ["Skrzynia z obcą monetą - widziałaś ją?","„Stoi w trzeciej niszy i jest pełna do brzegu. Trzysta czterdzieści sztuk, wszystkie z tym samym stemplem.<br><br>Napłynęły w ciągu pół roku. Ktoś płaci nimi w tym kraju i płaci dużo.”","Mogę ją zobaczyć?"]]]
+      ]}),
+    wnetrze({id:"waga_cech", wejscie:"Wejdź do Domu Cechu", wraca:"miedziana_waga",
+      n:"Dom Cechu", region:"cech mennicy",
+      opis:"Sala z jednym długim stołem i ośmioma tabliczkami z imionami. Przy trzech tabliczkach nikt nie siada od jesieni.",
+      ludzie:[
+       ["nw_starszy_cechu","Starszy Cechu Bogusław","Człowiek siedzący przy pierwszej tabliczce","starszy cechu","urzednik",
+        "„Trzy tabliczki puste. Nie pytaj, bo odpowiedź jest nudna i smutna, a ja wolę nudne bez smutnego.”",
+        [["A jednak pytam.","„Pojechali na wschód z kontraktem giełdy. Mieli ocenić rudę, o której ktoś napisał, że jest lepsza od naszej.<br><br>Wrócił jeden i nie usiadł już przy stole. Siedzi w Klasztorze Rachuby i liczy, bo tylko to potrafi robić po tym, co widział.”","Poszukam go."],
+         ["Czy ta ruda była lepsza?","„Przywieźli próbkę. Leży w hali w ołowianej skrzynce, bo probierz nie chce jej trzymać w gołych rękach.<br><br>Nie jest to ruda. Nikt tu nie wie, co to jest.”","Chcę ją zobaczyć."]]],
+       ["nw_zapisowa","Pisarka Cechowa Milena","Kobieta z trzema księgami otwartymi naraz","pisarka cechowa","kobieta",
+        "„Trzy księgi, bo trzy prawdy: co przyszło, co wyszło i co powiedziano, że przyszło i wyszło.”",
+        [["Które się zgadzają?","„Pierwsza z drugą nigdy. Trzecia z żadną.<br><br>Tak jest we wszystkich cechach i nikt tego nie nazywa kradzieżą. Nazywa się to różnicą naturalną.”","Zgrabnie."],
+         ["Co mówi trzecia księga o wschodzie?","„Że kontraktów na wschód nie było. W drugiej są trzy, w pierwszej pięć.<br><br>Pięć wyjazdów, zero powrotów, zero zapisów. Ktoś bardzo się starał, żeby to zniknęło.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  ulica("latarnica", [
+    ["nw_bosman","Bosman Chwalisz","Człowiek z liną zawiniętą wokół pięści","bosman portowy","weteran",
+     "„Trzymaj się z dala od krawędzi. Nie dlatego, że wpadniesz - dlatego, że jak wpadniesz, to ja muszę cię wyciągać.”",
+     [["Ruch w porcie?","„Mniejszy niż powinien. Statki wychodzą, wracają, ale ładunek jest lżejszy od zgłoszonego o jedną piątą.<br><br>Nie kradną. Sprawdzałem. Po prostu w porcie docelowym nie ma kto odebrać wszystkiego.”","Dziwne."],
+      ["Pływacie na południe?","„Do Prastarego Ludu i z powrotem, wzdłuż brzegu. Dalej nie.<br><br>Dalej jest woda bez brzegu i wyspa, o której gadają pijani. Nie znam nikogo, kto by tam był, i znam wielu, którzy twierdzą, że znają kogoś takiego.”","Wyspa."]]],
+    ["nw_kaper","Zbroja Kaper","Kobieta z hakiem zamiast lewej dłoni","szyprowa","kobieta",
+     "„Hak nie od abordażu. Od liny, która się zerwała pod ładunkiem. Nudniejsza historia, ale prawdziwsza.”",
+     [["Wozisz towar czy ludzi?","„Ludzi, którzy chcą być towarem, i towar, który chce być ludźmi. Kontor tego nie zapisuje.<br><br>Ostatnio wożę głównie w jedną stronę. Na południe pełno, na północ pusto.”","Uciekają?"],
+      ["Kto ucieka?","„Rodziny z Kuźnic. Płacą podwójnie za nocny rejs i nie mówią dlaczego.<br><br>Jedna kobieta powiedziała mi tylko tyle: że jej mąż wrócił z kontraktu i przestał spać, a potem przestał być mężem.”","Zapamiętam to."]]]
+  ]);
+  budynki("latarnica", [
+    wnetrze({id:"latarnica_wieza", wejscie:"Wejdź na Wieżę Latarni", wraca:"latarnica",
+      n:"Wieża Latarni", region:"latarnia Nowożytnych",
+      opis:"Sto osiemdziesiąt stopni i na górze misa z ogniem, którego nikt nigdy nie widział zgaszonego. Pod misą leży dziennik, w którym zapisuje się każdą noc od dwustu lat.",
+      ludzie:[
+       ["nw_lampiarz","Lampiarz Wojsław","Człowiek z sadzą wtartą w zmarszczki","lampiarz","kowal",
+        "„Ogień je pół beczki oleju na noc. Zimą całą. Kto tego nie policzy, ten myśli, że latarnia jest za darmo.”",
+        [["Zgasła kiedyś?","„Trzy razy w dwustu latach i za każdym razem jest o tym zapis. Zawsze przy sztormie z północy.<br><br>Czwarty raz był we wrześniu. Sztormu nie było. Zapisu też nie ma, bo kazali go nie robić.”","Kto kazał?"],
+         ["Co widać stąd nocą?","„Wodę i światła statków. A od lata jeszcze jedno światło, na północnym wschodzie, nisko nad horyzontem.<br><br>Nie miga jak latarnia i nie porusza się jak statek. Stoi. Świeci na czerwono i stoi.”","Od kiedy?"]]],
+       ["nw_dziennikarka","Zapisowa Nocy Ostoja","Kobieta z piórem przy otwartym dzienniku","zapisowa","kobieta",
+        "„Jedna linijka na noc: pogoda, statki, ogień. Dwieście lat, siedemdziesiąt trzy tysiące linijek.”",
+        [["Czytałaś stare?","„Wszystkie. To moja robota i moja kara.<br><br>Pierwszy tom zaczyna się od zdania, którego nikt nie umie wyjaśnić: <em>zapalono ponownie, po Zamknięciu</em>. Ponownie. Czyli była tu latarnia wcześniej.”","Ponownie."],
+         ["Zapisałaś to czerwone światło?","„Zapisałam sto dwadzieścia razy i sto dwadzieścia razy przekreślono mi to w odpisie, który idzie do kontoru.<br><br>Trzymam własny odpis, nieprzekreślony. Nie pytaj gdzie.”","Nie pytam."]]]
+      ]}),
+    wnetrze({id:"latarnica_stocznia", wejscie:"Wejdź do stoczni", wraca:"latarnica",
+      n:"Stocznia", region:"stocznia Latarnicy",
+      opis:"Pochylnia, na niej kadłub odwrócony dnem do góry, i zapach smoły tak gęsty, że czuć go w ustach.",
+      ludzie:[
+       ["nw_szkutnik2","Cieśla Okrętowy Racław","Człowiek mierzący coś sznurkiem z węzłami","cieśla okrętowy","kowal",
+        "„Sznurek z węzłami, nie miara. Miary się rozciągają, węzły nie.”",
+        [["Co budujecie?","„Ósmy w tym roku i wszystkie osiem to ten sam wzór: płytki, szybki, do dwudziestu ludzi.<br><br>Takich łodzi nie buduje się do handlu. Buduje się je, żeby przewieźć wojsko przez wodę i wrócić po następnych.”","Kto zamówił?"],
+         ["Nowożytni szykują desant?","„Nie wiem i nie chcę. Ale kontrakt podpisała giełda, a giełda nie kupuje ośmiu takich łodzi dla zabawy.<br><br>Zapytaj kapitana portu. On wie i on się boi, że wiem ja.”","Zapytam."]]],
+       ["nw_smolarka","Smolarka Dobrochna","Kobieta z rękami czarnymi po łokcie","smolarka stoczniowa","kobieta",
+        "„Nie podchodź do kotła. Smoła nie parzy - smoła się przykleja i dopiero potem parzy.”",
+        [["Skąd bierzecie smołę?","„Ze Smolarzy, wozami przez Kuźnice. Dwa razy więcej niż rok temu.<br><br>Radzim tam mielerzuje dzień i noc i wygląda jak człowiek, którego przestano pytać, czy da radę.”","Zajrzę do niego."],
+         ["Co się smołuje poza łodziami?","„Od miesiąca beczki. Duże, na jedną trzecią wypełnione czymś, co się przelewa, i uszczelniane potrójnie.<br><br>Odbiera je człowiek, który nie schodzi z konia. Płaci od beczki i nie targuje się.”","Ile beczek?"]]]
+      ]})
+  ]);
+
+  ulica("kuznice_wodne", [
+    ["nw_kolodziej_h","Młynarz Kołowy Bogdan","Człowiek nasłuchujący koła","młynarz kołowy","kowal",
+     "„Słucham koła. Zdrowe koło mruczy, chore stuka. To koło stuka od trzech tygodni i nikt nie daje na naprawę.”",
+     [["Ile tu kół?","„Czternaście, z czego dwa stoją. Napędzają młoty, miechy i jedną rzecz, o której hutmistrz nie mówi.<br><br>Ta jedna rzecz jest za trzecią ścianą i pracuje tylko nocą.”","Co to jest?"],
+      ["Byłeś tam?","„Raz, po naprawę. Widziałem koło, które napędza nie młot, tylko miech dmuchający w rurę idącą w ziemię.<br><br>W ziemię, rozumiesz. Nie do pieca. W ziemię.”","Zapamiętam."]]],
+    ["nw_wdowa_h","Wdowa Radomiła","Kobieta czekająca przy bramie huty","wdowa hutnicza","kobieta",
+     "„Czekam. Nie na niego - na wypłatę po nim. Trzeci miesiąc i za każdym razem mówią, że w przyszłym tygodniu.”",
+     [["Co się stało twojemu mężowi?","„Poszedł z kontraktem na wschód, bo płacili poczwórnie. Mówiłam, żeby nie szedł.<br><br>Giełda nie wypłaca, bo nie ma potwierdzenia zgonu. Nie ma zgonu, bo nie ma ciała. Nie ma ciała, bo nikt tam nie pojechał sprawdzić.”","To podłe."],
+      ["Ilu was tu czeka?","„Dziewiętnaście kobiet przy tej bramie. Przychodzimy w piątki, bo w piątki wypłacają.<br><br>W zeszłym roku było nas cztery.”","Dziewiętnaście."]]]
+  ]);
+  budynki("kuznice_wodne", [
+    wnetrze({id:"kuznice_huta", wejscie:"Wejdź do wielkiej huty", wraca:"kuznice_wodne",
+      n:"Wielka Huta", region:"huta Nowożytnych",
+      opis:"Trzy piece i przy każdym kolejka wózków. Gorąco jest tu takie, że ludzie pracują na zmiany po dwie godziny i nikt tego nie kwestionuje.",
+      ludzie:[
+       ["nw_wytapiacz","Wytapiacz Sulimir","Człowiek z osmalonymi rzęsami","wytapiacz","kowal",
+        "„Dwie godziny przy piecu i cztery odpoczynku. Kto wytrzyma trzy, ten nie wytrzyma dziesięciu lat.”",
+        [["Co topicie?","„Rudę darniową z kopalni i złom z pól bitewnych. Złomu przychodzi więcej niż rudy i to jest cała prawda o tej wojnie.<br><br>Przetapiam pancerze na pancerze. Te same żelazo chodzi w kółko i za każdym razem jest go trochę mniej.”","Ponuro."],
+         ["Co jest za trzecią ścianą?","„Nie wiem i nie chcę wiedzieć, bo ci, co wiedzieli, dostali podwyżkę i przestali z nami jeść.<br><br>Wiem tylko, że tam idzie powietrze rurą w dół i wraca gorące. Nie ogrzane. Gorące.”","Kto tam pracuje?"]]],
+       ["nw_hutmistrzowa","Nadzorczyni Wierzchosława","Kobieta z tabliczką zmian","nadzorczyni zmian","kobieta",
+        "„Zmiany prowadzę ja, nie hutmistrz. Hutmistrz prowadzi rachunki, a rachunki nie mdleją przy piecu.”",
+        [["Ilu ludzi zatrudniacie?","„Czterystu dwunastu na papierze, trzystu siedemdziesięciu naprawdę.<br><br>Czterdziestu dwóch jest na liście, ale nie przychodzą. Za nich też płacimy i nie mnie o to pytać.”","Komu płacicie?"],
+         ["Kto pracuje za trzecią ścianą?","„Dwunastu, wpisanych osobno, z osobnym wejściem i osobną wypłatą.<br><br>Żaden nie jest stąd i żaden nie mówi po naszemu bez akcentu. Nie umiem powiedzieć jakiego.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"kuznice_zbrojownia", wejscie:"Wejdź do zbrojowni", wraca:"kuznice_wodne",
+      n:"Zbrojownia Kuźnic", region:"zbrojownia Nowożytnych",
+      opis:"Stojaki po obu stronach, na nich broń poukładana według wagi, nie według rodzaju. Trzeci rząd od końca jest pusty i zamieciony.",
+      ludzie:[
+       ["nw_zbrojmistrzowa","Zbrojmistrzyni Nawoja Młodsza","Kobieta ważąca miecz na dłoni","zbrojmistrzyni","kobieta",
+        "„Ważę, nie oglądam. Broń, która waży tyle co trzeba, jest zrobiona jak trzeba. Zdobienia nie ważą nic i nic nie znaczą.”",
+        [["Co zniknęło z trzeciego rzędu?","„Sto dwadzieścia toporów i osiemdziesiąt tarcz, wydane w sierpniu na jeden podpis.<br><br>Podpis jest nieczytelny, a pieczęć giełdowa. Pytałam. Powiedziano mi, że to nie mój dział.”","Twój dział to zbrojownia."],
+         ["Czym najlepiej bić się z Ismaalem?","„Niczym. Ale skoro pytasz: krótkim i ciężkim. Oni noszą tarcze i uczą się je trzymać od dziecka.<br><br>Długa broń odbija się od tarczy. Ciężka łamie rękę, która ją trzyma.”","Rozsądnie."]]],
+       ["nw_puszkarz_nw","Puszkarz Gniewomir","Człowiek z opaską na jednym oku","puszkarz","weteran",
+        "„Oko zostało przy trzeciej próbie. Czwarta wyszła. Piąta też. To nazywam postępem.”",
+        [["Nowożytni używają prochu?","„Używamy i nie chwalimy się tym, bo Ismaal nazywa to bezbożnym, a my nie chcemy im dawać powodu do kazań.<br><br>Trzy działa. Wszystkie stoją w Grocie... to znaczy stały. Teraz nie wiem gdzie.”","Nie wiesz?"],
+         ["Zgubiliście działa?","„Wyjechały na wschód w sierpniu, tym samym transportem co topory. Trzy działa, sto dwadzieścia toporów, osiemdziesiąt tarcz.<br><br>To nie jest wyprawa handlowa. To jest wojsko, tylko nikt tego tak nie nazwał.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  /* ============ MIASTA ISMAALA ============ */
+  ulica("zarnowiec", [
+    ["sk_formierz","Formierz Świętomir","Człowiek ubijający glinę stopami","formierz","kowal",
+     "„Glina musi być ubita nogami, nie młotem. Młot zostawia w niej powietrze, a powietrze w formie to pęknięty dzwon.”",
+     [["Ile dzwonów odlaliście w tym roku?","„Dwa. W zeszłym czternaście.<br><br>Reszta pieca idzie na to, co dzwonem nie jest, i o tym się nie mówi przy formierzach, bo formierze plotkują.”","A jednak plotkujesz."],
+      ["Więc plotkuj.","„Lufy. Krótkie, grube, po cztery stopy. Ismaal nie używa prochu, więc po co nam lufy.<br><br>Chyba że przestaliśmy nie używać. Wtedy wszystko się zgadza i to jest gorsze.”","Zapamiętam."]]],
+    ["sk_dzwonnica","Dzwonniczka Bogumiła","Kobieta z watą w uszach","dzwonniczka","kobieta",
+     "„Głośniej. Nie zdejmę waty, bo bez niej ogłuchnę do reszty, a i tak już słyszę połowę.”",
+     [["Bijesz w dzwony?","„Cztery razy dziennie i piąty raz, kiedy ktoś umrze wysoko urodzony. W tym roku biłam piąty raz siedemnaście razy.<br><br>Wszystkie siedemnaście w ciągu dwóch tygodni w sierpniu.”","Siedemnaście naraz?"],
+      ["Kto to był?","„Nie mówią. Biję i nie pytam - taka umowa.<br><br>Ale liczyłam uderzenia. Za rycerza bije się dwanaście razy, za chorążego dwadzieścia cztery. Biłam dwadzieścia cztery siedemnaście razy z rzędu.”","Siedemnastu chorążych."]]]
+  ]);
+  budynki("zarnowiec", [
+    wnetrze({id:"zarnowiec_ludwisarnia", wejscie:"Wejdź do ludwisarni", wraca:"zarnowiec",
+      n:"Ludwisarnia", region:"ludwisarnia Ismaala",
+      opis:"Dół odlewniczy głęboki na dwa wzrosty, a nad nim rusztowanie z kadzią. Ściany są zakopcone tak równo, że wyglądają na pomalowane.",
+      ludzie:[
+       ["sk_kadziowy","Kadziowy Wszemir","Człowiek stojący przy dźwigni","kadziowy","kowal",
+        "„Kadź waży tyle co trzy konie i wisi na jednym łańcuchu. Dlatego stoję tu ja, a nie ktoś, kto się rozprasza.”",
+        [["Co dziś lejecie?","„Nie dzwon. Więcej ci nie powiem przy świetle.<br><br>Przyjdź po zmierzchu, jak nie będzie tu kanclerskiego pisarza. Wtedy pokażę ci formę i sam zobaczysz, co to jest.”","Przyjdę."],
+         ["Boisz się pisarza?","„Boję się tego, że pisarz przyszedł. Przez czternaście lat nikt nie pisał, co odlewamy.<br><br>Od sierpnia pisze codziennie i wysyła to nie do kanclerza, tylko gdzie indziej. Widziałem pieczęć. Nie jest nasza.”","Czyja?"]]],
+       ["sk_odlewnik","Mistrzyni Odlewu Racława Starsza","Kobieta z linijką z brązu","mistrzyni odlewu","kobieta",
+        "„Linijka z brązu, bo drewniana się kurczy przy piecu. Wszystko tu jest z brązu poza ludźmi.”",
+        [["Uczyłaś Prochmistrzynię Racławę?","„Uczyłam i żałuję. Uczyłam ją mierzyć, a ona nauczyła się mierzyć, ile prochu potrzeba na ścianę.<br><br>To ta sama umiejętność. Nie umiem powiedzieć, w którym momencie stała się czymś innym.”","Rozumiem."],
+         ["Co się zmieniło w Żarnowcu?","„Zamówienia. Przez trzysta lat to miasto odlewało dzwony i kotły, a od roku odlewa rzeczy, które nie mają nazwy w naszym cechowym spisie.<br><br>Wpisujemy je jako <em>wyrób szczególny</em>. Sto siedemdziesiąt wyrobów szczególnych w tym roku.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"zarnowiec_prochownia", wejscie:"Zejdź do prochowni", wraca:"zarnowiec",
+      n:"Prochownia", region:"prochownia Ismaala",
+      opis:"Piwnica z podłogą wysypaną piaskiem i zakazem wnoszenia żelaza. Beczki stoją w rzędach po dziesięć, oddzielone murkami.",
+      ludzie:[
+       ["sk_prochowa","Ważąca Proch Milesa","Kobieta w płóciennych trzewikach","ważąca proch","kobieta",
+        "„Zdejmij podkute buty albo stój w progu. Jedna iskra i nie będzie tu ani ciebie, ani mnie, ani Żarnowca.”",
+        [["Ile tu prochu?","„Czterysta beczek. Rok temu było czterdzieści.<br><br>Ismaal oficjalnie prochu nie używa. Czterysta beczek to jest bardzo dużo nieużywania.”","Bardzo dużo."],
+         ["Dokąd to idzie?","„Na wschód, wozami, nocą i bez chorągwi. Zapisuję każdą beczkę i co miesiąc oddaję zapis kanclerzowi.<br><br>Kanclerz oddaje mi go z powrotem z przekreślonymi liczbami i kazaniem, żebym się nie myliła.”","Nie mylisz się."]]],
+       ["sk_saletrnik","Saletrnik Wojmił","Człowiek pachnący uryną i wapnem","saletrnik","kowal",
+        "„Wiem, jak pachnę. Saletra się nie robi z powietrza, tylko z gnoju, uryny i cierpliwości.”",
+        [["Skąd bierzecie saletrę?","„Z gnojowisk całego Ismaala i to od roku nie wystarcza. Kupujemy przez Jarmark, od Odeszłych, po potrójnej cenie.<br><br>Odeszli kupują to od Nowożytnych. Więc kupujemy proch od tych, do których strzelamy.”","Idiotyczne."],
+         ["Ktoś jeszcze kupuje saletrę?","„Ktoś kupuje wszystko, co się da wysypać i podpalić, i płaci lepiej od nas.<br><br>Nie wiem kto. Wiem, że Odeszli boją się z nim targować, a Odeszli targują się ze wszystkimi.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  ulica("kruczyn", [
+    ["sk_zaloba","Płaczka Miłosława","Kobieta w czarnym, z zaczerwienionymi oczami","płaczka pogrzebowa","kobieta",
+     "„Płaczę na pogrzebach za zapłatą i nie wstydzę się. Ktoś musi, skoro rodziny są na wojnie.”",
+     [["Dużo pracy?","„Za dużo. Płakałam na osiemdziesięciu pogrzebach w tym roku, a na dwudziestu ośmiu nie było trumny, tylko płótno złożone w kostkę.<br><br>Puste płótno. Płaczę nad pustym płótnem i biorę za to pełną stawkę. To mnie zżera.”","Rozumiem."],
+      ["Kto zamawia te puste pogrzeby?","„Twierdza Grot. Płacą z góry za dwadzieścia osiem i mówią, że będzie więcej.<br><br>Zamawiają pogrzeby na zapas. Rozumiesz, co to znaczy?”","Rozumiem."]]],
+    ["sk_student","Żak Przecław","Chłopak z pękiem zwojów pod pachą","żak archiwum","urzednik",
+     "„Trzy lata w archiwum i wciąż nie mam prawa wejść na czwarty poziom. Mówią, że tam jest wilgoć.”",
+     [["Wierzysz w tę wilgoć?","„Wierzyłem przez dwa lata. W trzecim zauważyłem, że na czwarty poziom co miesiąc schodzi archiwista z lampą i wychodzi bez kurzu na rękawach.<br><br>W wilgotnym archiwum kurz nie lata. W pustym też nie.”","Sprytnie."],
+      ["Co tam jest?","„Regestry sprzed Zamknięcia Bram. Trzysta lat i starsze. Wiem, bo raz widziałem sygnaturę na grzbiecie, kiedy archiwista wychodził.<br><br>Sygnatura zaczynała się od litery, której nie używamy od dwustu lat.”","Poszukam tego."]]]
+  ]);
+  budynki("kruczyn", [
+    wnetrze({id:"kruczyn_archiwum", wejscie:"Wejdź do Archiwum Wysokiego", wraca:"kruczyn",
+      n:"Archiwum Wysokie", region:"archiwum Ismaala",
+      opis:"Cztery poziomy regałów, do trzeciego prowadzą schody, do czwartego drabina zamknięta na łańcuch. Powietrze jest suche i pachnie klejem.",
+      ludzie:[
+       ["sk_archiwistka","Archiwistka Dobrosława Stara","Kobieta z lampą osłoniętą szkłem","archiwistka","kobieta",
+        "„Lampa osłonięta, bo jedna iskra i trzysta lat idzie z dymem. Tak zginęło archiwum w Żarnowcu.”",
+        [["Co jest na czwartym poziomie?","„Rzeczy, których nie wolno mi opisać, ale wolno mi powiedzieć, że są. To jest ostrożnie sformułowane i nie przypadkiem.<br><br>Zapytaj mnie o coś konkretnego. Na konkretne pytanie muszę odpowiedzieć albo odmówić, a odmowa też jest odpowiedzią.”","Czy jest tam coś o Bramie?"],
+         ["Czy jest tam coś o Bramie?","Milczy przez cztery oddechy.<br><br><span class='mowa'>„Odmawiam odpowiedzi.”</span><br><br>Odkłada lampę i odwraca się do regału. Ręce jej drżą i nie ma to nic wspólnego z wiekiem.","Wystarczy mi to."]]],
+       ["sk_introligator","Introligator Ziemomysł","Człowiek z klejem zaschniętym na palcach","introligator","urzednik",
+        "„Nie oprawiam. Rozprawiam i oprawiam z powrotem, a to zupełnie inna robota i płacą za nią lepiej.”",
+        [["Po co rozprawiać księgę?","„Żeby wyjąć kartę i wszyć inną. Robię to od jedenastu lat i przez pierwsze dziewięć myślałem, że poprawiam błędy.<br><br>W dziesiątym policzyłem karty, które wyjąłem. Sto siedemdziesiąt. Same błędy nie zdarzają się sto siedemdziesiąt razy.”","Co było na tych kartach?"],
+         ["Zachowałeś którąś?","„Jedną. Nie umiem powiedzieć dlaczego akurat tę - może dlatego, że była z pieśni, a pieśni nikt nie poprawia bez powodu.<br><br>Jest na niej wers o tym, skąd przyszedł Ismaal. Trzymam ją w oprawie modlitewnika, którego nikt nie otwiera.”","Pokaż mi ją."]]]
+      ]}),
+    wnetrze({id:"kruczyn_cmentarz", wejscie:"Wejdź na Cmentarz Wysoki", wraca:"kruczyn",
+      n:"Cmentarz Wysoki", region:"cmentarz Ismaala",
+      opis:"Groby wykute w skale, jeden nad drugim, w dziewięciu piętrach. Im wyżej, tym starsze i tym trudniej odczytać imię.",
+      ludzie:[
+       ["sk_grabarz","Grabarz Niemir","Człowiek z kilofem zamiast łopaty","grabarz","kowal",
+        "„W skale nie kopie się łopatą. Jeden grób to trzy dni kilofa i dlatego u nas nie chowa się byle kogo.”",
+        [["Ile grobów wykułeś w tym roku?","„Dwadzieścia dwa, a zapłacono mi za pięćdziesiąt.<br><br>Dwadzieścia osiem jest opłaconych i nie wykutych, bo nie ma kogo w nie włożyć. Kazali czekać.”","Czekasz."],
+         ["Kto leży najwyżej?","„Nikt nie wie. Dziewiąte piętro jest sprzed rachuby i imion nie da się odczytać.<br><br>Poza jednym. Jeden grób na dziewiątym ma imię wykute głębiej niż inne i ktoś je odnawiał przez trzysta lat. Nie ma tam nazwiska ani rodu.”","Jakie imię?"]]],
+       ["sk_kamieniarka_c","Rytowniczka Nagrobna Zofia","Kobieta wykuwająca literę po literze","rytowniczka","kobieta",
+        "„Litera dziennie, jak dobrze idzie. Ludzie się dziwią, że tak wolno. Ludzie nie próbowali pisać w skale.”",
+        [["Co wykuwasz najczęściej?","„Imię, chorągiew i rok. Od sierpnia coraz częściej bez chorągwi, bo rodziny proszą, żeby nie wykuwać.<br><br>Nie chcą, żeby ktoś kiedyś policzył, ilu z jednej chorągwi leży tu obok siebie.”","Rozumiem."],
+         ["Wykuwałaś to imię z dziewiątego piętra?","„Odnawiałam. Moja matka odnawiała przed mną, a jej matka przed nią.<br><br>Płaci za to kaplica i płaci zawsze na czas. Imię brzmi krótko i nie jest ismaalskie. Brzmi jak imię z puszczy.”","Powiedz mi je."]]]
+      ]})
+  ]);
+
+  ulica("grot", [
+    ["sk_intendent","Intendent Wszebor","Człowiek z tabliczką i ołówkiem","intendent twierdzy","urzednik",
+     "„Licz szybko, mów wolno. U mnie odwrotnie niż u ludzi.”",
+     [["Ile ludzi żywisz?","„Osiemset według rozkazu, czterysta sześćdziesiąt naprawdę, a wydaję na siedemset.<br><br>Różnica idzie wozami na wschód. Nie pytaj, komu - podpisuję i nie czytam, bo tak jest zdrowiej.”","Zdrowiej."],
+      ["Wozy wracają?","„Wozy tak, ludzie nie. Wracają puste, z jednym woźnicą zamiast czterech.<br><br>Ten sam woźnica, za każdym razem. Nie mówi nic i nie chce jeść. Widziałem go osiem razy i za ósmym miał te same buty co za pierwszym, nieznoszone.”","Nieznoszone."]]],
+    ["sk_rekrut","Rekrut Częstobor","Chłopak w za dużym kaftanie","rekrut","weteran",
+     "„Trzeci tydzień. Uczą mnie stać. Trzeci tydzień samego stania.”",
+     [["Ilu was jest w naborze?","„Sześćdziesięciu. Z Sępnicy, Wrzosów i Kamionki, sami tacy, po których nikt nie zapyta.<br><br>Sierżant mówi, że idziemy na wschód za miesiąc. Mówi to tak, jakby nas przepraszał.”","Nie idź."],
+      ["Możesz odmówić?","„Mogę uciec. Trzech uciekło w zeszłym tygodniu i dwóch przyprowadzono z powrotem.<br><br>Trzeciego nie. Sierżant powiedział, że dotarł do Ziem Niczyich. Powiedział to głośno i chyba specjalnie.”","Idź na zachód."]]]
+  ]);
+  budynki("grot", [
+    wnetrze({id:"grot_arsenal", wejscie:"Wejdź do arsenału twierdzy", wraca:"grot",
+      n:"Arsenał Grotu", region:"arsenał Ismaala",
+      opis:"Sklepiona hala z bronią ustawioną w kozłach. Pod ścianą stoją trzy puste podstawy z odciśniętymi w kurzu śladami czegoś ciężkiego i okrągłego.",
+      ludzie:[
+       ["sk_arsenalowy","Arsenałowy Domasz","Człowiek liczący kozły z bronią","arsenałowy","weteran",
+        "„Licz ze mną albo nie przeszkadzaj. Zgubię rachubę i zacznę od pierwszego kozła.”",
+        [["Co stało na tych podstawach?","„Nic. Zawsze były puste.<br><br>Kazano mi tak mówić i powiedziałem. Zapytaj mnie jeszcze raz, a powiem to samo, tylko wolniej.”","Zapytam jeszcze raz."],
+         ["Zapytam jeszcze raz.","Odkłada tabliczkę.<br><br><span class='mowa'>„Trzy działa nowożytnej roboty, zdobyte pod Kruczynem cztery lata temu. Stały tu i nikt ich nie ruszał, bo Ismaal prochu nie używa.<br><br>W sierpniu przyjechał wóz i wyjechał z nimi. Papieru nie było. Był tylko człowiek, któremu kasztelanka nie śmiała odmówić.”</span>","Kto to był?"]]],
+       ["sk_cieciwiarz","Cięciwiarz Milobrat Młodszy","Człowiek skręcający ścięgno","cięciwiarz","kowal",
+        "„Cięciwa ze ścięgna, nie z konopi. Konopna pęka na mrozie, a na wschodzie jest mróz nawet latem.”",
+        [["Skąd wiesz, jaki jest mróz na wschodzie?","„Z reklamacji. Wróciło do mnie osiemdziesiąt kusz z pękniętymi cięciwami i wszystkie pękły tak samo - w miejscu, gdzie ścięgno przymarza.<br><br>Osiemdziesiąt kusz wróciło. Ludzi, którzy je nieśli, nie widziałem.”","Ktoś je przywiózł."],
+         ["Kto przywiózł te kusze?","„Ten sam woźnica co zawsze. Zdjął je z wozu jedną ręką, po osiem naraz, a osiem kusz waży tyle co człowiek.<br><br>Podziękowałem mu. Nie odpowiedział. Nie sądzę, żeby mógł.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"grot_kaplica", wejscie:"Wejdź do kaplicy garnizonowej", wraca:"grot",
+      n:"Kaplica Garnizonowa", region:"kaplica Twierdzy Grot",
+      opis:"Ciasna izba z polnym kamieniem i ławą na dwadzieścia osób. Na ścianie wiszą tabliczki poległych, ostatnie osiemnaście jeszcze bez dat śmierci.",
+      ludzie:[
+       ["sk_kapelan","Kapelan Ziemowit Cichy","Człowiek wieszający kolejną tabliczkę","kapelan garnizonu","urzednik",
+        "„Wieszam z datą urodzenia. Datę drugą dopisuję, jak przyjdzie potwierdzenie. Osiemnaście czeka.”",
+        [["Ile czekają?","„Najstarsza od sierpnia. Sto dwadzieścia trzy dni.<br><br>Po roku wolno dopisać datę zaginięcia zamiast śmierci. Nie dopiszę. Wolę, żeby wisiały bez daty i żeby ktoś pytał.”","Pytam."],
+         ["Modlisz się za nich?","„Modlę się o to, żeby to, co ich spotkało, nie było tym, o czym myślę.<br><br>To nie jest modlitwa, której uczą w Czerwieni. To jest modlitwa, której człowiek uczy się sam, kiedy przestaje wierzyć w tamtą.”","Rozumiem."]]],
+       ["sk_wdowa_g","Sierota Rada","Dziewczynka siedząca pod tabliczkami","sierota garnizonowa","kobieta",
+        "„Nie jestem sierotą. Tata nie ma daty, więc jeszcze nie.”",
+        [["Jak długo tu siedzisz?","„Od sierpnia. Kapelan daje mi jeść i mówi, żebym poszła do ciotki do Sępnicy.<br><br>Nie pójdę. Jak przyjdzie, to przyjdzie tutaj, a nie do Sępnicy.”","Rozumiem."],
+         ["Jak wygląda twój tata?","„Wysoki i ma bliznę tu, przy uchu. Nazywa się Wojsław, nie ten sierżant, inny.<br><br>Jak go zobaczysz, powiedz mu, że siedzę pod tabliczkami i że nie poszłam do Sępnicy.”","Powiem mu."]]]
+      ]})
+  ]);
+
+  /* ============ MIASTA PRASTAREGO LUDU ============ */
+  ulica("borowe_wrota", [
+    ["pl_wrotny","Wrotny Dobrogost","Człowiek stojący między dwoma żywymi dębami","wrotny","weteran",
+     "„Brama jest z dwóch drzew, które rosną. Nie zamyka się jej - ona zarasta, jak trzeba.”",
+     [["Zarasta sama?","„Sama, jeśli druidzi poproszą. Trwa to trzy dni i przez trzy dni nikt nie wejdzie ani nie wyjdzie.<br><br>Zarosła dwa razy w moim życiu. Pierwszy raz przy zarazie. Drugi raz w zeszłym miesiącu.”","Dlaczego w zeszłym?"],
+      ["Więc dlaczego zarosła?","„Nie powiedziano nam. Zarosła na jedną noc i rano była otwarta.<br><br>Rano znaleźliśmy pod nią ślady, które wchodziły i nie wychodziły. Ślady dwunożne, ale krok za szeroki na człowieka.”","Zapamiętam."]]],
+    ["pl_strzelec","Strzelczyni Dobroniega","Kobieta z trzema strzałami między palcami","strzelczyni wrót","kobieta",
+     "„Trzy strzały w dłoni, czwarta na cięciwie. Kto potrzebuje piątej, ten już nie żyje.”",
+     [["Uczysz tu?","„Uczę dzieci trzymać, a dorosłych oduczam wszystkiego, co umieli.<br><br>Najgorsi są zbrojni z nizin. Chcą celować. W puszczy się nie celuje - w puszczy się wie, gdzie strzała ma być, zanim się ją wypuści.”","Rozumiem."],
+      ["Strzelałaś kiedyś do człowieka?","„Do człowieka nie. Do czegoś, co szło jak człowiek, tak.<br><br>Trafiłam trzy razy w pierś i nie zwolniło kroku. Odeszło samo, kiedy zrobiło się jasno. Od tamtej nocy śpię z łukiem.”","Kiedy to było?"]]]
+  ]);
+  budynki("borowe_wrota", [
+    wnetrze({id:"wrota_lucznia", wejscie:"Wejdź na strzelnicę pod dębami", wraca:"borowe_wrota",
+      n:"Strzelnica pod Dębami", region:"szkoła łuczników Prastarego Ludu",
+      opis:"Polana z tarczami rozstawionymi co dwadzieścia kroków, aż po sto sześćdziesiąt. Za setką stoi już tylko jedna tarcza i jest cała.",
+      ludzie:[
+       ["pl_mistrz_luku","Mistrz Cięciwy Wojsław Leśny","Człowiek z przedramieniem grubszym po jednej stronie","mistrz cięciwy","weteran",
+        "„Ręka nierówna od trzydziestu lat naciągania. Wszyscy tutejsi łucznicy tak wyglądają. Poznasz nas po tym w tłumie.”",
+        [["Kto trafia w tarczę za setką?","„Trzech żyjących. Wielki Łowczy, ja i jedna dziewczyna z Rosicy, która o tym nie wie, bo nikt jej jeszcze nie zmierzył.<br><br>Tarcza jest cała, bo nie strzelamy do niej dla popisu. Strzelamy, jak jest po co.”","Kiedy ostatnio było po co?"],
+         ["Więc kiedy?","„W zeszłym miesiącu, w nocy, przy zarośniętej bramie. Strzelaliśmy we trzech i trafiliśmy we trzech.<br><br>To coś zabrało wszystkie trzy strzały ze sobą. Nie wyciągnęło ich. Odeszło z nimi w środku.”","Zapamiętam."]]],
+       ["pl_drzewiec","Drzewiec Radomił","Człowiek wybierający pnie na łuki","drzewiec","kowal",
+        "„Cis z północnego stoku, nie z południowego. Południowy rośnie szybciej i pęka. Rzeczy, które rosną szybko, zawsze pękają.”",
+        [["Ile trwa zrobienie łuku?","„Cztery lata suszenia i osiem dni roboty. Ludzie się dziwią, że łuk kosztuje tyle co koń.<br><br>Koń rośnie sam. Łuk trzeba czekać.”","Uczciwie."],
+         ["Ktoś zamawiał u ciebie ostatnio dużo?","„Wielki Łowczy. Sto łuków na wiosnę i wszystkie ciężkie, na sześćdziesiąt funtów naciągu.<br><br>Sześćdziesiąt funtów nie jest na zwierzynę i nie jest na człowieka. Człowieka kładzie się czterdziestką.”","Na co więc?"]]]
+      ]}),
+    wnetrze({id:"wrota_warsztat", wejscie:"Wejdź do warsztatu ciesielskiego", wraca:"borowe_wrota",
+      n:"Warsztat Ciesielski", region:"warsztat Borowych Wrót",
+      opis:"Wiór po kostki i zapach żywicy. Na kozłach leżą drzewce w różnych stopniach obróbki, a pod ścianą stoi coś dużego przykrytego płótnem.",
+      ludzie:[
+       ["pl_ciesla2","Cieśla Mścisz","Człowiek strugający bez patrzenia na dłonie","cieśla","kowal",
+        "„Patrzę na słój, nie na nóż. Kto patrzy na nóż, ten się tnie.”",
+        [["Co jest pod płótnem?","„Kładka składana, na dwadzieścia kroków, do przerzucenia przez wodę w pół godziny.<br><br>Robimy trzy takie. Prastary Lud nie buduje mostów od dwustu lat, bo mosty działają w obie strony.”","Więc po co teraz?"],
+         ["Po co teraz mosty?","„Bo starszyzna liczy się z tym, że będziemy musieli przejść na drugą stronę szybko i całym ludem.<br><br>Nikt tego nie powiedział głośno. Ale kładek nie robi się na wycieczkę.”","Zapamiętam."]]],
+       ["pl_tokarz","Tokarka Lubomira","Kobieta przy tokarce nożnej","tokarka","kobieta",
+        "„Noga napędza, ręce prowadzą. Kto ma słabą nogę, ten toczy krzywo, i to jest wszystko, co trzeba wiedzieć o moim fachu.”",
+        [["Co toczysz?","„Drzewca, trzonki i to, czego nikt nie zamawiał przez dwieście lat: kołki do palisady.<br><br>Sześć tysięcy kołków. Policzyłam, bo płacą od sztuki.”","Sześć tysięcy."],
+         ["Gdzie stanie ta palisada?","„Nie mówią. Ale kołki są krótkie, na dwie stopy, i zaostrzone z obu końców.<br><br>Palisady nie robi się z takich. Z takich robi się coś, co się wbija gęsto w ziemię przed linią. Coś przeciw temu, co biegnie.”","Znam to."]]]
+      ]})
+  ]);
+
+  ulica("mchowiec", [
+    ["pl_grzybiarz","Grzybiarz Sulisz","Człowiek z koszem wyścielonym mchem","grzybiarz","kowal",
+     "„Mech w koszu, nie płótno. Płótno poci grzyba i grzyb gnije, zanim dojdziesz.”",
+     [["Dobry rok na grzyby?","„Zły. Najgorszy od jedenastu lat i to bez suszy.<br><br>Grzyb rośnie z tego, co się rozkłada. Jak nie ma grzyba, to znaczy, że w ziemi coś przestało się rozkładać.”","Co to znaczy?"],
+      ["Więc co to znaczy?","„Nie wiem. Wiem tylko, że na wschodzie puszczy jest pas, w którym leżą pnie sprzed dziesięciu lat i wyglądają jak wczoraj ścięte.<br><br>Nie próchnieją. Powiedziałem to druidom. Kazali nie chodzić tam więcej.”","Poszedłeś?"]]],
+    ["pl_zabiarz","Bagienna Żywia","Kobieta z żabą na dłoni","zbieraczka bagienna","kobieta",
+     "„Nie krzyw się. Żaba w bagnie jest jak ptak w kopalni - dopóki skacze, można wejść.”",
+     [["A jak przestanie skakać?","„Wtedy się wychodzi i nie wraca przez rok. Bagno wypuszcza czasem powietrze, od którego się zasypia i nie budzi.<br><br>Od wiosny żaby przestały skakać w trzech miejscach naraz. Wcześniej zdarzało się to raz na dekadę.”","Trzy miejsca."],
+      ["Gdzie te miejsca?","„Wszystkie po wschodniej stronie i wszystkie na jednej linii, jakby ktoś przeciągnął sznurek.<br><br>Pokazałam to Ostromirowi. Popatrzył na tę linię dłużej, niż powinien, i powiedział, żebym nikomu nie mówiła. Mówię tobie, bo ty stąd odejdziesz.”","Zapamiętam."]]]
+  ]);
+  budynki("mchowiec", [
+    wnetrze({id:"mchowiec_krag", wejscie:"Wejdź w Krąg Druidów", wraca:"mchowiec",
+      n:"Krąg Druidów", region:"krąg druidzki Mchowca",
+      opis:"Dziewięć drzew rosnących w okrąg tak równo, że nie mogły wyrosnąć same. Środek jest wydeptany do gołej ziemi i nic tam nie rośnie od stuleci.",
+      ludzie:[
+       ["pl_druid_st","Druid Trzebor","Człowiek z korą wrośniętą w skórę przedramienia","druid kręgu","urzednik",
+        "„Kora nie wrasta. Kora się przyjmuje, jeśli drzewo się zgodzi, i wtedy człowiek przestaje być całkiem człowiekiem. Ja jestem w jednej ósmej drzewem.”",
+        [["Boli to?","„Nie. Za to nie czuję zimna po tej stronie i nie czuję też, kiedy się skaleczę.<br><br>Za każdą ósmą coś się oddaje. Arcydruidka jest w połowie i nie pamięta imion swoich dzieci.”","Warto było?"],
+         ["Co mówi wam puszcza?","„Że coś ssie. Nie zabija, nie pali, nie tnie - ssie.<br><br>Woda ucieka, grzyb nie rośnie, drewno nie próchnieje. Wszystko, co potrzebuje rozkładu, żeby żyć, zatrzymało się na wschodzie. Jakby ktoś tam zabrał samą śmierć.”","Zabrał śmierć."]]],
+       ["pl_zwierzeca","Odmieniec Wilcza","Kobieta o źrenicach zbyt wąskich w dzień","odmieniec","kobieta",
+        "„Patrz w oczy albo nie patrz wcale. Odwracanie wzroku to u wilków wyzwanie, a ja nie chcę cię wyzywać.”",
+        [["Zmieniasz się w wilka?","„Zmieniam się z wilka. To ważniejsza kolejność i nikt na nizinach jej nie rozumie.<br><br>Urodziłam się jako wilk i puszcza zgodziła się, żebym chodziła też tak. Kiedyś przestanie się zgadzać.”","Kiedy?"],
+         ["Chodzisz na wschód?","„Chodziłam. Jako wilk, bo wilk czuje więcej.<br><br>Ostatni raz w Popielnym. Zawróciłam po dwóch dniach, bo przestałam czuć zapachy. Wszystkie. Zapach nie znika w lesie - chyba że nie ma czemu pachnieć.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"mchowiec_zielarnia", wejscie:"Wejdź do zielarni Mchowca", wraca:"mchowiec",
+      n:"Zielarnia Mchowca", region:"zielarnia druidów",
+      opis:"Izba wrośnięta w pień olbrzymiej olchy. Półki nie są przybite - wyrastają ze ściany, bo ktoś poprosił drzewo, żeby wyrosły.",
+      ludzie:[
+       ["pl_zielarz_m","Zielarz Miłowit","Człowiek rozcierający coś w dłoni zamiast w moździerzu","zielarz","urzednik",
+        "„Moździerz miażdży, dłoń rozciera. Różnica jest w tym, ile z ziela zostaje żywego, a to widać dopiero po tygodniu.”",
+        [["Czym się różni wasze zielarstwo od nizinnego?","„Tym, że pytamy roślinę, zanim ją zerwiemy, i czasem dostajemy odpowiedź, że nie.<br><br>Niziny nazywają to zabobonem. Zabobon czy nie, mamy o połowę mniej zatruć niż oni.”","Trudno się kłócić."],
+         ["Co przestało rosnąć?","„Sześć gatunków w tym roku, wszystkie z rodzaju, który lubi wilgoć i próchno.<br><br>Zapisałem je na korze i schowałem, bo Milina mówi, że zapisane trafia na niziny. Wolę, żeby trafiło i przetrwało, niż żeby zginęło czyste.”","Rozsądnie."]]],
+       ["pl_uczen_z","Uczennica Ziela Kalina Mała","Dziewczynka z poparzonym nosem","uczennica zielarska","kobieta",
+        "„Powąchałam, czego nie wolno. Miłowit mówi, że to lepsza nauka niż dziesięć wykładów, a mnie nos boli.”",
+        [["Co powąchałaś?","„Korzeń, którego nazwy nie wolno mi powtarzać, bo nazwa jest częścią przepisu.<br><br>Rośnie tylko w jednym miejscu w całej puszczy i Miłowit chodzi tam raz w roku. W tym roku wrócił z pustym koszem.”","Wrócił z niczym?"],
+         ["Co powiedział, kiedy wrócił?","„Nic. Siedział całą noc przy ogniu i patrzył w kosz.<br><br>Rano poszedł do Ostromira i wrócił jeszcze bardziej milczący. Od tamtej pory uczy mnie szybciej, jakby mu się spieszyło.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  ulica("jodlogrod", [
+    ["pl_ostrzarz","Ostrzarz Wszerad","Człowiek z kamieniem ostrzącym na sznurku u pasa","ostrzarz","kowal",
+     "„Ostrzę na mokro, nie na sucho. Sucho szybciej, mokro dłużej trzyma. U nas nikomu się nie spieszy.”",
+     [["Ile ostrzysz dziennie?","„Czterdzieści ostrzy. Rok temu dwanaście.<br><br>Zbrojni ćwiczą teraz dwa razy dłużej i ostrza tępią się dwa razy szybciej. Reszty domyśl się sam.”","Domyśliłem się."],
+      ["Co ćwiczą?","„Walkę z czymś, co nie ma tarczy i nie robi uników. Ustawiają słupy i tną je w pełnym biegu.<br><br>Człowiek robi uniki. Ćwiczą przeciw czemuś, co ich nie robi.”","Zapamiętam."]]],
+    ["pl_kucharka_j","Kucharka Obozowa Milena Starsza","Kobieta mieszająca w kotle wielkości beczki","kucharka obozowa","kobieta",
+     "„Kocioł na osiemdziesiąt porcji i wszystkie się rozejdą. Nie chwalę się - martwię.”",
+     [["Dlaczego martwisz?","„Bo rok temu gotowałam na czterdzieści i to był cały Jodłogród.<br><br>Teraz jest osiemdziesiąt i nie przybyło mieszkańców. Przybyło zbrojnych z innych osad, których tu ściągnięto.”","Ściągnięto po co?"],
+      ["Więc po co?","„Nikt nie mówi. Ale gotuję też suchary, a suchary robi się na drogę.<br><br>Cztery tysiące sucharów. To jest osiemdziesiąt ludzi na pięćdziesiąt dni marszu.”","Pięćdziesiąt dni."]]]
+  ]);
+  budynki("jodlogrod", [
+    wnetrze({id:"jodlogrod_dwor", wejscie:"Wejdź na Dwór Zbrojnych", wraca:"jodlogrod",
+      n:"Dwór Zbrojnych", region:"dwór ćwiczebny Prastarego Ludu",
+      opis:"Wydeptany placyk otoczony słupami z drewna, wszystkie pocięte na wysokości piersi i szyi. Żaden nie jest pocięty niżej.",
+      ludzie:[
+       ["pl_zbrojmistrz","Zbrojmistrz Leśny Ninogniew","Człowiek z dwoma ostrzami wetkniętymi w ziemię","zbrojmistrz leśny","weteran",
+        "„Ostrza w ziemi, nie u pasa. U pasa kuszą. W ziemi trzeba się po nie schylić i przez ten jeden ruch człowiek zdąży pomyśleć.”",
+        [["Dlaczego tniecie tylko wysoko?","„Bo tak trzeba, jak przeciwnik nie ma tarczy i nie ma zamiaru się bronić.<br><br>Uczyliśmy nóg przez dwieście lat. Od pół roku uczę szyi i piersi.”","Kto tak wygląda?"],
+         ["Kto nie broni się przy ataku?","„Coś, czego nie widziałem, i mam nadzieję, że nie zobaczę. Opisał mi to Wielki Łowczy, a Wielki Łowczy nie opisuje rzeczy, których nie widział.<br><br>Powiedział jedno zdanie: <em>ono idzie na ostrze</em>. Nie ucieka przed ostrzem. Idzie na nie.”","Idzie na ostrze."]]],
+       ["pl_tancerka_u","Uczennica Dwóch Ostrzy Zbrosława","Dziewczyna z bandażem na obu przedramionach","uczennica","kobieta",
+        "„Bandaże od własnych ostrzy. Pierwszy rok tak wygląda u każdego, kto się uczy dwóch naraz.”",
+        [["Warto się tego uczyć?","„Warto, jeśli chcesz przeżyć w puszczy. Nie warto, jeśli chcesz stanąć w szeregu.<br><br>Ludmiła mówi, że jedno wyklucza drugie i że mam wybrać. Wybrałam i teraz mam bandaże.”","Powodzenia."],
+         ["Ludmiła was przygotowuje do czegoś?","„Do marszu. Nie mówi dokąd, ale kazała każdemu zszyć własne buty na nowo i sprawdzić, czy trzymają w wodzie i w piachu.<br><br>W puszczy nie ma piachu.”","Nie ma."]]]
+      ]}),
+    wnetrze({id:"jodlogrod_platnernia", wejscie:"Wejdź do płatnerni leśnej", wraca:"jodlogrod",
+      n:"Płatnernia Leśna", region:"płatnernia Prastarego Ludu",
+      opis:"Warsztat pod okapem z kory. Zbroje wiszą tu na kołkach i żadna nie jest z pełnej blachy - wszystkie z płytek naszytych na skórę.",
+      ludzie:[
+       ["pl_platnerz2","Płatnerka Wisława","Kobieta naszywająca płytki drewnianą igłą","płatnerka","kobieta",
+        "„Igła z rogu, nie ze stali. Stalowa rozcina rzemień, rogowa go rozpycha. Nizinni tego nie rozumieją i dlatego ich zbroje się pruja.”",
+        [["Dlaczego nie robicie pełnych zbroi?","„Bo w pełnej zbroi nie da się biec, a u nas walka to bieganie z przerwami na cięcie.<br><br>Poza tym pełna zbroja tonie. Połowa naszych bitew kończy się w wodzie i to zwykle my w niej kończymy.”","Rozsądnie."],
+         ["Zmieniłaś coś w tych zbrojach ostatnio?","„Dodałam kołnierz. Sztywny, wysoki, na płytkach zachodzących na siebie.<br><br>Nikt mnie o to nie prosił. Zrobiłam to, jak zobaczyłam ranę, którą przyniósł jeden z gońców. Rana była na karku i szła w dół.”","Zapamiętam."]]],
+       ["pl_garbarz","Garbarz Chwalimir","Człowiek pachnący korą dębową","garbarz","kowal",
+        "„Garbuję korą, nie moczem jak niziny. Dłużej, drożej, ale skóra żyje dwa razy tyle.”",
+        [["Skąd bierzesz skóry?","„Z traperów z Lisiej Kępy i od tego, co sami ubijemy. Od jesieni mniej niż zwykle.<br><br>Zwierzyna schodzi z północy na południe całymi stadami i traperzy mówią, że idzie nie na żer, tylko na oślep.”","Na oślep."],
+         ["Ubijacie tę uciekającą zwierzynę?","„Nie ubijamy. Zwierzę, które ucieka przed czymś, ma mięso gorzkie i skórę cienką ze strachu.<br><br>Poza tym byłoby to niegodne. Ono ucieka od czegoś, przed czym my za chwilę też będziemy uciekać.”","Rozumiem."]]]
+      ]})
+  ]);
+
+  /* ============ MIASTA ODESZŁYCH ============ */
+  ulica("suchy_brod", [
+    ["od_tabliczkarz","Wywieszacz Kres","Człowiek wieszający tabliczki na ścianie kontraktów","wywieszacz","kowal",
+     "„Wieszam, nie czytam. Za czytanie nie płacą, a za powieszenie nie na tym haku płacą karę.”",
+     [["Ile kontraktów wisi?","„Sto dwanaście. Osiemdziesiąt dziewięć na wschód, dwadzieścia trzy na resztę świata.<br><br>Rok temu było odwrotnie i wieszałem dwa razy mniej.”","Kto je przynosi?"],
+      ["Więc kto?","„Na wschodnie zawsze ten sam człowiek, w kapturze, i płaci za wywieszenie z góry na miesiąc.<br><br>Nie targuje się i nie zabiera tabliczki, kiedy kontrakt zostanie wzięty. Zostawia ją i przynosi następną.”","Zapamiętam."]]],
+    ["od_kaleka_n","Wracający Sowa","Człowiek siedzący z dłońmi na kolanach, nieruchomo","najemnik po powrocie","weteran",
+     "„Wróciłem. Ludzie mówią, że mi się udało. Ludzie mówią dużo rzeczy.”",
+     [["Skąd wróciłeś?","„Ze wschodu, dwanaście dni temu, sam z ośmiu.<br><br>Nie pytaj, jak wyglądali tamci na końcu. Powiem ci, a potem będziesz to widział tak jak ja, a ja nie życzę tego nikomu.”","Zapytam o co innego."],
+      ["Co tam widziałeś na ziemi?","„Piach. Sam piach, tam gdzie na mapie jest step.<br><br>I ślady. Idą kręgiem, jakby coś krążyło wokół jednego punktu i nigdy się od niego nie oddalało. My szliśmy w ten punkt.”","Doszliście?"]]]
+  ]);
+  budynki("suchy_brod", [
+    wnetrze({id:"brod_sciana", wejscie:"Podejdź do Ściany Kontraktów", wraca:"suchy_brod",
+      n:"Ściana Kontraktów", region:"giełda najemników Odeszłych",
+      opis:"Ściana z desek, cała w tabliczkach zawieszonych na hakach. Lewa strona to zlecenia zwykłe, prawa te, które płacą wielokrotność stawki.",
+      ludzie:[
+       ["od_maklerka","Pośredniczka Zgrzyt","Kobieta zdejmująca tabliczkę z prawej strony","pośredniczka kontraktów","kobieta",
+        "„Prawa strona płaci cztery razy więcej. Zastanów się, dlaczego ktoś płaci cztery razy więcej za tę samą robotę.”",
+        [["Dlaczego płaci?","„Bo stawka to nie zapłata za pracę. Stawka to cena zgody na ryzyko.<br><br>Czterokrotność znaczy, że wraca jeden na czterech. Tak to się liczy u nas od stu lat i nikt jeszcze tej reguły nie złamał.”","Ponuro, ale uczciwie."],
+         ["Bierze ktoś te kontrakty?","„Bierze. Ci, co mają długi, i ci, co nie mają nikogo.<br><br>Ostatnio też ci, co mają rodziny, bo z góry płacą tyle, że rodzina przeżyje dwa lata. To jest nowe i to mi się nie podoba.”","Mnie też nie."]]],
+       ["od_wyceniacz","Wyceniacz Krzywy Bogdan","Człowiek z linijką i tabliczką","wyceniacz ryzyka","urzednik",
+        "„Wyceniam, ile warte jest cudze życie w danym tygodniu. Praca jak każda inna, tylko wszyscy udają, że nie.”",
+        [["Ile warte jest moje?","„Bez barw, bez rodziny, bez rangi - osiemdziesiąt złotych na tydzień, ale tylko dlatego, że wyglądasz na kogoś, kto wraca.<br><br>Ci, co nie wyglądają, dostają czterdzieści. Różnica to nie zapłata. To zakład.”","Elegancko."],
+         ["Kto ustala stawki wschodnie?","„Nie ja i to jest w tym najgorsze. Przychodzą gotowe, wykute na tabliczce, z liczbą, której bym nie wystawił.<br><br>Ktoś tam liczy inaczej niż my. Ktoś, kto nie liczy, ile wróci - tylko ile wystarczy, żeby poszli.”","Zapamiętam."]]]
+      ]}),
+    wnetrze({id:"brod_szkola", wejscie:"Wejdź na dziedziniec ćwiczebny", wraca:"suchy_brod",
+      n:"Dziedziniec Ćwiczebny", region:"szkoła najemników Odeszłych",
+      opis:"Klepisko obwiedzione belką. Nie ma tu stylów ani szkół - są ludzie, którzy przeżyli, i pokazują to, co ich uratowało.",
+      ludzie:[
+       ["od_belka","Belka","Kobieta z drewnianym kijem zamiast miecza","instruktorka","kobieta",
+        "„Kij, nie miecz. Kto nie umie kijem, ten mieczem tylko szybciej się zabije.”",
+        [["Czego uczysz?","„Trzech rzeczy: jak uderzyć pierwszy, jak upaść i jak biec.<br><br>Uczę biegania najdłużej, bo to jest najważniejsze i wszyscy się tego wstydzą.”","Rozsądnie."],
+         ["Zmieniłaś czegoś w nauce?","„Uczę teraz biec w piachu. Sprowadziliśmy piach wozami z północy, żeby ludzie poczuli, jak to jest.<br><br>Kto biegał tylko po kamieniu, ten w piachu pada po stu krokach. Sto kroków wystarczy, żeby coś cię dogoniło.”","Kto kazał?"]]],
+       ["od_krzywousty","Krzywousty","Człowiek z zapadniętym policzkiem","weteran szkoły","weteran",
+        "„Szczęka z jednej strony nie wróciła na miejsce. Mówię dziwnie, słyszę dobrze. Mów.”",
+        [["Ile kontraktów masz za sobą?","„Sześćdziesiąt siedem i wszystkie na zachód, południe albo w miejscu. Ani jednego na wschód.<br><br>Odmawiam od jedenastu lat i przez jedenaście lat wyśmiewali mnie za to. Od pół roku przestali.”","Dlaczego odmawiasz?"],
+         ["Więc dlaczego?","„Bo byłem tam raz, przed jedenastu laty, jako chłopak, z wyprawą Odeszłych na step.<br><br>Wróciło nas dwóch. Drugi powiesił się po roku. Ja mam krzywą szczękę i wolę ją niż jego sznur.”","Co tam było?"]]]
+      ]})
+  ]);
+
+  ulica("mgielnik", [
+    ["od_mglarz","Mglarz Cisz","Człowiek prawie niewidoczny w odległości dziesięciu kroków","przewodnik po mgle","weteran",
+     "„Stój przy mnie albo stój w miejscu. W tej mgle człowiek gubi się przy własnym progu i to nie jest przenośnia.”",
+     [["Zawsze tu tak jest?","„Od zawsze. Woda z podziemi jest cieplejsza niż powietrze i mgła nie opada.<br><br>Ale od wiosny jest gęstsza i zimniejsza. Zimniejsza mgła nad ciepłą wodą to jest coś, czego mi nikt nie umie wyjaśnić.”","Pytałeś magów?"],
+      ["Więc pytałeś?","„Pytałem Ślepej Nawki. Odpowiedziała, że mgła robi się gęstsza tam, gdzie woda przestaje płynąć.<br><br>Woda tu płynie od zawsze. Chyba że przestała i my tego jeszcze nie widzimy.”","Zapamiętam."]]],
+    ["od_dziecko_m","Chłopiec Mgiełka","Dziecko bawiące się kamykami przy wodzie","dziecko z Mgielnika","kobieta",
+     "„Nie jestem mgiełka, tylko mnie tak wołają, bo jak byłem mały, to mnie ciągle gubili.”",
+     [["Co robisz nad wodą?","„Liczę kamyki, które da się przerzucić na drugą stronę. Dziś dwadzieścia trzy.<br><br>Rok temu było dwanaście. Woda się zwęża i nikt tego nie zauważył poza mną.”","To ważne."],
+      ["Powiedziałeś komuś?","„Mamie. Powiedziała, żebym nie wymyślał.<br><br>Nie wymyślam. Mam kamyk z każdego dnia od wiosny i wszystkie leżą pod moim posłaniem po kolei.”","Zachowaj je."]]]
+  ]);
+  budynki("mgielnik", [
+    wnetrze({id:"mgielnik_szkola", wejscie:"Wejdź do Szkoły Wody", wraca:"mgielnik",
+      n:"Szkoła Wody", region:"szkoła magów wody Odeszłych",
+      opis:"Izba z podłogą wyłożoną płaskimi misami, każda pełna po brzeg. Uczniowie chodzą między nimi i żadna nie drgnie - to jest pierwszy egzamin.",
+      ludzie:[
+       ["od_wykladowca","Wykładowca Cichowoda","Człowiek mówiący ciszej, niż wypada","wykładowca","urzednik",
+        "„Mów ciszej. Głos marszczy wodę, a marszczona woda nie odpowiada.”",
+        [["Czego uczycie tu naprawdę?","„Cierpliwości pod pozorem magii. Pierwsze dwa lata to chodzenie między misami.<br><br>Kto po dwóch latach jeszcze chce, ten dostaje pierwszy znak. Z dwudziestu zostaje trzech i to jest dobry rocznik.”","Rozumiem."],
+         ["Woda naprawdę odpowiada?","„Woda pokazuje inną wodę. Nie odpowiada, nie doradza i nie kłamie - tylko pokazuje.<br><br>Od trzech miesięcy pokazuje na północy suche dno tam, gdzie było jezioro. Sprawdziliśmy w trzech misach osobno. To samo dno.”","Zapamiętam."]]],
+       ["od_uczen_w","Uczennica Rosa Mokra","Dziewczyna z mokrymi rękawami po łokcie","uczennica wody","kobieta",
+        "„Rękawy mokre, bo się przewróciłam do misy. Trzeci raz w tym tygodniu.”",
+        [["Zostaniesz tu?","„Zostanę, bo nie mam gdzie indziej. Ojciec wziął kontrakt na wschód i zapłacili z góry, żeby mnie tu umieścić.<br><br>To był warunek. Zapłata za jego życie to moja nauka.”","Przykro mi."],
+         ["Widziałaś coś w misie?","„Raz. Nie wodę - kamień, łuk z kamienia, i przez ten łuk płynęło coś, co nie było wodą.<br><br>Powiedziałam wykładowcy. Kazał zapomnieć i przez tydzień nie dopuszczał mnie do mis. Nie zapomniałam.”","Nie zapominaj."]]]
+      ]}),
+    wnetrze({id:"mgielnik_cysterna2", wejscie:"Zejdź do Zbiornika", wraca:"mgielnik",
+      n:"Zbiornik", region:"zbiornik Mgielnika",
+      opis:"Podziemna komora z wodą po pas i pomostem biegnącym wzdłuż ściany. Na ścianie widać poziomy wody z ostatnich stu lat, wyryte co roku.",
+      ludzie:[
+       ["od_poziomowy","Poziomowy Znak","Starzec wyrywający nową kreskę w ścianie","strażnik poziomu","weteran",
+        "„Kreska raz w roku, na wiosnę. Sto trzy kreski i wszystkie moją ręką albo ręką mojego ojca.”",
+        [["Jak wyglądały ostatnie lata?","„Chodź i zobacz. Do dziewięćdziesiątej kreski wszystkie mieszczą się w dwóch dłoniach.<br><br>Ostatnie trzy są niżej o pół łokcia każda. Woda schodzi i schodzi coraz szybciej.”","Trzy lata."],
+         ["Skąd bierze się ta woda?","„Z północy, spod grani, szczelinami w skale. Zawsze tak było i zawsze wystarczało.<br><br>Jeśli schodzi tu, to znaczy, że tam jej nie ma. A jak nie ma wody pod granią, to nie ma też Mgielnika za dziesięć lat.”","Mówiłeś o tym komuś?"]]],
+       ["od_czerpaczka","Czerpaczka Struga Młodsza","Kobieta z wiadrem na długim drążku","czerpaczka","kobieta",
+        "„Czerpię z dna, nie z wierzchu. Na wierzchu jest to, co spadło z sufitu, a sufit tu nie jest czysty.”",
+        [["Co spada z sufitu?","„Kurz, kamień i od wiosny coś jeszcze. Drobne, czarne, twarde jak żużel i nie rozpuszcza się.<br><br>Zbieram to sitem i mam już pół garnca. Nikt nie umie powiedzieć, co to jest.”","Pokaż mi to."],
+         ["Skąd to się bierze?","„Z góry, przez szczeliny, razem z wodą z północy. Więc gdzieś na północy coś się pali albo coś się kruszy.<br><br>Pod granią nie ma czego palić. Tam jest sam kamień i lód.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  ulica("podkowa", [
+    ["od_koniuszy","Koniuszy Ryk","Człowiek stojący między dwoma końmi i trzymający oba","koniuszy","kowal",
+     "„Nie z tyłu. Z boku i głośno, żeby wiedziały, że idziesz. Koń kopie ze strachu, nie ze złości.”",
+     [["Ile macie koni?","„Dwieście czterdzieści i wszystkie sprzedane, choć jeszcze stoją.<br><br>Kupiec zapłacił z góry za wszystkie i kazał trzymać do wiosny. Nikt nie kupuje dwustu czterdziestu koni na raz.”","Kto kupił?"],
+      ["Więc kto?","„Nie podał się. Płacił monetą, której tu nikt nie zna, i to nie garść, tylko trzy skrzynie.<br><br>Bosa Wanda przyjęła zapłatę i od tamtego dnia mniej mówi. Zapytaj ją, jeśli ci odpowie.”","Zapytam."]]],
+    ["od_rymarz","Rymarz Pas","Człowiek z ustami pełnymi gwoździ","rymarz","kowal",
+     "„Mmm. Poczekaj.” Wypluwa gwoździe na dłoń.<br><br>„Teraz mów.”",
+     [["Co szyjesz?","„Uprzęże i popręgi, dwieście czterdzieści kompletów, ten sam zamawiający co konie.<br><br>Ale nie na siodła. Na zaprzęg. Dwieście czterdzieści koni w zaprzęgu to jest sto dwadzieścia wozów.”","Sto dwadzieścia wozów."],
+      ["Czego się wozi sto dwudziestoma wozami?","„Wojska nie, bo wojsko idzie pieszo. Zboża nie, bo nie ma tyle zboża.<br><br>Tyloma wozami wywozi się ludzi albo przywozi coś ciężkiego. Nie wiem, które jest gorsze.”","Zapamiętam."]]]
+  ]);
+  budynki("podkowa", [
+    wnetrze({id:"podkowa_stajnie", wejscie:"Wejdź do Wielkich Stajni", wraca:"podkowa",
+      n:"Wielkie Stajnie", region:"stajnie Podkowy",
+      opis:"Cztery rzędy boksów pod jednym dachem, a między nimi przejście szerokie na wóz. Konie stoją spokojnie, ale żaden nie je z pełnego żłobu.",
+      ludzie:[
+       ["od_masztalerz","Masztalerz Wędzidło","Człowiek z siwym zarostem i jasnymi oczami","masztalerz","weteran",
+        "„Nie karmię do syta. Koń najedzony do syta nie pobiegnie, a te mają biec.”",
+        [["Dokąd mają biec?","„Nikt mi nie powiedział, ale karmię je tak, jak karmi się przed daleką drogą po złej ziemi.<br><br>Robię to od czterdziestu lat i ręce wiedzą wcześniej niż głowa. Ręce mówią: piach.”","Piach."],
+         ["Konie coś czują?","„Konie czują wszystko i te są niespokojne od jesieni. Nie od hałasu - od kierunku.<br><br>Postaw je łbem na północ i przestają jeść. Sprawdzałem to dwadzieścia razy, bo sam sobie nie wierzyłem.”","Zapamiętam."]]],
+       ["od_kowalka_p","Podkuwaczka Iskierka","Kobieta z fartuchem przepalonym w trzech miejscach","podkuwaczka","kobieta",
+        "„Podkuwam czterdzieści koni dziennie i mam na to dwa tygodnie. Policz sama, czy zdążę.”",
+        [["Nie zdążysz.","„Nie zdążę i powiedziałam to Wandzie. Kazała podkuwać dalej.<br><br>Wanda nigdy tak nie mówiła. Wanda zawsze mówiła, że lepiej zrobić mniej i dobrze.”","Coś się zmieniło."],
+         ["Jakie podkowy każą robić?","„Szerokie, płaskie, z rantem. Takie robi się na miękki grunt, na bagno albo na piach.<br><br>U nas jest kamień. Na kamieniu taka podkowa zdziera się w miesiąc.”","Więc nie na kamień."]]]
+      ]}),
+    wnetrze({id:"podkowa_kuznia2", wejscie:"Wejdź do Kuźni Wielkiej", wraca:"podkowa",
+      n:"Kuźnia Wielka", region:"kuźnia Podkowy",
+      opis:"Sześć palenisk pod jednym dachem i sześć par ludzi przy nich. Praca idzie tu w rytmie, w którym młot jednej pary wpada w przerwę drugiej.",
+      ludzie:[
+       ["od_starszy_kowal","Starszy Kuźni Żużel","Człowiek z uchem zniekształconym od odprysku","starszy kuźni","kowal",
+        "„Ucho od odprysku, trzydzieści lat temu. Odtąd noszę czapkę i odtąd wszyscy tu noszą czapki.”",
+        [["Ile kujecie dziennie?","„Sto dwadzieścia podków i osiemdziesiąt okuć do wozów. To trzy razy więcej niż normalnie.<br><br>Kujemy na trzy zmiany i i tak nie nadążamy z zamówieniem.”","Kto zamawia?"],
+         ["Ktoś sprawdza tę robotę?","„Sprawdza, i to jest najdziwniejsze. Przychodzi człowiek raz na tydzień, bierze do ręki po jednej sztuce z każdej setki i zgina ją w palcach.<br><br>W palcach, gołymi rękami. Okucie wozowe. Nie widziałem, żeby któremuś nie dał rady.”","Zapamiętam."]]],
+       ["od_uczen_k","Uczeń Kuźni Klin","Chłopak z opuchniętą dłonią","uczeń kowalski","kowal",
+        "„Trafiłem się młotem. Nie pierwszy raz i nie ostatni. Żużel mówi, że ręka mądrzeje szybciej niż głowa.”",
+        [["Podoba ci się ta robota?","„Podobała. Teraz kujemy w nocy i przez to nie widzę słońca od trzech tygodni.<br><br>Płacą podwójnie i to jest jedyny powód, dla którego nikt nie odchodzi.”","Skąd te pieniądze?"],
+         ["Kto płaci podwójnie?","„Ten sam, co odbiera. Widziałem go raz z bliska, jak podawałem mu skrzynkę.<br><br>Rękawice miał na obu dłoniach, w środku lata, i między rękawicą a rękawem nie było widać skóry. Nic tam nie było widać.”","Zapamiętam."]]]
+      ]})
+  ]);
+
+  /* ============ WSIE: po dwoje ludzi więcej ============ */
+  function wies(lok, ludzie){ ulica(lok, ludzie); }
+
+  wies("kobylniki", [
+    ["nw_karczmarz_k","Zajazdowy Radost","Człowiek liczący puste kufle","zajazdowy","kowal",
+     "„Zajazd przy trakcie. Żyję z tego, że komuś się chce jechać, a ostatnio chce się coraz mniejszej liczbie ludzi.”",
+     [["Kto jeszcze tędy jeździ?","„Wozy giełdy i wozy, które udają wozy giełdy. Te drugie nie zatrzymują się u mnie i to boli mnie bardziej niż powinno.<br><br>Jadą nocą, po sześć, i nikt z nich nie schodzi po wodę. Ludzie po dniu jazdy schodzą po wodę.”","Zapamiętam."]]],
+    ["nw_dziewka","Dziewka Zajazdowa Kalina","Dziewczyna ze ścierką przewieszoną przez ramię","dziewka zajazdowa","kobieta",
+     "„Nie siadaj przy oknie. Przy oknie siadają ci, co chcą widzieć, kto wjeżdża, a to zawsze źle się kończy dla stołu.”",
+     [["Kto siadał przy oknie ostatnio?","„Człowiek w kapturze, trzy razy w tym miesiącu. Zamawiał i nie jadł. Płacił i nie liczył reszty.<br><br>Za trzecim razem zapytałam, czy mu nie smakuje. Nie odpowiedział, tylko odwrócił głowę i wtedy zobaczyłam, że pod kapturem nie ma cienia.”","Nie ma cienia?"]]]
+  ]);
+  wies("smolarze", [
+    ["nw_mielerzowa","Mielerzowa Świętosława","Kobieta z twarzą czarną od dymu","dozorczyni mielerza","kobieta",
+     "„Mielerz pilnuje się trzy doby bez snu. Kto zaśnie, temu wypali się na węgiel, a nie na węgiel drzewny. Różnica jest w cenie i w robocie.”",
+     [["Dużo teraz palicie?","„Dwa razy tyle co rok temu i wszystko idzie do Latarnicy na smołę.<br><br>Radzim mówi, że bór tego nie wytrzyma. Radzim ma rację, ale Radzimowi nikt nie płaci za rację.”","Ile jeszcze wytrzyma?"]]],
+    ["nw_drwal_s","Drwal Bojan","Człowiek z siekierą wbitą w pień obok","drwal","kowal",
+     "„Siekiera w pniu, nie na ramieniu. Kto nosi siekierę na ramieniu, ten się nią kiedyś zetnie.”",
+     [["Skąd bierzecie drewno?","„Coraz dalej na wschód. Bliższe wycięliśmy w dwa lata.<br><br>Za rzeczką jest pas, w którym pnie leżą od dawna i nie próchnieją. Nie tykamy go. Drewno, które nie próchnieje, nie chce się też palić.”","Zapamiętam."]]]
+  ]);
+  wies("grobla_nw", [
+    ["nw_solnik","Solnik Ninomir","Człowiek z solą wżartą w dłonie","solnik","kowal",
+     "„Panwie chodzą dzień i noc. Sól z tej wody jest gorzka, ale gorzka sól to wciąż sól.”",
+     [["Ile soli daje jedna panew?","„Korzec na dobę. Mamy szesnaście panwi i wszystkie sprzedane na rok naprzód.<br><br>Kupiec zapłacił z góry i kazał zwiększyć produkcję. Nie mamy jak. Powiedziałem mu to. Powiedział, żebym spróbował.”","Kto to był?"]]],
+    ["nw_rybaczka","Rybaczka Miłosza","Kobieta zszywająca więcierz","rybaczka","kobieta",
+     "„Więcierz, nie sieć. Sieć bierze wszystko, więcierz tylko to, co wpłynie samo. Uczciwsze wobec rzeki.”",
+     [["Bierze ryba?","„Bierze, ale nie ta. Od wiosny idzie z góry rzeki sum i węgorz, jakby uciekały.<br><br>Sieciarka z Wiecznika mówi to samo z drugiej strony. Rozmawiałyśmy przez wodę i obie się przestraszyłyśmy.”","Zapamiętam."]]]
+  ]);
+  wies("wrzosy", [
+    ["sk_pasterka","Pasterka Dobroniega","Kobieta z psem, który nie odstępuje jej nogi","pasterka","kobieta",
+     "„Pies przy nodze, bo od jesieni nie odchodzi. Sam się tak nauczył i nie umiem go oduczyć.”",
+     [["Czego się boi?","„Nie wiem. Wilki znam i pies wilków się nie boi - warczy.<br><br>Na to nie warczy. Kładzie uszy i wciska mi się w nogę. Pies wciska się w człowieka tylko wtedy, gdy uważa, że człowiek jest bezpieczniejszy niż otwarte pole.”","Zapamiętam."]]],
+    ["sk_owczarz2","Postrzygacz Bolebor","Człowiek z nożycami u pasa","postrzygacz","kowal",
+     "„Strzygę raz w roku, wiosną. Owca ostrzyżona za wcześnie marznie, ostrzyżona za późno się dusi.”",
+     [["Dużo owiec padło?","„Czterdzieści w tym roku i żadna na chorobę. Znalazłem je w jednym miejscu, wszystkie razem, bez śladów.<br><br>Bez śladów, rozumiesz. Wilk zostawia ślady. To nie zostawiło nic poza czterdziestoma owcami.”","Pokażesz mi to miejsce?"]]]
+  ]);
+  wies("kamionka", [
+    ["sk_lamacz","Łamacz Sulimir","Człowiek z młotem dłuższym od siebie","łamacz kamienia","kowal",
+     "„Młot dłuższy, bo dźwignia. Kto łamie krótkim, ten łamie sobie plecy zamiast kamienia.”",
+     [["Na co idzie ten kamień?","„Na mury i na nagrobki. Nagrobków wychodzi teraz więcej niż muru i to jest wszystko, co da się powiedzieć o Ismaalu w jednym zdaniu.”","Trafnie."]]],
+    ["sk_kamieniarka2","Kamieniarka Wisława","Kobieta wygładzająca płytę","kamieniarka","kobieta",
+     "„Płyta ma być gładka, żeby rytowniczka miała gdzie kuć. Gładzę osiem godzin, ona kuje trzy dni.”",
+     [["Ile płyt zamówili?","„Sto dwadzieścia, bez imion. Imiona dopiszą później.<br><br>Kamieniarz nie powinien robić płyt bez imion. To jest jak szycie całunu na zapas.”","Zapamiętam."]]]
+  ]);
+  wies("sepnica", [
+    ["sk_poborczyni2","Poborca Krzywda","Człowiek z workiem i księgą","poborca","urzednik",
+     "„Nazywam się inaczej, ale wołają mnie Krzywda i przestałem prostować.”",
+     [["Ile ściągasz z tej wsi?","„Trzykrotność tego, co przed wojną, z połowy ludzi, bo drugą połowę wzięto do chorągwi.<br><br>Rachunek się nie spina i wszyscy o tym wiedzą. Ściągam mimo to, bo jak nie ja, to przyjdzie ktoś z bronią.”","Ponuro."]]],
+    ["sk_chlopka","Gospodyni Miłochna","Kobieta z dwojgiem dzieci u spódnicy","gospodyni","kobieta",
+     "„Nie mam co dać, więc nie stój tak, jakbyś czekał.”",
+     [["Nic nie chcę.","„To rzadkie. Siadaj więc.<br><br>Mąż w trzeciej chorągwi, od sierpnia bez wieści. Poborca mówi, że dopóki nie ma potwierdzenia, to płacę jak za żywego. Za żywego płaci się więcej.”","To podłe."]]]
+  ]);
+  wies("barcie", [
+    ["pl_bartnik2","Bartnik Chwalisz","Człowiek z zapuchniętą powieką","bartnik","kowal",
+     "„Powieka od pszczoły, nie od bójki. U nas bójek nie ma, pszczoły są.”",
+     [["Dobry rok na miód?","„Zły. Pszczoła nie leci na wschód i przez to lata dwa razy dalej.<br><br>Pszczoła nie omija kierunku bez powodu. Powiedziałem to druidom. Zapisali.”","Zapamiętam."]]],
+    ["pl_dziewczyna_b","Podkurzaczka Rosica","Dziewczyna z dymiącym garnkiem","podkurzaczka","kobieta",
+     "„Nie machaj rękami. Machanie je złości, dym uspokaja. Ludzie odwrotnie.”",
+     [["Ile macie barci?","„Osiemdziesiąt, z czego dwanaście opuszczonych od wiosny. Roje odeszły same, choć miały pełno.<br><br>Rój nie odchodzi od pełnej barci. Chyba że coś mu każe.”","Dokąd odeszły?"]]]
+  ]);
+  wies("lisia_kepa", [
+    ["pl_traperka","Traperka Wilcza Łapa","Kobieta z naszyjnikiem z pazurów","traperka","kobieta",
+     "„Pazury z tych, które sama wzięłam. Nie chwalę się - liczę. Każdy pazur to jedna zima, którą przeżyłam.”",
+     [["Ile pazurów?","„Dziewiętnaście. Dwudziestego nie będzie, bo w tym roku nic nie wpadło we wnyki.<br><br>Wnyki stoją puste od jesieni, a tropów jest więcej niż zwykle. Tropy są, zwierząt nie.”","Czyje tropy?"]]],
+    ["pl_chlopiec_l","Osacznik Mały Sęk","Chłopak z procą","osacznik","kowal",
+     "„Proca, nie łuk. Łuk dostanę na czternaste lato, jak przeżyję trzynaste.”",
+     [["Chodzisz sam po lesie?","„Chodziłem. Teraz nie wolno nikomu poniżej piętnastu i to od miesiąca.<br><br>Nie powiedzieli dlaczego. Powiedzieli tylko, że jak zobaczę coś, co idzie na dwóch nogach i nie odpowiada, mam biec i nie oglądać się.”","Słuchaj ich."]]]
+  ]);
+  wies("olszyny", [
+    ["pl_susznik","Susznik Dobrogost","Człowiek obwieszony pękami ziela","susznik","kowal",
+     "„Wieszam na sobie, bo pod okapem już nie ma miejsca. Wyglądam jak krzak i tak się czuję.”",
+     [["Skąd tyle suszu?","„Bo zbieram na trzy lata naprzód. Chwalisława kazała.<br><br>Chwalisława nigdy nie kazała zbierać na zapas. Mówiła, że ziele świeże leczy, a suszone tylko pociesza.”","Więc czemu teraz?"]]],
+    ["pl_znachorka2","Znachorka Ładna Ręka","Stara kobieta rozcierająca maść","znachorka","kobieta",
+     "„Ręka ładna nie jest. Tak mnie nazwali, bo nie zabiłam nikogo przez czterdzieści lat leczenia.”",
+     [["Co leczysz najczęściej?","„Rany od ostrza i gorączkę. Od jesieni jeszcze coś trzeciego, na co nie mam nazwy.<br><br>Człowiek nie ma rany, nie ma gorączki i nie chce jeść. Patrzy w jedną stronę i po tygodniu przestaje mówić.”","W którą stronę patrzy?"]]]
+  ]);
+  wies("popielisko", [
+    ["od_wypalacz2","Wypalaczka Sadza","Kobieta z rękami czarnymi do łokci","wypalaczka","kobieta",
+     "„Sadza schodzi po trzech dniach szorowania. Nikt tu nie szoruje, bo po trzech dniach znów się pali.”",
+     [["Komu sprzedajecie węgiel?","„Do Podkowy, do kuźni, i od pół roku trzy razy więcej.<br><br>Kuźnie w Podkowie mają sześć palenisk. Sześć palenisk nie zje trzy razy więcej węgla, chyba że pali się w nich bez przerwy.”","Palą bez przerwy."]]],
+    ["od_stary_w","Stary Piec","Starzec siedzący plecami do mielerza","dawny wypalacz","weteran",
+     "„Siedzę plecami, bo ogień w oczy przez czterdzieści lat wystarczy na resztę życia.”",
+     [["Widziałeś coś w tym roku?","„Łunę na północy, trzy razy, zawsze przed świtem. Nie pożar - pożar migocze.<br><br>To stało. Czerwone, niskie i stało. Powiedziałem synowi, kazał mi się przespać.”","Widziałem to samo."]]]
+  ]);
+  wies("wykrot", [
+    ["od_drwalka","Drwalka Szczapa","Kobieta z klinem i obuchem","drwalka","kobieta",
+     "„Klin i obuch, nie siekiera. Siekierą ścina się drzewo, klinem się je łupie. Kto myli, ten się męczy.”",
+     [["Pnie leżą, gdzie padły.","„Bo nie ma kto wywieźć. Wozy zabrali na wschód i nie oddali.<br><br>Ścinamy dalej, bo za ścinkę płacą. Za wywóz płaciliby komu innemu, więc nikt nie płaci nikomu.”","Absurd."]]],
+    ["od_kucharz_w","Kucharz Obozowy Kęs","Człowiek mieszający w kotle na trójnogu","kucharz obozowy","kowal",
+     "„Kocioł na dwudziestu, a jest nas dwunastu. Ośmiu poszło na kontrakt i gotuję dla nich dalej, bo tak jest raźniej.”",
+     [["Wrócą?","„Nie. Wiem to od trzech tygodni i dalej gotuję na dwudziestu.<br><br>Nie umiem gotować na dwunastu. Nauczę się w przyszłym miesiącu, jak zabraknie mąki.”","Trzymaj się."]]]
+  ]);
+  wies("krzywe_doly", [
+    ["od_przemytnik2","Przemytnik Dwoje Drzwi","Człowiek stojący dokładnie w progu","przemytnik","weteran",
+     "„Stoję w progu, bo w progu widzę obie strony. To jest cała moja filozofia i wystarcza mi od dwudziestu lat.”",
+     [["Co przechodzi teraz przez Krzywe Doły?","„Nic. I to jest nowość, bo przez dwadzieścia lat przechodziło wszystko.<br><br>Wschodni szlak zamknął się sam. Nie strażą, nie cłem - po prostu ludzie przestali nim chodzić i nikt nie umie powiedzieć, kto był pierwszy.”","Zapamiętam."]]],
+    ["od_stara_d","Babka Dwie Chaty","Stara kobieta z kluczami do dwóch domów","gospodyni","kobieta",
+     "„Dwie chaty, bo w każdej drugie wyjście. Tu każdy ma dwa i nikt nie uważa tego za dziwne.”",
+     [["Kto tu mieszka?","„Ci, po których nikt nie przyjdzie, i ci, po których ktoś przyjdzie, ale nie znajdzie.<br><br>Od pół roku przybyło nam czternaście rodzin z Ismaala i osiem z Kuźnic. Wszystkie z dziećmi i wszystkie bez mężczyzn.”","Zapamiętam."]]]
+  ]);
+
+
+})();
+
 /* --- mapa: każdy znacznik należy do krainy, żeby dało się filtrować --- */
 (function(){
   var GRUPY = {
@@ -11962,7 +14491,7 @@ var GLOS_NPC = {
     var sc = SCENY[lista[idx]];
     var cena = CENY[r.id] || 50;
     sc.opcje.splice(Math.max(0, sc.opcje.length - 1), 0, {
-      l: "Naucz mnie: " + r.n,
+      l: "Naucz mnie: " + r.n + " (" + cena + " zł)",
       recepta: r.id, cenaR: cena, idz: lista[idx],
       warunek: (function(rid, c){ return function(){ return !znaReceptura(rid) && S.zloto >= c; }; })(r.id, cena)
     });
@@ -11980,6 +14509,212 @@ var GLOS_NPC = {
       if(pk.typ === "ryba" && pk.zbierz && !pk.zbierz.ryba) pk.zbierz.ryba = 2;
     });
   }
+})();
+
+/* ================= POPRAWKI KOŃCOWE =================
+   Wszystko poniżej wykonuje się po złożeniu całego świata,
+   więc dotyczy także treści dodanych przez rozszerzenia regionalne. --- */
+
+/* --- 1. "wróć do osady" prowadzi tam, gdzie naprawdę stoisz --- */
+(function(){
+  LOKACJA_SCENY = {};
+  for(var l in LOKACJE){
+    ["postacie","miejsca","akcje","drogi"].forEach(function(p){
+      (LOKACJE[l][p]||[]).forEach(function(o){
+        if(!o.scena) return;
+        var q = [o.scena], vis = {};
+        while(q.length){
+          var c = q.shift();
+          if(!c || vis[c] || !SCENY[c] || c.indexOf("__") === 0) continue;
+          vis[c] = true;
+          if(!LOKACJA_SCENY[c]) LOKACJA_SCENY[c] = l;
+          (SCENY[c].opcje||[]).forEach(function(x){ if(x.idz) q.push(x.idz); });
+        }
+      });
+    });
+  }
+  for(var id in SCENY){
+    (SCENY[id].opcje||[]).forEach(function(o){
+      if(o.idz === "osada" && LOKACJA_SCENY[id] && LOKACJA_SCENY[id] !== "popielnica"){
+        delete o.idz; o.wyjdzDoLokacji = true;
+      }
+    });
+  }
+})();
+
+/* --- 2/5/11. te same odpowiedzi w różnych rozmowach --- */
+(function(){
+  var ZAMIAST = {
+    weteran_wies:    {"Czyli o nic.":"Dwanaście chałup i studnia. Rozumiem."},
+    swierad:         {"Odchodzę. Nie mam tu nic więcej.":"Licz dalej te owce."},
+    swierad_dzik:    {"Położę go. Ale nie za darmo.":"Położę go. Ale nie za darmo."},
+    ozog:            {"Odchodzę. Nie mam tu nic więcej.":"Grzej ręce dalej."},
+    ozog_wypatruje:  {"Runa przekonuje. Ciekawe.":"Czyli wypatrujesz i nie wiesz czego."},
+    ozog_runy:       {"Runa przekonuje. Ciekawe.":"Runa przekonuje, nie pali. Zapamiętam różnicę."},
+    ozog_kuznia:     {"Runa przekonuje. Ciekawe.":"Mag na żołdzie cechu. Nowe czasy."},
+    ozog_imie:       {"Runa przekonuje. Ciekawe.":"A jeżeli nie masz racji?"},
+    kalina:          {"Rozumiem.":"Trzy księgi i jeden pisarz. Czym się zajmujesz?"},
+    kalina_trzecia:  {"Rozumiem.":"Trzeciej księgi więc nie ma."},
+    sk_zaloba:       {"Rozumiem.":"Pusty całun to nie pogrzeb."}
+  };
+  for(var sc in ZAMIAST){
+    if(!SCENY[sc] || !SCENY[sc].opcje) continue;
+    var m = ZAMIAST[sc];
+    SCENY[sc].opcje.forEach(function(o){ if(m[o.l]) o.l = m[o.l]; });
+  }
+
+  /* Ta sama kwestia dwa razy w jednym drzewie rozmowy - rozsuwamy warianty. */
+  var WARIANTY = ["Rozumiem.","Zapamiętam to.","Niech ci będzie.","Dobrze wiedzieć.","Tyle mi starczy."];
+  var korzenie = {};
+  for(var l in LOKACJE) (LOKACJE[l].postacie||[]).forEach(function(p){ korzenie[p.scena] = true; });
+  var uzyte = {};
+  for(var id in SCENY){
+    var k = null;
+    if(korzenie[id]) k = id;
+    else for(var kk in korzenie) if(id.indexOf(kk + "_") === 0){ k = kk; break; }
+    if(!k) continue;
+    (SCENY[id].opcje||[]).forEach(function(o){
+      if(typeof o.l !== "string") return;
+      var klucz = k + "||" + o.l;
+      if(!uzyte[klucz]){ uzyte[klucz] = 1; return; }
+      var i = uzyte[klucz]++;
+      void i;
+      /* bierzemy pierwszy wariant, ktorego ten rozmowca jeszcze nie uzyl */
+      var wolny = null;
+      for(var v = 0; v < WARIANTY.length; v++){
+        if(WARIANTY[v] === o.l) continue;
+        if(!uzyte[k + "||" + WARIANTY[v]]){ wolny = WARIANTY[v]; break; }
+      }
+      if(!wolny) wolny = o.l + " Tyle.";
+      o.l = wolny;
+      uzyte[k + "||" + o.l] = 1;
+    });
+  }
+})();
+
+/* --- 4. przyjęte zlecenie znika z listy tematów --- */
+(function(){
+  for(var id in SCENY){
+    (SCENY[id].opcje||[]).forEach(function(o){
+      if(!o.idz || !SCENY[o.idz] || o.warunek || o.warunekZ) return;
+      var cel = SCENY[o.idz];
+      var zadania = [];
+      (cel.opcje||[]).forEach(function(x){ if(x.dajZ) zadania.push(x.dajZ); });
+      if(!zadania.length || zadania.length > 3) return;
+      /* podscena służy tylko do wydania tych zadań - chowamy wejście, gdy wszystkie ruszyły */
+      var maCos = (cel.opcje||[]).some(function(x){ return !x.dajZ && !x.oddajZ && x.idz !== id && x.idz !== o.idz; });
+      if(maCos) return;
+      o.warunek = (function(lista){ return function(){
+        return lista.some(function(q){ var st = stanZadania(q); return st === "brak" || st === "gotowe"; });
+      }; })(zadania);
+    });
+  }
+})();
+
+/* --- 3/12. każdy uczy tego, na czym się zna --- */
+(function(){
+  /* cechy: znikają wszystkie stare wpisy, wracają w jednym wymiarze */
+  var CECHY = {
+    sila:  {n:"Siła",       ef1:function(){S.sila+=1;},    ef5:function(){S.sila+=5;}},
+    zrecz: {n:"Zręczność",  ef1:function(){S.zrecz+=1;},   ef5:function(){S.zrecz+=5;}},
+    mana:  {n:"Zasób many", ef1:function(){S.manaMax+=5;S.mana+=5;}, ef5:function(){S.manaMax+=25;S.mana+=25;}, krok:5},
+    hp:    {n:"Zdrowie",    ef1:function(){S.hpMax+=10;S.hp+=10;},   ef5:function(){S.hpMax+=50;S.hp+=50;}, krok:10}
+  };
+  var uczyCechy = {};
+  for(var i = NAUKA.length - 1; i >= 0; i--){
+    var a = atrybutNauki(NAUKA[i]);
+    if(!a) continue;
+    if(a !== "intelekt"){
+      var k = NAUKA[i].uczy || "weteran";
+      (uczyCechy[k] = uczyCechy[k] || {})[a] = true;
+    }
+    NAUKA.splice(i, 1);   /* intelekt znika zupełnie - bierze się go z ksiąg */
+  }
+  for(var kto in uczyCechy){
+    for(var ce in uczyCechy[kto]){
+      var C = CECHY[ce], krok = C.krok || 1;
+      NAUKA.push({id:kto+"_"+ce+"_1", uczy:kto, grupa:"walka",
+        l:C.n+" +"+krok, pn:1, zl:0, ef:C.ef1});
+      NAUKA.push({id:kto+"_"+ce+"_5", uczy:kto, grupa:"walka",
+        l:C.n+" +"+(krok*5), pn:5, zl:0, ef:C.ef5});
+    }
+  }
+
+  /* umiejętności trafiają do tych, którzy się nimi zajmują */
+  var PRZENIES = {
+    zielarstwo:"wanda", oprawianie:"swierad", tropienie:"swierad",
+    gornictwo:"przybyslaw", wedkarstwo:"nieszka", targowanie:"iwo"
+  };
+  NAUKA.forEach(function(w){
+    if(PRZENIES[w.id]) w.uczy = PRZENIES[w.id];
+  });
+  /* rybak i sztygar też mają czego uczyć - dorzucamy im tę samą naukę */
+  function dubluj(idZrodla, kto, nowyId){
+    var wz = null;
+    NAUKA.forEach(function(w){ if(w.id === idZrodla) wz = w; });
+    if(!wz) return;
+    if(NAUKA.some(function(w){ return w.id === nowyId; })) return;
+    NAUKA.push({id:nowyId, uczy:kto, grupa:wz.grupa, l:wz.l, pn:wz.pn, zl:wz.zl,
+                raz:true, wymagaUm:wz.wymagaUm, ef:wz.ef});
+  }
+  dubluj("wedkarstwo", "wszebor", "wedkarstwo_wszebor");
+  dubluj("wedkarstwo", "pl_lada", "wedkarstwo_lada");
+  dubluj("wedkarstwo", "nw_rybaczka", "wedkarstwo_grobla");
+  dubluj("gornictwo", "bolko", "gornictwo_bolko");
+  dubluj("gornictwo", "od_kikut", "gornictwo_kikut");
+  /* wypalacz węgla nie uczy łowienia ryb */
+  for(var i2 = NAUKA.length - 1; i2 >= 0; i2--){
+    var w2 = NAUKA[i2];
+    if(w2.uczy === "zgaga" && /Wędkarstwo/.test(w2.l)) NAUKA.splice(i2, 1);
+  }
+  /* jeden nauczyciel, jedna umiejętność - bez podwójnych wpisów */
+  var widziane = {};
+  for(var i3 = NAUKA.length - 1; i3 >= 0; i3--){
+    var klucz = (NAUKA[i3].uczy || "weteran") + "||" + NAUKA[i3].l;
+    if(widziane[klucz]) NAUKA.splice(i3, 1); else widziane[klucz] = 1;
+  }
+  dubluj("oprawianie", "godzimir", "oprawianie_godzimir");
+  dubluj("tropienie", "pl_traperka", "tropienie_traperka");
+})();
+
+/* --- 7b. surowce i amunicja też mówią, do czego są --- */
+(function(){
+  var DO_CZEGO = {
+    strzaly:"amunicja do łuku", belty:"amunicja do kuszy",
+    ruda_kuznicka:"surowiec: wytop żelaza", darniowa:"surowiec: wytop żelaza",
+    ruda_wietrzna:"surowiec: stal wietrzna", wegiel_drzewny:"surowiec: paliwo do kuźni",
+    smola_okretowa:"surowiec szkutniczy", proch_zarnowiecki:"surowiec puszkarski",
+    lak_pieczetny:"surowiec kancelaryjny", prochno_trumienne:"składnik alchemiczny",
+    kora_wieczna:"składnik druidzki", zywica_borowa:"składnik druidzki",
+    rzemien:"surowiec rymarski", skora:"surowiec garbarski", futro:"surowiec kuśnierski",
+    sztaba:"surowiec kowalski", stal_wietrzna:"surowiec kowalski"
+  };
+  for(var k in DO_CZEGO) if(PRZEDMIOTY[k] && !PRZEDMIOTY[k].dziala) PRZEDMIOTY[k].dziala = DO_CZEGO[k];
+  /* reszta towarów dostaje ogólny opis, żeby w sklepie nie było pustej linii */
+  for(var k2 in PRZEDMIOTY){
+    var p = PRZEDMIOTY[k2];
+    if(p.dziala || p.obr || p.odp || p.daje || p.leczy || p.mana || p.intelekt || p.runy || p.wym || p.jad) continue;
+    if(p.typ === "towar" || p.typ === "skladnik") p.dziala = "towar na sprzedaż lub do rzemiosła";
+  }
+})();
+
+/* --- 8. gdzie coś kosztuje, tam widać ile --- */
+(function(){
+  for(var id in SCENY){
+    (SCENY[id].opcje||[]).forEach(function(o){
+      if(o.cena || !o.ef) return;
+      var m = String(o.ef).match(/S\.zloto\s*-=\s*(\d+)/);
+      if(m) o.cena = parseInt(m[1], 10);
+    });
+  }
+})();
+
+/* --- 13. cena nauki widoczna zanim klikniesz --- */
+(function(){
+  /* koszty liczy ekranTrenera; tu tylko pilnujemy, żeby żaden wpis nie miał zerowej ceny bazowej */
+  NAUKA.forEach(function(w){
+    if(!atrybutNauki(w) && !w.zl) w.zl = 20;
+  });
 })();
 
 /* --- każda droga ma powrót --- */
