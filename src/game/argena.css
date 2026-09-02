@@ -157,10 +157,29 @@ text-shadow:0 0 4px #000,0 0 4px #000}
 .mapa-ramka{overflow:auto;margin:0 0 14px;background:#0b0907;-webkit-overflow-scrolling:touch}
 #mapa-plotno{position:relative;width:100%;transition:width .2s}
 #mapa-obraz{display:block;width:100%;height:auto}
+/* Podpisy i znaczniki maleja wraz z powiekszeniem mapy, zeby nie zaslanialy sie nawzajem.
+   Przy 1x nazwy sa ukryte - przy 92 miejscach i tak nie daloby sie ich odczytac. */
 .podpis{position:absolute;transform:translate(-50%,10px);white-space:nowrap;
-font-family:Cinzel,serif;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
-color:#fff;text-shadow:0 0 4px #000,0 0 4px #000,0 1px 2px #000;pointer-events:none}
-.podpis.most{display:none}
+font-family:Cinzel,serif;letter-spacing:.06em;text-transform:uppercase;
+color:#fff;text-shadow:0 0 4px #000,0 0 4px #000,0 1px 2px #000;pointer-events:none;
+font-size:9px;display:none}
+.podpis.most{display:none!important}
+#mapa-plotno.z2 .podpis{display:block;font-size:7px}
+#mapa-plotno.z3 .podpis{display:block;font-size:6px}
+#mapa-plotno.z4 .podpis{display:block;font-size:5px}
+#mapa-plotno.z5 .podpis{display:block;font-size:4.5px}
+#mapa-plotno.z1 .podpis.kraina,#mapa-plotno.z1 .podpis.legenda{display:block;font-size:9px}
+#mapa-plotno.z2 .podpis.kraina,#mapa-plotno.z2 .podpis.legenda{font-size:8px}
+#mapa-plotno.z2 .znacznik{width:18px;height:18px;min-height:18px;border-width:1.5px}
+#mapa-plotno.z3 .znacznik{width:13px;height:13px;min-height:13px;border-width:1.5px}
+#mapa-plotno.z4 .znacznik{width:10px;height:10px;min-height:10px;border-width:1px}
+#mapa-plotno.z5 .znacznik{width:8px;height:8px;min-height:8px;border-width:1px}
+#mapa-plotno.z3 .znacznik.kraina,#mapa-plotno.z4 .znacznik.kraina,#mapa-plotno.z5 .znacznik.kraina{display:none}
+.mapa-krainy{margin:0 0 12px}
+.mapa-krainy button{font-size:11px;padding:6px 8px}
+.mapa-krainy button.on{color:var(--zloto);border-color:var(--braz);background:linear-gradient(180deg,#221b12,#171309)}
+.naglowek-czas{font-family:Cinzel,serif;font-size:11px;letter-spacing:.14em;
+text-transform:uppercase;color:var(--braz-jasny);margin-top:6px}
 .prob{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-3px;margin-right:8px;
 border:2px solid var(--zloto);background:rgba(18,15,12,.55)}
 .prob.stolica{border-color:#ffdf9a;background:rgba(216,178,94,.5)}

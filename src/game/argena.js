@@ -2627,7 +2627,8 @@ function ekranLokacji(id){
   if(!L.teren && !TERENY[id+"_teren"]) S.widok = "lokacja";
 
   var terenId = L.teren || (TERENY[id+"_teren"] ? id+"_teren" : null);
-  var h = '<div class="naglowek-lok"><h2>'+L.n+'</h2><span>'+L.region+'</span></div>';
+  var h = '<div class="naglowek-lok"><h2>'+L.n+'</h2><span>'+L.region+'</span>'
+        + '<div class="naglowek-czas">'+godzinaGry()+' &middot; '+dzienTygodnia()+'</div></div>';
 
   if(terenId){
     h += '<div class="przelacznik">'
@@ -3447,7 +3448,7 @@ d.innerHTML = {zapisy:widokZapisow, mapa:widokMapy, ekwipunek:widokEkwipunku, po
 dziennik:widokDziennika, bestiariusz:widokBestii}[panel]();
 Array.prototype.forEach.call(d.querySelectorAll("button[data-akcja]"), function(b){
 b.onclick = function(){
-if(S.wrog && b.getAttribute("data-akcja") !== "znacznik" && b.getAttribute("data-akcja") !== "zoom") return;
+if(S.wrog && b.getAttribute("data-akcja") !== "znacznik" && b.getAttribute("data-akcja") !== "zoom" && b.getAttribute("data-akcja") !== "mapaKraina") return;
 var a = b.getAttribute("data-akcja"), k = b.getAttribute("data-klucz");
 if(a === "zaloz") zaloz(k);
 if(a === "zdejmij") zdejmij(k);
@@ -3463,6 +3464,7 @@ if(a === "zaklDol"){ przesunZaklecie(k, 1); odswiezPanel(); return; }
 if(a === "rozwin"){ S.rozwiniete = (S.rozwiniete === k) ? null : k; odswiezPanel(); return; }
 if(a === "idzDoMapy"){ panel = "mapa"; odswiezPanel(); rysujPasek(); setTimeout(function(){ pokazZnacznik(+k); }, 30); return; }
 if(a === "zoom"){ zoomMapy(+k); return; }
+if(a === "mapaKraina"){ filtrMapy(k); return; }
 if(a === "czytaj"){
         var kw = PRZEDMIOTY[k];
         if(kw.runy && !S.umie[kw.runy]){
@@ -3656,16 +3658,41 @@ function widokZapisow(){
   return h;
 }
 
+var KRAINY_MAPY = [
+  {id:"wsz", n:"Cała Argena"},
+  {id:"zn",  n:"Ziemie Niczyje"},
+  {id:"nw",  n:"Nowożytni"},
+  {id:"sk",  n:"Ismaal"},
+  {id:"pl",  n:"Prastary Lud"},
+  {id:"od",  n:"Odeszli"}
+];
 function widokMapy(){
+  var kraina = S.mapaKraina || "wsz";
+  var zoom = S.mapaZoom || 1;
   var h = naglowek("Argena", "Dotknij znacznika, żeby przeczytać, co to za miejsce.");
-  h += '<div class="mapa-ramka rama"><div id="mapa-plotno">'
+
+  h += '<div class="strefy mapa-krainy">';
+  KRAINY_MAPY.forEach(function(k){
+    h += '<button data-akcja="mapaKraina" data-klucz="'+k.id+'" class="'
+       + (kraina === k.id ? "on" : "")+'">'+k.n+'</button>';
+  });
+  h += '</div>';
+
+  var widoczne = MAPA.znaczniki.filter(function(z){
+    return kraina === "wsz" || z.f === kraina || z.f === "wsz";
+  });
+  h += '<div class="mapa-ramka rama"><div id="mapa-plotno" class="z'+zoom+'" style="width:'+(zoom*100)+'%">'
      + '<img src="'+MAPA.plik+'" alt="Mapa Argeny" id="mapa-obraz">';
   MAPA.znaczniki.forEach(function(z,i){
+    if(kraina !== "wsz" && z.f !== kraina && z.f !== "wsz") return;
     h += '<button class="znacznik '+z.typ+(z.tu?" tu":"")+'" data-akcja="znacznik" data-klucz="'+i+'"'
        + ' style="left:'+z.x+'%;top:'+z.y+'%" aria-label="'+z.n+'"></button>'
        + '<span class="podpis '+z.typ+'" style="left:'+z.x+'%;top:'+z.y+'%">'+z.n+'</span>';
   });
   h += '</div></div>';
+  h += '<p class="tekst" style="font-size:13px;color:var(--tekst-cichy);margin:0 0 12px">'
+     + 'Widocznych miejsc: '+widoczne.length+' z '+MAPA.znaczniki.length
+     + (kraina === "wsz" ? '. Wybierz krainę powyżej, żeby odczytać nazwy.' : '.')+'</p>';
   h += '<div id="mapa-opis" class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Nic nie wybrano.</span></div></div>';
   h += '<div class="kat">Legenda</div><div class="rzeczy rama">'
      + '<div class="rzecz"><span><span class="prob kraina"></span> Kraina</span><span class="rzecz-o">obszar frakcji</span></div>'
@@ -3675,9 +3702,11 @@ function widokMapy(){
      + '<div class="rzecz"><span><span class="prob legenda"></span> Legenda</span><span class="rzecz-o">niepotwierdzone</span></div>' 
      + '</div>';
   h += '<div class="kat">Powiększenie</div>';
-  h += '<div class="strefy"><button data-akcja="zoom" data-klucz="1">1×</button>'
-     + '<button data-akcja="zoom" data-klucz="2">2×</button>'
-     + '<button data-akcja="zoom" data-klucz="3">3×</button></div>';
+  h += '<div class="strefy">';
+  [1,2,3,4,5].forEach(function(k){
+    h += '<button data-akcja="zoom" data-klucz="'+k+'" class="'+(zoom===k?"on":"")+'">'+k+'×</button>';
+  });
+  h += '</div>';
   return h;
 }
 
@@ -3690,9 +3719,13 @@ d.innerHTML = '<div class="rzecz"><span>'+z.n+'<div class="rzecz-o">'+z.o+'</div
 }
 
 function zoomMapy(k){
-var pl = document.getElementById("mapa-plotno");
-if(!pl) return;
-pl.style.width = (k*100)+"%";
+  S.mapaZoom = k;
+  odswiezPanel();
+}
+function filtrMapy(k){
+  S.mapaKraina = k;
+  S.mapaZoom = (k === "wsz") ? 1 : Math.max(S.mapaZoom || 1, 2);
+  odswiezPanel();
 }
 
 function widokPostaci(){
@@ -4183,6 +4216,8 @@ function wynikWyboru(tekst, potem){
 /* ================= ROZDZIAŁ PIERWSZY - SYSTEMY ================= */
 
 var MIESIACE = ["Wilczy","Sokoli","Zielny","Żniwny","Popielny","Głodny"];
+var DNI_TYGODNIA = ["poniedziałek","wtorek","środa","czwartek","piątek","sobota","niedziela"];
+function dzienTygodnia(){ uzupelnijStan(); return DNI_TYGODNIA[(S.dzien - 1) % 7]; }
 
 function uzupelnijStan(){
   if(S.czas === undefined) S.czas = 6*60;
@@ -11115,6 +11150,151 @@ function lokacjaSceny(id){ return LOKACJA_SCENY[id] || null; }
           if(!LOKACJA_SCENY[c]) LOKACJA_SCENY[c] = l;
           (SCENY[c].opcje||[]).forEach(function(x){ if(x.idz) q.push(x.idz); });
         }
+      });
+    });
+  }
+})();
+
+/* --- mapa: każdy znacznik należy do krainy, żeby dało się filtrować --- */
+(function(){
+  var GRUPY = {
+    nw:["Nowy Ostrów","Miedziana Waga","Latarnica","Kuźnice Wodne","Kobylniki","Smolarze","Grobla",
+        "Droga Latarnicza","Trakt Wagowy","Kontor Nowożytnych","Rogatka Nowożytnych","Kopalnia Żelazna",
+        "Zalany Chodnik","Ziemie Nowożytnych"],
+    sk:["Czerwień Wysoka","Żarnowiec","Kruczyn","Twierdza Grot","Wrzosy","Kamionka","Sępnica",
+        "Droga Krucza","Gościniec Czerwony","Bramy Ismaala","Strażnica Ismaala","Jaskinia Szeptów",
+        "Królestwo Ismaala"],
+    pl:["Wiecznik","Borowe Wrota","Mchowiec","Jodłogród","Rosica","Barcie","Lisia Kępa","Olszyny",
+        "Ścieżka Mchowa","Wilczy Przesmyk","Uroczysko za Kratą","Most Zachodni","Most Wschodni",
+        "Prastary Lud"],
+    od:["Zgorzel","Suchy Bród","Mgielnik","Podkowa","Popielisko","Wykrot","Krzywe Doły",
+        "Wyschłe Koryto","Trakt Popielny","Kryjówka Odeszłych","Wąwóz Kupiecki","Ziemie Odeszłych"]
+  };
+  var doGrupy = {};
+  for(var g in GRUPY) GRUPY[g].forEach(function(nazwa){ doGrupy[nazwa] = g; });
+  var KRAINY = {"Odeszli":"kraina","Nowożytni":"kraina","Królestwo Ismaala":"kraina",
+                "Prastary Lud":"kraina","Ziemie Nieznane":"kraina","Ziemie Niczyje":"kraina"};
+  var PRZYPISY = {"Stolica Odeszłych":"od","Stolica Ismaala":"sk","Stolica Nowożytnych":"nw",
+                  "Most zachodni":"pl","Most wschodni":"pl"};
+  MAPA.znaczniki.forEach(function(z){
+    z.f = doGrupy[z.n] || PRZYPISY[z.n] || (KRAINY[z.n] ? "wsz" : "zn");
+  });
+})();
+
+/* --- rozmowa nie kończy się sama: podsceny wracają do rozmówcy --- */
+(function(){
+  var DO_LOKACJI = {osada:1, __kruczy:1};
+  function jestWyjsciem(cel){
+    return !!cel && (DO_LOKACJI[cel] || cel.indexOf("__lok_") === 0);
+  }
+  /* korzeń rozmowy: scena, do której należy dana podscena */
+  var korzenie = {};
+  for(var l in LOKACJE)
+    (LOKACJE[l].postacie||[]).forEach(function(p){ korzenie[p.scena] = true; });
+
+  function korzenRozmowy(id){
+    if(korzenie[id]) return null;                 /* to już jest scena główna NPC */
+    for(var k in korzenie) if(id.indexOf(k + "_") === 0) return k;
+    return null;
+  }
+
+  for(var id in SCENY){
+    var k = korzenRozmowy(id);
+    if(!k || !SCENY[k]) continue;
+    var POWROTY = ["Wróćmy do rozmowy.","Jeszcze jedno.","Zostań chwilę.",
+                   "Mam jeszcze pytanie.","Nie skończyliśmy."];
+    (SCENY[id].opcje||[]).forEach(function(o, nr){
+      if(!jestWyjsciem(o.idz)) return;
+      o.idz = k;
+      o.l = POWROTY[(id.length + nr) % POWROTY.length];
+    });
+  }
+
+  /* po przyjęciu lub oddaniu zadania zostajesz w rozmowie */
+  for(var id2 in SCENY){
+    var sc = SCENY[id2];
+    if(!sc.opcje || !sc.opcje.length) continue;
+    var ma = sc.opcje.some(function(o){ return o.dajZ || o.oddajZ; });
+    if(!ma) continue;
+    var kk = korzenRozmowy(id2);
+    if(!kk || !SCENY[kk]) continue;
+    var jest = sc.opcje.some(function(o){ return o.idz === kk && !o.dajZ && !o.oddajZ; });
+    if(!jest) sc.opcje.push({l:"Wróćmy do rozmowy.", idz:kk});
+  }
+})();
+
+/* --- bliźniacze wyjścia z rozmowy: zostaje jedno --- */
+(function(){
+  for(var id in SCENY){
+    var sc = SCENY[id];
+    if(!sc.opcje) continue;
+    var widziane = {};
+    sc.opcje = sc.opcje.filter(function(o){
+      var proste = o.idz && !o.dajZ && !o.oddajZ && !o.ef && !o.warunek && !o.warunekZ
+                   && !o.walka && !o.zid && !o.rep && !o.wymagaPrzedmiotu && !o.recepta
+                   && !o.kradziez && !o.odpoczynek && !o.warsztat && !o.natret;
+      if(!proste) return true;
+      if(widziane[o.idz]) return false;
+      widziane[o.idz] = true;
+      return true;
+    });
+  }
+})();
+
+/* --- RYTM: kwestie merytoryczne dociągnięte do miary pierwowzoru ---
+   W Gothicu bohater mówi medianą pięciu słów. Krótkie wyjścia z rozmowy to zostawiamy,
+   ale tam, gdzie o coś pyta albo się na coś godzi, zdanie ma nieść treść. --- */
+(function(){
+  var DLUZSZE = {
+    "Zapamiętam.":"Zapamiętam. Nie zapomnę, kto to powiedział.",
+    "Niech ci będzie.":"Niech ci będzie. Nie będę wracał do tego.",
+    "Przyjmuję.":"Przyjmuję. Zobaczymy, ile to warte.",
+    "Jeszcze nie teraz.":"Jeszcze nie teraz. Wrócę, jak będę gotowy.",
+    "Jeszcze się zastanowię.":"Zastanowię się. Nie lubię decydować w biegu.",
+    "Zaczynajmy.":"Zaczynajmy, zanim się rozmyślę.",
+    "Przyniosę.":"Przyniosę. Nie pytam, komu to potem sprzedasz.",
+    "Będę pamiętał.":"Będę pamiętał. Takich rzeczy się nie zapomina.",
+    "Wystarczy.":"Wystarczy. Więcej i tak byś nie powiedział.",
+    "Na razie wystarczy.":"Na razie wystarczy. Wrócę z resztą pytań.",
+    "Nie pytam.":"Nie pytam. Wolę nie wiedzieć.",
+    "Przykro mi.":"Przykro mi. To wszystko, co mogę powiedzieć.",
+    "Zapamiętam rozkaz.":"Zapamiętam rozkaz. Co do słowa.",
+    "Rozkaz to rozkaz.":"Rozkaz to rozkaz. Nawet głupi.",
+    "Nie mam imienia.":"Nie mam imienia. Sprawdzałem, nikt go nie zna.",
+    "Masz robotę?":"Masz jakąś robotę, czy tylko gadamy?",
+    "Kto tu rządzi?":"Kto tu naprawdę rządzi, jak nie ty?",
+    "Pokaż towar.":"Pokaż, co masz i za ile.",
+    "Pokaż, co masz.":"Pokaż, co masz i na ile wyceniasz.",
+    "Czyli o nic.":"Czyli biją się o nic i wiedzą o tym.",
+    "Krata zamknięta. Jasne.":"Krata zamknięta. Zawsze była, tak rozumiem.",
+    "Runa przekonuje. Ciekawe.":"Runa przekonuje, nie pali. Zapamiętam różnicę.",
+    "Przeprawa nieczynna. Rozumiem.":"Przeprawa nieczynna, a łódź stoi. Rozumiem.",
+    "Naucz mnie wody.":"Naucz mnie tego, co robisz z wodą.",
+    "Przeczekaj (4 godziny)":"Przeczekaj tu cztery godziny",
+    "Wróć na rozdroże":"Wróć na rozdroże",
+    "Odejdę.":"Odejdę. Ale to nie koniec sprawy.",
+    "Odchodzę.":"Odchodzę. Nie mam tu nic więcej.",
+    "Dość tego.":"Dość tego gadania na dzisiaj.",
+    "Bywaj.":"Bywaj. I nie licz na to, że zapomnę.",
+    "Na tyle.":"Na tyle mi starczy. Na razie.",
+    "Skończyliśmy.":"Skończyliśmy. Chyba że masz coś jeszcze.",
+    "Idę swoją drogą.":"Idę swoją drogą. Tak będzie prościej.",
+    "Tyle mi wystarczy.":"Tyle mi wystarczy. Reszty się domyślę.",
+    "Wracam.":"Wracam. Mam jeszcze robotę."
+  };
+  /* powroty do rozmowy: pięć wariantów zamiast jednego, dłuższych */
+  var POWROTY = ["Zostań. Mam jeszcze jedno pytanie.","Nie skończyliśmy tej rozmowy.",
+                 "Wróćmy do tego, o czym mówiłeś.","Jeszcze jedno, zanim pójdę.",
+                 "Mam do ciebie jeszcze sprawę."];
+  var licznik = 0;
+  for(var id in SCENY){
+    var sc = SCENY[id];
+    [sc.opcje, sc.intro && sc.intro.opcje].forEach(function(lista){
+      if(!lista) return;
+      lista.forEach(function(o){
+        if(typeof o.l !== "string") return;
+        if(o.l === "Wróćmy do rozmowy."){ o.l = POWROTY[(licznik++) % POWROTY.length]; return; }
+        if(DLUZSZE[o.l]) o.l = DLUZSZE[o.l];
       });
     });
   }
