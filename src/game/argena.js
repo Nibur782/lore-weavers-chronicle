@@ -624,6 +624,14 @@ function mozeUzyc(k){
   return false;
 }
 
+/* Ikony przedmiotów leżą w public/ikony/<identyfikator>.png.
+   Gdy pliku nie ma, przeglądarka chowa obrazek i zostaje dotychczasowy wygląd. */
+var SCIEZKA_IKON = "ikony/";
+function ikonaPrzedmiotu(id, klasa){
+  if(!id) return "";
+  return '<img class="ikona ' + (klasa || "") + '" src="' + SCIEZKA_IKON + id + '.png" alt="" '
+       + 'loading="lazy" onerror="this.style.display=&quot;none&quot;">';
+}
 function opisDzialania(p){
   var cz = [];
   if(p.leczy) cz.push("+"+p.leczy+" życia");
@@ -635,6 +643,7 @@ function opisDzialania(p){
   if(p.daje) for(var d in p.daje) cz.push({sila:"siła",zrecz:"zręczność",unik:"unik",kryt:"krytyk",intelekt:"intelekt"}[d]+" +"+p.daje[d]);
   if(p.intelekt) cz.push("+"+p.intelekt+" intelektu po przeczytaniu");
   if(p.wym) for(var w in p.wym) cz.push("wymaga: "+({sila:"siła",zrecz:"zręczność"}[w])+" "+p.wym[w]);
+  if(p.dziala) cz.push(p.dziala);
   if(!cz.length && p.typ === "towar") cz.push("towar na sprzedaż");
   return cz.join(" &middot; ");
 }
@@ -2616,7 +2625,7 @@ function listaRzeczy(){
   if(!klucze.length) return '<div class="rzeczy rama"><div class="rzecz"><span class="rzecz-o">Plecak jest pusty.</span></div></div>';
   return '<div class="rzeczy rama">' + klucze.map(function(k){
     var p = PRZEDMIOTY[k];
-    return '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]+'<div class="rzecz-o">'+p.o+'</div>'
+    return '<div class="rzecz z-ikona">'+ikonaPrzedmiotu(k)+'<span>'+p.n+' &times; '+S.plecak[k]+'<div class="rzecz-o">'+p.o+'</div>'
          + (opisDzialania(p) ? '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisDzialania(p)+'</div>' : '')
          + '</span><span class="rzecz-o">'+(p.cena ? p.cena+" zł" : "")+'</span></div>';
   }).join("") + '</div>';
@@ -2871,10 +2880,10 @@ function ekranSklepu(sc){
     var grupa = KOLEJNOSC[p.typ] || 9;
     if(grupa !== ostatniaGrupa){ h += '<div class="kat">'+NAGLOWKI[grupa]+'</div>'; ostatniaGrupa = grupa; }
     var braknie = S.zloto < cena;
-    var mech = opisMechaniki(p);
-    h += '<button data-i="'+i+'"'+(braknie ? " disabled" : "")+'>'
+    var mech = opisDzialania(p);
+    h += '<button class="z-ikona" data-i="'+i+'"'+(braknie ? " disabled" : "")+'>'
        + '<span class="koszt">'+cena+' zł<i class="ile">ilość: '+zostalo+'</i></span>'
-       + p.n
+       + ikonaPrzedmiotu(k) + p.n
        + (mech ? '<em class="mech">'+mech+'</em>' : '')
        + '</button>';
     akcje.push(function(){
@@ -3440,7 +3449,7 @@ var KSIEGI = {
       return PRZEDMIOTY[k].kat === "roslina";
     }).map(function(k){
       var p = PRZEDMIOTY[k];
-      return '<div class="rzecz"><span>'+p.n+'<div class="rzecz-o">'+p.o+'</div>'
+      return '<div class="rzecz z-ikona">'+ikonaPrzedmiotu(k)+'<span>'+p.n+'<div class="rzecz-o">'+p.o+'</div>'
         + '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+(opisDzialania(p)||"Nic poza wartością na targu.")+'</div>'
         + '</span><span class="rzecz-o">'+p.cena+' zł</span></div>';
     }).join("") + '</div>';
@@ -3593,7 +3602,7 @@ var KATEGORIE_EKW = [
 
 function wierszPrzedmiotu(k){
   var p = PRZEDMIOTY[k];
-  return '<div class="rzecz"><span>'+p.n+' &times; '+S.plecak[k]
+  return '<div class="rzecz z-ikona">'+ikonaPrzedmiotu(k)+'<span>'+p.n+' &times; '+S.plecak[k]
      + '<div class="rzecz-o">'+p.o+'</div>'
      + (opisDzialania(p) ? '<div class="rzecz-o" style="color:var(--braz-jasny);margin-top:4px">'+opisDzialania(p)+'</div>' : '')
      + (p.typ==="wyposazenie" && !S.wrog ? (brakWymagan(p)
