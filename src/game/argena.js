@@ -486,13 +486,13 @@ function dodajExp(ile){
   if(!ile) return null;
   S.exp += ile;
   var awanse = 0;
-  var MAKS = 21;
+  var MAKS = 23;
   if(S.poziom >= MAKS){ S.exp = Math.min(S.exp, progExp(MAKS)-1); return 0; }
   while(S.exp >= progExp(S.poziom) && S.poziom < MAKS){
     S.exp -= progExp(S.poziom);
     S.poziom++;
     S.pn += 10;
-    S.hpMax += 5; S.hp = Math.min(S.hpMax, S.hp + 5);
+    S.hpMax += 12; S.hp = Math.min(S.hpMax, S.hp + 12);
     
     awanse++;
   }
@@ -538,8 +538,8 @@ function atrybutNauki(w){
 }
 /* Ogólni nauczyciele doprowadzą cię do połowy. Wyżej uczą tylko swoi.
    Sufit dotyczy wyłącznie nauki - przedmioty mogą wynieść cechę ponad niego. */
-var SUFITY_OGOLNE   = {sila:50,  zrecz:50,  intelekt:50,  mana:70,  hp:110};
-var SUFITY_FRAKCYJNE = {sila:100, zrecz:100, intelekt:100, mana:160, hp:240};
+var SUFITY_OGOLNE   = {sila:50,  zrecz:50,  mana:70};
+var SUFITY_FRAKCYJNE = {sila:100, zrecz:100, mana:160};
 function wartoscAtrybutu(a){
   if(a === "sila") return S.sila;
   if(a === "zrecz") return S.zrecz;
@@ -551,31 +551,51 @@ function wartoscAtrybutu(a){
 function sufitNauki(w){
   var a = atrybutNauki(w);
   if(!a) return null;
-  return (w.frakcyjny ? SUFITY_FRAKCYJNE : SUFITY_OGOLNE)[a];
+  var sf = (w.frakcyjny ? SUFITY_FRAKCYJNE : SUFITY_OGOLNE)[a];
+  if(sf === undefined) return null;
+  /* przy nauce kilku stopni naraz sufit musi zmieścić cały skok */
+  var krok = (a === "mana") ? 5 : 1;
+  return sf - ((w.ile || 1) - 1) * krok;
 }
 function poSufitem(w){
   var sf = sufitNauki(w);
   return sf === null || wartoscAtrybutu(atrybutNauki(w)) < sf;
 }
-function kosztPn(w){
+/* Ile punktów nauki kosztuje jeden stopień danej cechy przy jej obecnej wartości. */
+function pnZaStopien(a, wartosc){
+  if(a === "sila" || a === "zrecz") return wartosc < 15 ? 1 : (wartosc < 25 ? 2 : 3);
+  if(a === "mana")                  return wartosc < 30 ? 1 : (wartosc < 60 ? 2 : 3);
+  return 1;
+}
+function zlZaStopien(a, wartosc){
+  if(a === "sila" || a === "zrecz") return 6 + Math.max(0, wartosc - 10) * 3;
+  if(a === "mana")                  return 12 + Math.max(0, wartosc - 10) * 2;
+  return 0;
+}
+/* Nauka kilku stopni naraz kosztuje tyle, co kupienie ich po kolei.
+   Piąty stopień bywa droższy od pierwszego, jeśli po drodze przekroczysz próg. */
+function sumaStopni(w, funkcja){
   var a = atrybutNauki(w);
-  if(a === "sila")     return S.sila  < 15 ? 1 : (S.sila  < 25 ? 2 : 3);
-  if(a === "zrecz")    return S.zrecz < 15 ? 1 : (S.zrecz < 25 ? 2 : 3);
-  if(a === "intelekt") return S.intelekt < 15 ? 1 : (S.intelekt < 25 ? 2 : 3);
-  if(a === "mana")     return S.manaMax < 30 ? 1 : (S.manaMax < 60 ? 2 : 3);
-  if(a === "hp")       return S.hpMax < 80 ? 1 : (S.hpMax < 140 ? 2 : 3);
-  return w.pn;
+  if(!a) return null;
+  var krok = (a === "mana") ? 5 : 1;
+  var ile = w.ile || 1;
+  var wart = wartoscAtrybutu(a);
+  var suma = 0;
+  for(var i = 0; i < ile; i++){
+    suma += funkcja(a, wart);
+    wart += krok;
+  }
+  return suma;
+}
+function kosztPn(w){
+  var s = sumaStopni(w, pnZaStopien);
+  return s === null ? w.pn : s;
 }
 
 /* jednolity cennik treningów - te same atrybuty kosztują tyle samo u każdego */
 function kosztZl(w){
-  var a = atrybutNauki(w);
-  if(a === "sila")     return 6 + Math.max(0, S.sila  - 10) * 3;
-  if(a === "zrecz")    return 6 + Math.max(0, S.zrecz - 10) * 3;
-  if(a === "intelekt") return 6 + Math.max(0, S.intelekt - 5) * 3;
-  if(a === "mana")     return 12 + Math.max(0, S.manaMax - 10) * 2;
-  if(a === "hp")       return 14 + Math.max(0, S.hpMax - 40);
-  return w.zl;
+  var s = sumaStopni(w, zlZaStopien);
+  return s === null ? w.zl : s;
 }
 
 /* ---------- PLECAK ---------- */
@@ -14450,7 +14470,8 @@ var GLOS_NPC = {
     huta:             ["miecz_stary"],
     arsenal_czerwien: ["bulawa", "zbroja_straznicza"],
     zbrojownia_kuznice: ["dwurecz", "kaftan_kontoru"],
-    belciarnia_grot:  ["kusza_kontoru"]
+    belciarnia_grot:  ["kusza_kontoru"],
+    halszka_sklep:    ["pieczec_roszki"]
   };
   for(var sc in GDZIE){
     if(!SCENY[sc] || !SCENY[sc].oferta) continue;
@@ -14626,14 +14647,14 @@ var GLOS_NPC = {
   var CECHY = {
     sila:  {n:"Siła",       ef1:function(){S.sila+=1;},    ef5:function(){S.sila+=5;}},
     zrecz: {n:"Zręczność",  ef1:function(){S.zrecz+=1;},   ef5:function(){S.zrecz+=5;}},
-    mana:  {n:"Zasób many", ef1:function(){S.manaMax+=5;S.mana+=5;}, ef5:function(){S.manaMax+=25;S.mana+=25;}, krok:5},
-    hp:    {n:"Zdrowie",    ef1:function(){S.hpMax+=10;S.hp+=10;},   ef5:function(){S.hpMax+=50;S.hp+=50;}, krok:10}
+    mana:  {n:"Zasób many", ef1:function(){S.manaMax+=5;S.mana+=5;}, ef5:function(){S.manaMax+=25;S.mana+=25;}, krok:5}
+    /* zdrowia nikt nie uczy - rośnie wyłącznie z poziomem */
   };
   var uczyCechy = {};
   for(var i = NAUKA.length - 1; i >= 0; i--){
     var a = atrybutNauki(NAUKA[i]);
     if(!a) continue;
-    if(a !== "intelekt"){
+    if(a !== "intelekt" && a !== "hp"){
       var k = NAUKA[i].uczy || "weteran";
       (uczyCechy[k] = uczyCechy[k] || {})[a] = true;
     }
@@ -14642,9 +14663,9 @@ var GLOS_NPC = {
   for(var kto in uczyCechy){
     for(var ce in uczyCechy[kto]){
       var C = CECHY[ce], krok = C.krok || 1;
-      NAUKA.push({id:kto+"_"+ce+"_1", uczy:kto, grupa:"walka",
+      NAUKA.push({id:kto+"_"+ce+"_1", uczy:kto, grupa:"walka", cecha:ce, ile:1,
         l:C.n+" +"+krok, pn:1, zl:0, ef:C.ef1});
-      NAUKA.push({id:kto+"_"+ce+"_5", uczy:kto, grupa:"walka",
+      NAUKA.push({id:kto+"_"+ce+"_5", uczy:kto, grupa:"walka", cecha:ce, ile:5,
         l:C.n+" +"+(krok*5), pn:5, zl:0, ef:C.ef5});
     }
   }
